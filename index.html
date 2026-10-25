@@ -334,6 +334,9 @@ h2.hero{font-size:34px;background:linear-gradient(90deg,var(--sweblue),#3a86ff 4
 .drow{display:flex;gap:16px;align-items:center}.dcall{width:60px;height:60px;border-radius:50%;border:0;background:#23a55a;color:#fff;font-size:24px;cursor:pointer}.ddel{border:0;background:none;font-size:22px;color:var(--muted);cursor:pointer}
 .quick{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}.quick button{border:1px solid var(--line);background:var(--surface);border-radius:14px;padding:5px 11px;font:600 12px inherit;color:var(--fg);cursor:pointer}.quick .q112{background:#c8102e;color:#fff;border-color:#c8102e}
 .walkfade{position:fixed;inset:0;z-index:40;background:#0b1118;opacity:0;pointer-events:none;transition:opacity .35s}.walkfade.on{opacity:.92}
+.credit{position:absolute;left:var(--gut);bottom:calc(12px + env(safe-area-inset-bottom,0px));z-index:3;font-size:11px;color:#fff;opacity:.85;text-shadow:0 1px 3px #000;background:rgba(10,18,25,.45);padding:4px 9px;border-radius:8px;white-space:nowrap}
+.credit a{color:#ffd27a;text-decoration:none}.credit a:hover{text-decoration:underline}
+@media (max-width:1100px){.credit{left:50%;transform:translateX(-50%);bottom:calc(1px + env(safe-area-inset-bottom,0px));font-size:9.5px;padding:1px 7px;background:none}}
 .deptabs{display:flex;gap:6px;flex-wrap:wrap;margin:4px 0 8px}.deptabs button{border:1px solid var(--line);background:var(--surface2);border-radius:14px;padding:4px 10px;font:600 12px inherit;color:var(--fg);cursor:pointer}.deptabs button.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
 .deps{display:grid;gap:4px}.dep{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;padding:6px 8px;background:var(--board);color:var(--board-ink);border-radius:8px}.dep .ln{min-width:30px;text-align:center;padding:3px 6px;border-radius:6px;color:#fff;font:700 13px "IBM Plex Mono",monospace}
 .dep.fl{border:0;width:100%;text-align:left;cursor:pointer;font:inherit}.dep .dst{font-size:13.5px;line-height:1.25}.dep .dst small{display:block;color:#9fb0bd;font-size:11px}.dep .tm{font:600 14px "IBM Plex Mono",monospace;color:var(--amber);text-align:right}.dep .tm small{display:block}.dep .late{color:#ff8a80;font-size:11px}.dep.can .dst,.dep.can .tm{text-decoration:line-through;opacity:.6}
@@ -364,6 +367,7 @@ h2.hero{font-size:34px;background:linear-gradient(90deg,var(--sweblue),#3a86ff 4
   <div class="joy" id="joy" aria-label="Move joystick"><div class="knob" id="knob"></div></div>
   <button class="runbtn" id="runbtn" aria-pressed="false">Run</button>
   <div class="attrib">© OpenStreetMap contributors</div>
+  <div class="credit">Developer: Seun Ajetomobi · © 2026 Helekt · <a href="https://www.helekt.net" target="_blank" rel="noopener">www.helekt.net</a></div>
   <div class="loading" id="loading"><div class="box"><b>Stockholm Life</b><div class="bar"><i id="loadbar"></i></div><small id="loadtxt">Downloading 84 000 buildings, 160 000 street segments and 15 000 places from OpenStreetMap…</small></div></div>
 </section>
 <nav class="dock" id="dock" aria-label="Panels">

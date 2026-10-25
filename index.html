@@ -1690,7 +1690,7 @@ const TRAITS_ME=[['outgoing','Outgoing',{social:10,charisma:8}],['shy','Shy',{ch
 const HOBBIES=['Football','Gym','Running','Music','Dancing','Cooking','Gaming','Reading','Hiking','Art','Photography','Tech','Fashion','Faith community','Volunteering','Movies'];
 const MARITAL=[['single','Single'],['relationship','In a relationship'],['married','Married'],['divorced','Divorced'],['widowed','Widowed']];
 const EDU=[['basic','Compulsory school',0],['upper','Upper secondary (gymnasium)',4],['uni','University degree',10],['phd','PhD',16]];
-function intro(){const F={kind:'stockholm',over:false,city:SWE_CITIES[0][0],nat:'Nigeria',from:'Nigeria',route:0,purpose:'work',name:'Alex',age:27,gender:'m',marital:'single',kids:0,edu:'upper',prof:'',eng:'good',traits:['kind'],hobbies:['Music'],bio:'',look:'',skin:'',pref:'any',asp:''};
+function intro(){const F={kind:'stockholm',over:false,city:SWE_CITIES[0][0],nat:'Nigeria',from:'Nigeria',route:0,purpose:'work',name:'Alex',age:27,gender:'m',marital:'single',kids:0,edu:'upper',prof:'',eng:'good',traits:['kind'],hobbies:['Music'],bio:'',look:'',skin:'',height:'avg',build:'avg',hair:'auto',pref:'any',asp:''};
   const draw=()=>{const nat=COUNTRIES.find(c=>c[0]===F.nat)||COUNTRIES[1];const rts=routesFrom(F.from);if(F.route>=rts.length)F.route=0;const rt=rts[F.route];
     const papers=F.kind!=='abroad'?'':nat[2]==='se'?'You are Swedish: no permit needed. Re-register your address at Skatteverket.':nat[2]==='nordic'?'Nordic citizens can live and work in Sweden freely. You only register at Skatteverket.':nat[2]==='eu'?'EU/EEA citizens have a right of residence: no permit card. Register at Skatteverket once you have work or studies.':F.purpose==='study'?'You have a residence permit for studies. First stop: Migrationsverket for your permit card.':'Your work permit was approved from abroad. First stop: Migrationsverket for your permit card.';
     const border=F.kind!=='abroad'||!rt?'':rt.sch?`Your last flight leaves from ${rt.last}, inside the Schengen area. ${nat[2]==='noneu'&&rt.last!==(COUNTRIES.find(c=>c[0]===F.from)||[])[5]?`You pass passport control in ${rt.last} when you enter Schengen, `:''}so there is <b>no passport control at Arlanda</b>.`:`Your last flight leaves from ${rt.last}, outside the Schengen area: <b>you go through Swedish passport control at Arlanda</b>.`;
@@ -1718,20 +1718,23 @@ function intro(){const F={kind:'stockholm',over:false,city:SWE_CITIES[0][0],nat:
     <div class="f">Hobbies<div class="pills">${HOBBIES.map(h=>`<button class="pill ${F.hobbies.includes(h)?'on':''}" data-h="${h}">${h}</button>`).join('')}</div></div>
     <label class="f">A few words about you<textarea data-f="bio" maxlength="200" rows="2" placeholder="What brings you to Stockholm?">${esc2(F.bio)}</textarea></label>
     <h3 class="step">3 · Your look and goals</h3>
-    <div class="two"><label class="f">Look<select data-f="look">${LOOKS.map(([k,n])=>`<option value="${k}" ${F.look===k?'selected':''}>${n}</option>`).join('')}</select></label>
+    <div class="two"><label class="f">Look<select data-f="look"><option value="">Automatic (from gender and age)</option>${LOOKS.filter(([k])=>F.gender==='x'||(F.gender==='f'?/Female/.test(k):/Male/.test(k))).map(([k,n])=>`<option value="${k}" ${F.look===k?'selected':''}>${n}</option>`).join('')}</select></label>
       <label class="f">Skin tone<select data-f="skin">${SKIN.map((c,i)=>`<option value="${c}" ${String(F.skin)===String(c)?'selected':''}>${["Very light","Light","Light-medium","Medium","Medium-dark","Dark","Very dark","Deep"][i]}</option>`).join('')}</select></label></div>
+    <div class="two"><label class="f">Height<select data-f="height">${[['short','Short'],['avg','Average'],['tall','Tall']].map(([k,n])=>`<option value="${k}" ${F.height===k?'selected':''}>${n}</option>`).join('')}</select></label>
+      <label class="f">Build<select data-f="build">${[['slim','Slim'],['avg','Average'],['athletic','Athletic'],['heavy','Heavy']].map(([k,n])=>`<option value="${k}" ${F.build===k?'selected':''}>${n}</option>`).join('')}</select></label></div>
+    <div class="two"><label class="f">Hair<select data-f="hair">${HAIRPICK.map(([k,n])=>`<option value="${k}" ${F.hair===k?'selected':''}>${n}</option>`).join('')}</select></label><p class="note" style="align-self:end">Your character is drawn from these: gender, age (grey hair later in life), skin tone, height and build.</p></div>
     <div class="two"><label class="f">Interested in dating<select data-f="pref"><option value="f" ${F.pref==='f'?'selected':''}>Women</option><option value="m" ${F.pref==='m'?'selected':''}>Men</option><option value="any" ${F.pref==='any'?'selected':''}>Anyone</option></select></label>
       <label class="f">Life goal<select data-f="asp">${Object.entries(ASPIRATIONS).map(([k,a])=>`<option value="${k}" ${F.asp===k?'selected':''}>${a.l}</option>`).join('')}</select></label></div>
     <button class="btn big" id="go">${F.kind==='abroad'?'✈ Fly to Stockholm':F.kind==='sweden'?'🚆 Travel to Stockholm':'Start in Stockholm'}</button>`,m=>{
       {const md=document.querySelector?document.querySelector('.modal'):null;if(md&&window.__introScroll)md.scrollTop=window.__introScroll;if(md)md.onscroll=()=>{window.__introScroll=md.scrollTop}}
       const sync=()=>m.querySelectorAll('[data-f]').forEach(el=>{const k=el.dataset.f;let v=el.value;if(k==='over')v=!!v;if(k==='age')v=clamp(+v||27,18,75);if(k==='kids'||k==='route')v=+v;F[k]=v});
       m.querySelectorAll('.orig').forEach(b=>b.onclick=()=>{sync();F.kind=b.dataset.o;draw()});
-      m.querySelectorAll('select[data-f]').forEach(el=>el.onchange=()=>{sync();if(el.dataset.f==='nat'){F.from=COUNTRIES.find(c=>c[0]===F.nat&&c[5])?F.nat:F.from;F.route=0}if(el.dataset.f==='from')F.route=0;if(['nat','from','route','purpose','city','over'].includes(el.dataset.f))draw()});
+      m.querySelectorAll('select[data-f]').forEach(el=>el.onchange=()=>{sync();if(el.dataset.f==='nat'){F.from=COUNTRIES.find(c=>c[0]===F.nat&&c[5])?F.nat:F.from;F.route=0}if(el.dataset.f==='from')F.route=0;if(el.dataset.f==='gender')F.look='';if(['nat','from','route','purpose','city','over','gender'].includes(el.dataset.f))draw()});
       m.querySelectorAll('.pill[data-t]').forEach(b=>b.onclick=()=>{const k=b.dataset.t;if(F.traits.includes(k))F.traits=F.traits.filter(x=>x!==k);else if(F.traits.length<3)F.traits.push(k);else{toast('Pick up to 3');return}b.classList.toggle('on',F.traits.includes(k))});
       m.querySelectorAll('.pill[data-h]').forEach(b=>b.onclick=()=>{const k=b.dataset.h;F.hobbies=F.hobbies.includes(k)?F.hobbies.filter(x=>x!==k):[...F.hobbies,k];b.classList.toggle('on',F.hobbies.includes(k))});
       m.querySelector('#go').onclick=()=>{sync();closeModal();const natG=(COUNTRIES.find(c=>c[0]===F.nat)||[])[2];
         const bg=F.kind==='stockholm'?(F.over?'over':'local'):F.kind==='sweden'?'domestic':natG==='se'?'domestic':(F.purpose==='study'?'student':'newcomer');
-        const look=F.look||(F.gender==='f'?'Casual_Female':'Casual_Male');newGame(F.name.trim()||'Alex',bg,look,F.pref,F.asp||Object.keys(ASPIRATIONS)[0],F.skin,{...F,routeObj:F.kind==='abroad'?routesFrom(F.from)[F.route]:null})}})};
+        const look=F.look||(F.gender==='f'?(F.age>=60?'OldClassy_Female':'Casual_Female'):F.gender==='m'?'Casual_Male':(Math.random()<0.5?'Casual_Female':'Casual_Male'));newGame(F.name.trim()||'Alex',bg,look,F.pref,F.asp||Object.keys(ASPIRATIONS)[0],F.skin,{...F,routeObj:F.kind==='abroad'?routesFrom(F.from)[F.route]:null})}})};
   draw()}
 function applyMe(o){const me={age:o.age,gender:o.gender,nat:o.kind==='abroad'?o.nat:'Sweden',marital:o.marital,kids:o.kids,edu:o.edu,prof:o.prof,eng:o.eng,traits:o.traits,hobbies:o.hobbies,bio:o.bio};S.me=me;
   const e=EDU.find(x=>x[0]===o.edu);if(e)S.skill=clamp(S.skill+e[2],0,100);if(/develop|program|engineer|it\b|data/i.test(o.prof||''))S.skill=clamp(S.skill+8,0,100);
@@ -1757,7 +1760,12 @@ function applyOrigin(o){try{if(W&&W.inside&&W.inside())W.exitInterior(true)}catc
     if(W&&W.landAt)setTimeout(()=>W.landAt({top:`Flight from ${dep[5]||dep[0]}${rt.last!==(dep[5]||dep[0])?' via '+rt.last:''}`,title:'Landing at Stockholm Arlanda',sub:`${S.name} · ${nat[1]} ${nat[0]} passport · ${rt.sch?'Schengen arrival':'International arrival: passport control'}`,col:[0x1d4f91,0xb0212a,0x2a7a3a,0x6a1b9a][Math.floor(Math.random()*4)]}),400)}
   else{S.fam=S.bg==='local'?null:{n:'Mamma',where:'Stockholm'}}
   try{applyMe(o)}catch(e){console.warn('me',e)}save();render()}
-const _newGame=newGame;newGame=function(n,bg,lk,pf,as,sk,o){_newGame(n,bg,lk,pf,as,sk);try{applyOrigin(o);todoRoll();renderTodo();badges()}catch(e){console.warn('origin',e)}};
+// hair colour and body from the start form; 'auto' greys with age
+const HAIRPICK=[['auto','Natural for my age'],['0x1b1b1b','Black'],['0x3b2414','Dark brown'],['0x6a4426','Brown'],['0x9b5a2a','Auburn'],['0xd9b36c','Blond'],['0xe8d6a8','Light blond'],['0xa8341f','Red'],['0x9a9690','Grey'],['0xdedbd5','White']];
+function applyBody(o){if(!o||!S)return;S.body={h:o.height||'avg',b:o.build||'avg'};const age=+o.age||27;
+  if(o.hair&&o.hair!=='auto')S.outfit.hair=parseInt(o.hair,16);else if(age>=64)S.outfit.hair=0xdedbd5;else if(age>=52)S.outfit.hair=0x9a9690;else if(age>=45&&Math.random()<0.5)S.outfit.hair=0x6e6a64;
+  if(W&&W.setLook)W.setLook(S.look)}
+const _newGame=newGame;newGame=function(n,bg,lk,pf,as,sk,o){_newGame(n,bg,lk,pf,as,sk);try{applyBody(o)}catch(e){console.warn('body',e)}try{applyOrigin(o);todoRoll();renderTodo();badges()}catch(e){console.warn('origin',e)}};
 // ---------- Arlanda arrivals: walk off the plane, passport control (if your last flight was outside Schengen), baggage, customs, into the city ----------
 function airportSpot(what){if(!S.flags.arlanda)return;
   if(what==='passport'){if(S.schengen){toast('Schengen arrival: no passport control here');return}if(S.flags.passport){toast('Already through passport control');return}
@@ -3658,7 +3666,7 @@ function buildWorld(){
   let avModel=null,avMixer=null,avActs={},avState='';
   function setAvState(st){if(!avActs[st]||st===avState)return;const next=avActs[st];next.reset().play();if(avActs[avState])avActs[avState].crossFadeTo(next,0.22,false);avState=st}
   function setLook(name){if(!MODELS.ready)return;const keys=Object.keys(MODELS.chars);if(!keys.length)return;const tpl=MODELS.chars[name]||MODELS.chars[keys[0]];
-    if(avModel)av.remove(avModel);const inst=THREE.SkeletonUtils.clone(tpl);avModel=new THREE.Group();avModel.add(inst);avModel.scale.setScalar(0.078/AV_S);av.add(avModel);applyOutfit();
+    if(avModel)av.remove(avModel);const inst=THREE.SkeletonUtils.clone(tpl);avModel=new THREE.Group();avModel.add(inst);{const b=(S&&S.body)||{},k=0.078/AV_S,h={short:0.93,avg:1,tall:1.07}[b.h]||1,w={slim:0.9,avg:1,athletic:1.06,heavy:1.18}[b.b]||1;avModel.scale.set(k*h*w,k*h,k*h*w)}av.add(avModel);applyOutfit();
     av.userData.body.visible=false;avMixer=new THREE.AnimationMixer(inst);avActs={};['Idle','Walk','Run'].forEach(k=>{if(MODELS.clips[k])avActs[k]=avMixer.clipAction(MODELS.clips[k])});avState='';setAvState('Idle')}
   function modelPed(){const keys=Object.keys(MODELS.chars);const inst=THREE.SkeletonUtils.clone(MODELS.chars[pickR(keys)]);try{tintModel(inst,randomOutfit())}catch(e){}const g=new THREE.Group();const s=new THREE.Group();s.add(inst);s.scale.setScalar(0.06+Math.random()*0.008);g.add(s);
     const mixer=new THREE.AnimationMixer(inst);if(MODELS.clips.Walk){const act=mixer.clipAction(MODELS.clips.Walk);act.play();act.time=Math.random()*MODELS.clips.Walk.duration}g.userData={mixer};scene.add(g);return g}

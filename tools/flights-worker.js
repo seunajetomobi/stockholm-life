@@ -1,4 +1,5 @@
-// Stockholm Life flights relay: a Cloudflare Worker that passes live aircraft positions around Stockholm to the game.
+// Stockholm Life flights relay: a Cloudflare Worker that passes live aircraft positions around Stockholm to the game,
+// and the latest headlines from Swedish news feeds (/news).
 //
 // Browsers only let a page read data from another site if that site allows it (CORS). The free ADS-B feeds
 // don't, so this relay fetches them, keeps only what the game needs, caches it for 8 seconds and adds the header.
@@ -59,13 +60,35 @@ const SOURCES = [
   }
 ];
 
+// /news?src=dn|ab|exp|svt : the latest headlines from Swedish news RSS feeds (same reason: their feeds don't allow browsers)
+const FEEDS = { dn: 'https://www.dn.se/rss/', ab: 'https://rss.aftonbladet.se/rss2/small/pages/sections/senastenytt/',
+  exp: 'https://feeds.expressen.se/nyheter/', svt: 'https://www.svt.se/rss.xml' };
+const tag = (x, t) => { const m = x.match(new RegExp(`<${t}[^>]*>([\\s\\S]*?)</${t}>`, 'i')); return m ? m[1].replace(/^<!\[CDATA\[|\]\]>$/g, '').trim() : ''; };
+const unent = t => t.replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;|&apos;/g, "'");
+async function news(src) {
+  const url = FEEDS[src]; if (!url) return null;
+  const r = await fetch(url, { headers: UA, cf: { cacheTtl: 300 } }); if (!r.ok) return null; const x = await r.text();
+  const items = (x.match(/<item[\s>][\s\S]*?<\/item>/gi) || []).slice(0, 25).map(it => ({ title: unent(tag(it, 'title')), link: unent(tag(it, 'link')),
+    date: tag(it, 'pubDate'), desc: unent(tag(it, 'description')).replace(/<[^>]+>/g, '').slice(0, 300) }));
+  return { src, items };
+}
+
 export default {
   async fetch(req, env, ctx) {
     const origin = req.headers.get('Origin') || '';
     const cors = { 'Access-Control-Allow-Origin': ALLOW.includes(origin) ? origin : ALLOW[0], 'Access-Control-Allow-Methods': 'GET', 'Vary': 'Origin' };
     if (req.method === 'OPTIONS') return new Response(null, { headers: cors });
     const url = new URL(req.url), debug = url.searchParams.has('debug');
-    if (url.pathname !== '/flights') return new Response('Stockholm Life flights relay. GET /flights', { headers: cors });
+    if (url.pathname === '/news') {
+      const k = url.searchParams.get('src') || '';
+      const cache = typeof caches !== 'undefined' ? caches.default : null, key = new Request('https://relay.cache/news/' + k);
+      let res = cache && await cache.match(key);
+      if (!res) { const d = await news(k).catch(() => null);
+        if (!d) return new Response(JSON.stringify({ error: 'unknown or unavailable feed' }), { status: 502, headers: { ...cors, 'Content-Type': 'application/json' } });
+        res = new Response(JSON.stringify(d), { headers: { 'Content-Type': 'application/json', 'Cache-Control': 'public, max-age=300' } }); if (cache && ctx) ctx.waitUntil(cache.put(key, res.clone())); }
+      const out = new Response(res.body, res); for (const [k2, v] of Object.entries(cors)) out.headers.set(k2, v); return out;
+    }
+    if (url.pathname !== '/flights') return new Response('Stockholm Life relay. GET /flights, /news?src=dn|ab|exp|svt', { headers: cors });
     LOG.length = 0;
     const cache = typeof caches !== 'undefined' ? caches.default : null, key = new Request('https://relay.cache/flights');
     let res = !debug && cache && await cache.match(key);

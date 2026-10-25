@@ -121,7 +121,8 @@ button:focus-visible,[tabindex]:focus-visible,input:focus-visible,select:focus-v
   left:var(--gut);right:var(--gutR);bottom:calc(82px + env(safe-area-inset-bottom,0px));max-height:min(62vh,640px)}
 .drawer[hidden]{display:none}
 @media (min-width:900px){.drawer{left:auto;width:400px;top:calc(var(--boardH,74px) + 18px + env(safe-area-inset-top,0px));max-height:none}
-  .next{max-width:min(420px,calc(100% - 460px))}.ctrls{right:var(--gutR);bottom:calc(12px + env(safe-area-inset-bottom,0px));grid-auto-flow:column;z-index:7}.attrib{right:var(--gutR);bottom:calc(64px + env(safe-area-inset-bottom,0px))}}
+  .next{max-width:min(420px,calc(100% - 460px))}.ctrls{right:var(--gutR);bottom:calc(12px + env(safe-area-inset-bottom,0px));grid-auto-flow:row;z-index:7}.attrib{right:calc(var(--gutR) + 52px);bottom:calc(14px + env(safe-area-inset-bottom,0px))}
+  body.drawer-open .ctrls{right:calc(var(--gutR) + 412px)}body.drawer-open .attrib{right:calc(var(--gutR) + 464px)}}
 .dhead{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px 10px;border-bottom:1px solid var(--line)}
 .dhead b{font:700 20px var(--display);letter-spacing:.04em;text-transform:uppercase}
 .dhead button{border:0;background:var(--surface2);border-radius:8px;width:32px;height:32px}
@@ -363,7 +364,7 @@ h2.hero{font-size:34px;background:linear-gradient(90deg,var(--sweblue),#3a86ff 4
   <div class="joy" id="joy" aria-label="Move joystick"><div class="knob" id="knob"></div></div>
   <button class="runbtn" id="runbtn" aria-pressed="false">Run</button>
   <div class="attrib">© OpenStreetMap contributors</div>
-  <div class="loading" id="loading"><div class="box"><b>Building Stockholm</b><div class="bar"><i id="loadbar"></i></div><small id="loadtxt">Downloading 84 000 buildings, 160 000 street segments and 15 000 places from OpenStreetMap…</small></div></div>
+  <div class="loading" id="loading"><div class="box"><b>Stockholm Life</b><div class="bar"><i id="loadbar"></i></div><small id="loadtxt">Downloading 84 000 buildings, 160 000 street segments and 15 000 places from OpenStreetMap…</small></div></div>
 </section>
 <nav class="dock" id="dock" aria-label="Panels">
   <button data-tab="here" aria-label="Here"><svg viewBox="0 0 24 24"><path d="M12 21s7-6.3 7-12a7 7 0 1 0-14 0c0 5.7 7 12 7 12z"/><circle cx="12" cy="9" r="2.5"/></svg><span>Here</span></button>
@@ -962,7 +963,7 @@ function museumMenu(p){const paid=S.flags['mus'+(p.i||p.name)]===S.day;if(paid){
 /* =================== INTERFACE: dock, panels, guide, gauges =================== */
 let TAB=null;const TAB_TITLES={here:'Here',phone:'Phone',me:'Me',civic:'Society',diary:'Diary'};
 const wideUI=()=>window.matchMedia&&window.matchMedia('(min-width: 900px)').matches;
-function setTab(t){if(t===TAB&&!wideUI())t=null;TAB=t;const dr=$('drawer');dr.hidden=!t;document.querySelectorAll('#dock button').forEach(b=>b.classList.toggle('on',b.dataset.tab===t));
+function setTab(t){if(t===TAB&&!wideUI())t=null;TAB=t;const dr=$('drawer');dr.hidden=!t;document.body.classList.toggle('drawer-open',!!t);document.querySelectorAll('#dock button').forEach(b=>b.classList.toggle('on',b.dataset.tab===t));
   document.querySelectorAll('.pane').forEach(p=>p.hidden=p.dataset.pane!==t);if(t)$('dtitle').textContent=TAB_TITLES[t];if(t==='civic')renderCivic();try{localStorage.setItem('sl-tab',t||'')}catch(e){}}
 function uiInit(){document.querySelectorAll('#dock button').forEach(b=>b.onclick=()=>setTab(b.dataset.tab));$('dclose').onclick=()=>setTab(null);
   let t=null;try{t=localStorage.getItem('sl-tab')}catch(e){}setTab(t===null?(wideUI()?'here':null):(t||null));
@@ -2471,11 +2472,14 @@ function buildWorld(){
       if(near&&cls>=7&&cls<=10&&!(e[4]&1)&&hashStr('v'+ei)%3!==0)ribbon(pts,w+0.064,0.0062,vergeC);
       if(near&&cls<=10&&cls!==0&&cls!==1)ribbon(pts,w+0.035,y-0.0012,walkC);
       ribbon(pts,w,y,col);
-      if(near&&!snow){const P=pts,cum=[0];for(let i=1;i<P.length;i++)cum.push(cum[i-1]+Math.hypot(P[i][0]-P[i-1][0],P[i][1]-P[i-1][1]));const Lt=cum[cum.length-1];
+      if(!snow&&(near||cls<=8)){const P=pts,cum=[0];for(let i=1;i<P.length;i++)cum.push(cum[i-1]+Math.hypot(P[i][0]-P[i-1][0],P[i][1]-P[i-1][1]));const Lt=cum[cum.length-1];
         const trim=n=>JD&&JD[n]>=3?Math.max(0.07,w*0.9):0.005;const ta=trim(e[0]),tb=trim(e[1]),my=y+0.0008;
         const run=(off,hw,dash,gap,c)=>{const s1=Lt-tb;if(s1<=ta)return;if(!dash){segQ(P,cum,ta,s1,off,hw,my,c);return}for(let q=ta;q<s1;q+=dash+gap)segQ(P,cum,q,Math.min(q+dash,s1),off,hw,my,c)};
-        if(cls>=2&&cls<=8){run(w-0.008,0.0022,0,0,markC);run(-(w-0.008),0.0022,0,0,markC);
-          if(cls<=3){run(w/2-0.004,0.0026,0.05,0.07,markC);run(-(w/2-0.004),0.0026,0.05,0.07,markC)}else run(0,0.003,0.045,0.045,markC)}
+        if(cls<=8){run(w-0.008,0.0022,0,0,markC);run(-(w-0.008),0.0022,0,0,markC);
+          // lane lines from the real lane counts: a centre line only on two-way streets, dashed lines between lanes going the same way
+          const ow=G.ow[ei],def=cls<=4?2:1,lf=G.lnF[ei]||def,lb=ow?0:(G.lnB[ei]||def),T=Math.max(1,ow?(G.lnF[ei]||G.lnB[ei]||def):lf+lb),lw=2*w/T;
+          const fwd=ow===-1?0:ow===1?T:lf; // lanes on the right-hand side of a→b
+          for(let k=1;k<T;k++){const off=w-k*lw;if(!ow&&k===T-fwd)run(off,0.003,cls<=1?0:0.045,cls<=1?0:0.045,markC);else run(off,0.0022,cls<=3?0.05:0.035,cls<=3?0.07:0.06,markC)}}
         else if(cls===13&&w>0.02)run(0,0.0016,0.02,0.03,markC)}}
     if(!vi)return null;const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(Pp,3));const nn=new Float32Array(Pp.length);for(let i=1;i<nn.length;i+=3)nn[i]=1;g.setAttribute('normal',new THREE.BufferAttribute(nn,3));
     g.setAttribute('color',new THREE.Float32BufferAttribute(Cc,3));g.setIndex(I);const m=new THREE.Mesh(g,roadMat);m.receiveShadow=true;return m}
@@ -3768,7 +3772,7 @@ const POSTERS_CITY=[['#f2b705','#1b1b1b','KANELBULLE','Färskt varje morgon','Ba
       for(let i=0;i<900;i++){const v=80+Math.random()*60|0;g.fillStyle=`rgb(${v+10},${v+4},${v-6})`;g.fillRect(Math.random()*64,Math.random()*256,2,2)}
       for(let y=4;y<256;y+=16){g.fillStyle='#8b8f92';g.fillRect(7,y,50,7);g.fillStyle='rgba(0,0,0,.25)';g.fillRect(7,y+7,50,1.5)}
       for(const x of [18,44]){g.fillStyle='#3b3d40';g.fillRect(x-2,0,4,256);g.fillStyle='#c9ccd0';g.fillRect(x-1,0,2,256)}
-      const t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.anisotropy=8;return t})();
+      const t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.anisotropy=16;return t})();
     const railsTex=(()=>{const c=document.createElement('canvas');c.width=64;c.height=16;const g=c.getContext('2d');g.clearRect(0,0,64,16);for(const x of [18,44]){g.fillStyle='#2f3134';g.fillRect(x-3,0,6,16);g.fillStyle='#b9bdc1';g.fillRect(x-1,0,2,16)}
       const t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;return t})();
     const trackStrip=(list,w,y,mat)=>{const P=[],U=[],I=[];let v=0;for(const pts of list){let acc=0;for(let i=0;i<pts.length;i++){const p=pts[i],a=pts[Math.max(0,i-1)],b=pts[Math.min(pts.length-1,i+1)];let dx=b[0]-a[0],dz=b[1]-a[1];const L=Math.hypot(dx,dz)||1;dx/=L;dz/=L;
@@ -3776,7 +3780,11 @@ const POSTERS_CITY=[['#f2b705','#1b1b1b','KANELBULLE','Färskt varje morgon','Ba
       if(!v)return;const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(P,3));const nn=new Float32Array(P.length);for(let i=1;i<nn.length;i+=3)nn[i]=1;g.setAttribute('normal',new THREE.BufferAttribute(nn,3));
       g.setAttribute('uv',new THREE.Float32BufferAttribute(U,2));g.setIndex(I);const m=new THREE.Mesh(g,mat);m.receiveShadow=true;scene.add(m)};
     const heavy=[],street=[];CITY.m.rail.forEach(r=>{if(r[1])return;(r[0]===3?street:heavy).push(pairs(r[2]))});
-    trackStrip(heavy,0.03,0.012,new THREE.MeshLambertMaterial({map:trackTex}));trackStrip(street,0.02,0.0162,new THREE.MeshLambertMaterial({map:railsTex,transparent:true,alphaTest:0.3,depthWrite:false}));
+    trackStrip(heavy,0.03,0.012,new THREE.MeshLambertMaterial({map:trackTex}));
+    {const rm=plain(0x2b2d30),P=[],I=[];let v=0;const rail=(pts,off)=>{for(let i=0;i<pts.length;i++){const p=pts[i],a=pts[Math.max(0,i-1)],b=pts[Math.min(pts.length-1,i+1)];let dx=b[0]-a[0],dz=b[1]-a[1];const L=Math.hypot(dx,dz)||1;dx/=L;dz/=L;const cx=p[0]-dz*off,cz=p[1]+dx*off,hw=0.0018;
+        P.push(cx-dz*hw,0.0128,cz+dx*hw,cx+dz*hw,0.0128,cz-dx*hw);if(i>0)I.push(v-2,v,v-1,v-1,v,v+1);v+=2}};
+      for(const pts of heavy){rail(pts,0.0086);rail(pts,-0.0086)}for(const pts of street){rail(pts,0.0086);rail(pts,-0.0086)}
+      if(v){const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(P,3));const nn=new Float32Array(P.length);for(let i=1;i<nn.length;i+=3)nn[i]=1;g.setAttribute('normal',new THREE.BufferAttribute(nn,3));g.setIndex(I);const m=new THREE.Mesh(g,rm);m.renderOrder=1;scene.add(m)}}trackStrip(street,0.02,0.0162,new THREE.MeshLambertMaterial({map:railsTex,transparent:true,alphaTest:0.3,depthWrite:false}));
     const rwMat=plain(0x3d3f43),apMat=plain(0x8a8c8f),twMat=plain(0x6f7175);
     CITY.m.aero.forEach(([kind,name,closed,flat])=>{const pts=pairs(flat);if(closed&&pts.length>=3&&kind!=='aerodrome'){try{polyMesh([pts],0.0075,kind==='runway'?rwMat:apMat)}catch(e){}}
       else if(!closed&&(kind==='runway'||kind==='taxiway'))for(let i=1;i<pts.length;i++)scene.add(strip(pts[i-1],pts[i],kind==='runway'?0.9:0.35,0.0075,kind==='runway'?rwMat:twMat))});

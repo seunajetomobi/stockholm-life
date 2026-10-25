@@ -9,13 +9,19 @@ Run with `./start.sh` and open http://localhost:8000. There is no build step and
 - Rules: `ACTS`, `BG` (backgrounds), `JOBS`, `HOMES`, `sleep()` (day change), `spendTime()`, `addBill()` + `processBills()` (reminder → inkasso → Kronofogden).
 - Phone apps: `PHONE_APPS`, `openChats`, `openMailbox`, `openTodo`, `openBag`, `notify`.
 - Origins and start screen: `intro()`, `COUNTRIES`, `routesFrom()`, `applyOrigin()`, `airportSpot()`.
+- Live data (needs internet; all degrade gracefully offline):
+  - Weather: `LIVEWX`, `fetchLiveWeather()` (Open-Meteo, every 10 min), `applyLiveWeather()`, `dressAdvice()`, `wearTip()`, `openWeather()`. Sky, clouds, rain/snow density, wind and fog in `lightAt()`/`refresh()` read `S.wx`.
+  - SL departures: `slSites()` (all stop areas, cached a week in localStorage), `slDepartures()`, `openDepartures()`, `departuresNear()`, `openDeparturesApp()`, `openFerries()`, `slLineCol()`.
+  - Flights: `FLIGHT_RELAY_DEFAULT` / `?flights=<url>`, `fetchFlights()`, `LIVEFL`, `openFlights()`, `flightDetail()`; routes from adsbdb.com via `routeOf()`. The relay is `tools/flights-worker.js` (Cloudflare Worker).
+- Your places bar: `renderPlaces()`, `goHome`, `goWork`/`workPlace`, `goFamily`, `goFriends`/`friendHome`, `openInvest`/`invTick` (ISK funds). `openTravel(k, dest)` travels to a district or any point.
 - Crime and accidents: `crimeAttempt`, `doCrime`, `sentence`, `accidentHappened`, `hospitalStay`.
-- 3D world: `buildWorld()` returns the `W` API. Inside: tiles (`buildTile`, `buildingGeo`, `roadGeo`), collision (`colByTile`, `colliding`, `onCarriageway`, `slideMove`, `freeSpot`, `unstick`), routing (`route`), agents (`ensureAgents`, `carStep`: lights, lanes, give way, högerregeln, never drive into the vehicle ahead), transit (`TRANSIT`, `updateTransit`, `ride`, `busRide`), interiors (`enterInterior`, `buildRoom`), driving (`DR`), Arlanda cutscene (`playLanding`), emergency vehicles (`emergency`), hover info (`hoverInfo`), the main loop `tick()`.
+- 3D world: `buildWorld()` returns the `W` API. Inside: tiles (`buildTile`, `buildingGeo`, `roadGeo`), collision (`colByTile`, `colliding`, `onCarriageway`, `slideMove`, `freeSpot`, `unstick`), routing (`route`), agents (`ensureAgents`, `carStep`: lights, lanes, give way, högerregeln, never drive into the vehicle ahead), transit (`TRANSIT`, `updateTransit`, `ride`, `busRide`), interiors (`enterInterior`, `buildRoom`), driving (`DR`), Arlanda cutscene (`playLanding`), emergency vehicles (`emergency`, city 112 calls in `cityCalls`/`spawnIncident`), helicopters (`updateAir`: ambulance, police with searchlight, sea rescue), live aircraft (`updateLiveAir`, `planeMesh`, `LIVERY`), tunnel portals (`buildPortals`, `tunDepth`), station signs (`updateEntrances`), pedestrian personal space (`pedAvoid`), camera (`goodCamera`, third-person pull-in in `tick`), hover info (`hoverInfo`), the main loop `tick()`.
 
 ## Coordinates and data
 
 - 1 world unit = 50 m. Origin = T-Centralen (59.3313 N, 18.0603 E). x = east, z = south. `P(lat, lon)` converts.
 - Tiles are 10 units (500 m), keyed "i,j". Integer coordinates in the JSON files are units × 100.
+- `data/e.json` (T-bana entrances and rail/tram stations with their SL lines and colours) is built by `tools/osm_stations.py` from two Overpass exports.
 - `data/o.json` (one-way directions + lane counts per street edge, from OpenStreetMap tags) is built by `tools/osm_lanes.py` from an Overpass export; vehicles use it in `mayEnter`, `nextEdge`, `lanesOf` and `agentEdge`.
 - Road classes 0–14: motorway, motorway_link, trunk, trunk_link, primary, primary_link, secondary, tertiary, unclassified, residential, living_street, pedestrian, service, cycleway, footway. Edge flags: 1 bridge, 2 tunnel, 4 no walking.
 

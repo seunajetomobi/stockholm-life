@@ -2067,7 +2067,7 @@ function buildWorld(){
   // retry without antialiasing: some GPUs/drivers refuse the heavier context
   let renderer;try{renderer=new THREE.WebGLRenderer({antialias:true,logarithmicDepthBuffer:true})}catch(e){try{renderer=new THREE.WebGLRenderer({antialias:false,logarithmicDepthBuffer:true,powerPreference:'low-power'})}catch(e2){return null}}
   renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
-  renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.25;
+  renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.0;
   stage.prepend(renderer.domElement);
   const scene=new THREE.Scene();scene.fog=new THREE.Fog(0xbfe3ff,30,90);
   const camera=new THREE.PerspectiveCamera(50,1,0.02,2000);
@@ -2124,7 +2124,7 @@ function buildWorld(){
   const waterMat=new THREE.MeshPhongMaterial({color:0x2f7fa6,shininess:120,specular:0xcfe8ff,normalMap:waterNormal,normalScale:new THREE.Vector2(0.55,0.55)});
 
   // ---------- ground ----------
-  const landMat=new THREE.MeshLambertMaterial({color:0xb5b49a});
+  const landMat=new THREE.MeshLambertMaterial({color:0x9b9a85});
   const hasLand=CITY&&CITY.m.land&&CITY.m.land.length;
   const waterPolys=[];
   function bboxOf(pts){let a=1e9,b=-1e9,c=1e9,d=-1e9;for(const [x,z] of pts){a=Math.min(a,x);b=Math.max(b,x);c=Math.min(c,z);d=Math.max(d,z)}return [a,b,c,d]}
@@ -2239,11 +2239,18 @@ function buildWorld(){
     suburb:[0xf2efe6,0xe3dccf,0xb5543e,0xd9cfbd,0x9fb7c4,0xe8d3a0,0xc98e6b],
     modern:[0xdedbd2,0xb4b9bc,0x9aa7b3,0xe8e6e1,0x8d949a,0xc9c3b6,0x5d6f7d],
     house:[0xa8352b,0x9c2a23,0xf3efe4,0xe6c06a,0xb9c7cf,0xf0d4a0,0x8fb3a0,0xb04a35]};
+  // OpenStreetMap colour names as they look on real Stockholm facades (ochre, Falu red, terracotta, cream...)
+  const OSMCOL={yellow:0xe3b54f,lightyellow:0xf0dc9c,gold:0xd9a83f,orange:0xd9853b,red:0xb5452f,darkred:0x8e3326,maroon:0x7d3326,brown:0x8a5a3c,lightbrown:0xb98d64,darkbrown:0x5e3f2b,saddlebrown:0x7a4b2c,saddlebrwn:0x7a4b2c,tan:0xcfb58f,
+    beige:0xe3d3b3,cream:0xefe4c8,white:0xece8df,ivory:0xf0ead8,grey:0xa9a9a4,gray:0xa9a9a4,lightgrey:0xc9c8c2,lightgray:0xc9c8c2,darkgrey:0x6f706d,darkgray:0x6f706d,silver:0xbfc0bd,black:0x3a3a3a,
+    green:0x8fae8a,lightgreen:0xb5caa6,darkgreen:0x53704f,olive:0x8c8a5a,blue:0x8fa9c2,lightblue:0xb5c9d9,darkblue:0x4f6482,navy:0x445873,pink:0xe8a8a0,salmon:0xe39a83,terracotta:0xc0643f,ochre:0xd29a3d,
+    purple:0x8f7a9e,violet:0xa38fb3,turquoise:0x7fb5ae,teal:0x5f8f8a,'#4':null,'grey yellow':0xd8c79a,'#grey yellow':0xd8c79a};
   const ROOFS={copper:0x5e9e83,black:0x30343a,tile:0xa4462f,dark:0x4c4f55,grey:0x7a7d80};
   const GS=D.gamlastan,SO=D.sodermalm,OS=D.ostermalm,KI=D.kista;
   function bColor(ti,ci,seedv,x,z,h){const T=CITY.b.types[ti],col=CITY.b.cols[ci];
     let wall=null,roof,glass=false;
-    if(col){try{wall=C(col.startsWith('#')||/^[a-z]+$/.test(col)?col:'#'+col)}catch(e){wall=null}}
+    if(col){const n=col.toLowerCase().trim();if(n in OSMCOL)wall=OSMCOL[n]===null?null:C(OSMCOL[n]);else{try{wall=C(n.startsWith('#')||/^[a-z]+$/.test(n)?n:'#'+n)}catch(e){wall=null}}
+      // painted render, not neon: keep tagged colours within what Stockholm facades actually look like
+      if(wall){const hsl={};wall.getHSL(hsl);wall.setHSL(hsl.h,Math.min(hsl.s,0.55),clamp(hsl.l,0.3,0.86))}}
     const pick=a=>a[seedv%a.length],r2=(seedv>>>8)%100;
     const dTC=Math.hypot(x,z),dG=Math.hypot(x-GS.x,z-GS.z),dS=Math.hypot(x-SO.x,z-SO.z-4),dO=Math.hypot(x-OS.x,z-OS.z+3),dK=Math.hypot(x-KI.x,z-KI.z);
     if(['house','detached','terrace','allotment_ho','shed','garage'].includes(T)){wall=wall||C(pick(PAL.house));roof=C(r2<55?ROOFS.black:ROOFS.tile)}
@@ -3664,7 +3671,7 @@ function buildWorld(){
     return nightF}
   let lastSeason='';
   function season(){const m=today().getMonth(),snowy=winter(),autumn=[9,10].includes(m)&&!snowy;
-    landMat.color.set(snowy?0xeef2f4:autumn?0xb3ad8a:m===3?0xb7b996:0xb5b49a);
+    landMat.color.set(snowy?0xe4e9ec:autumn?0x99937a:m===3?0x9ca083:0x9b9a85);
     agents.forEach(a=>{if(a.kind==='ped'&&a.g.userData.hat)a.g.userData.hat.visible=snowy||m===10});av.userData.hat.visible=snowy||m===10;clearTiles()}
   function placeAvatar(x,z,snap){av.position.set(x,0.01,z);av.visible=true;if(snap){controls.target.copy(av.position);camera.position.copy(goodCamera(x,z));camAuto=-1}}
   // a camera spot behind you with nothing in the way, preferring to look along the street you stand on
@@ -3799,10 +3806,10 @@ function buildWorld(){
     // third-person camera: when a building is between you and the camera, move in closer (quickly) and back out to your own zoom (slowly);
     // only if even a close camera is blocked, tilt up over the roofs
     if(!IN.on&&!flightLook){const off=camera.position.clone().sub(controls.target);const L=off.length()||1e-6;if(camAuto<0||Math.abs(L-camAuto)>0.003)camWant=L;
-      const dir=off.divideScalar(L);let clear=camWant;for(let i=1;i<=24;i++){const u=i/24*camWant;if(roofAt(controls.target.x+dir.x*u,controls.target.z+dir.z*u)>controls.target.y+0.03+dir.y*u){clear=Math.max(0.26,u-0.05);break}}
+      const dir=off.divideScalar(L);let clear=camWant;for(let i=1;i<=24;i++){const u=i/24*camWant;if(roofAt(controls.target.x+dir.x*u,controls.target.z+dir.z*u)>controls.target.y+0.03+dir.y*u){clear=Math.max(0.34,u-0.05);break}}
       const want=Math.min(camWant,clear),nl=L+(want-L)*Math.min(1,dt*(want<L?9:1.6));camera.position.copy(controls.target).addScaledVector(dir,nl);camAuto=nl;
       const sp=new THREE.Spherical().setFromVector3(camera.position.clone().sub(controls.target));
-      if(clear<=0.26&&viewBlocked(camera.position,controls.target)&&sp.phi>0.1){sp.phi=Math.max(0.1,sp.phi-Math.min(0.12,dt*2.2));camera.position.copy(controls.target).add(new THREE.Vector3().setFromSpherical(sp));camAuto=sp.radius}controls.update()}
+      if(clear<=0.34&&viewBlocked(camera.position,controls.target)&&sp.phi>0.1){sp.phi=Math.max(0.1,sp.phi-Math.min(0.12,dt*2.2));camera.position.copy(controls.target).add(new THREE.Vector3().setFromSpherical(sp));camAuto=sp.radius}controls.update()}
     if(CUT.on){CUT.update(dt,T);renderer.render(CUT.sc,camera);return}
     if(IN.on){interiorTick(dt,T);$('labels').style.display='none';renderer.render(inScene,camera);return}else $('labels').style.display='';
     const fx=controls.target.x,fz=controls.target.z,camD=camera.position.distanceTo(controls.target);

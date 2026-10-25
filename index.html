@@ -2516,6 +2516,17 @@ function buildWorld(){
   const CLSP=[1.35,1.1,1.3,1.05,1.1,1,1,0.95,0.85,0.65,0.4,0.4,0.5,0.5,0.5];
   function zebraBusy(zc){const r=zc.w+0.05;if(Math.abs(av.position.x-zc.x)<r&&Math.abs(av.position.z-zc.z)<r)return true;
     for(const o of agents)if(o.kind==='ped'&&o.g.visible&&Math.abs(o.g.position.x-zc.x)<r&&Math.abs(o.g.position.z-zc.z)<r)return true;return false}
+  // ---------- crossing a street on foot only when it is safe ----------
+  // every vehicle on the road being crossed that would reach the crossing point within ~4.5 s, or a light that is green for the cars, means wait
+  function vehList(){const L=[];for(const a of agents)if((a.kind==='car'||a.kind==='bus'||a.kind==='bike')&&a.g.visible)L.push([a.g,a.v===undefined?a.sp:a.v]);
+    for(const v of tveh)if(v.m==='bus'||v.m==='tram')L.push([v.parts[0],v.v||0]);for(const E of emerg)L.push([E.g,E.v||0]);if(DR.on)L.push([DR.g,Math.abs(DR.v)]);return L}
+  function crossSafe(px,pz){const seg=roadDepth(px,pz)[1];if(!seg)return true;const sx=seg[2]-seg[0],sz=seg[3]-seg[1],sl=Math.hypot(sx,sz)||1,ux=sx/sl,uz=sz/sl,half=seg[4]+0.05;
+    for(const [g,v] of vehList()){const dx=px-g.position.x,dz=pz-g.position.z;if(Math.abs(dx)>1.8||Math.abs(dz)>1.8)continue;if(Math.abs(dx*uz-dz*ux)>half)continue;
+      const along=Math.abs(dx*ux+dz*uz);if(along<0.13&&v>0.02)return false; // a car that has stopped for you is giving way
+      const hx=Math.sin(g.rotation.y),hz=Math.cos(g.rotation.y),toward=(dx*hx+dz*hz)/(Math.hypot(dx,dz)||1);if(toward>0.3&&v>0.02&&along/v<4.5)return false}
+    for(const [n,sg] of SIG){if(Math.abs(G.nx(n)-px)>0.4||Math.abs(G.nz(n)-pz)>0.4)continue;const ax=Math.abs(ux*sg.c.ref[0]+uz*sg.c.ref[1])>0.707?0:1;if(sigState(sg.c,ax,clock.elapsedTime)!=='r')return false}
+    return true}
+  function aheadOnPath(w,dd){let p=av.position.clone(),i=w.i;while(i<w.path.length){const q=w.path[i],L=p.distanceTo(q);if(L>=dd)return p.lerp(q,dd/L);dd-=L;p=q.clone();i++}return p}
   // personal space: a pedestrian slows down and steps aside for someone right in front (other people, you); never walks through them
   function pedAvoid(a){const px=a.g.position.x,pz=a.g.position.z,hx=Math.sin(a.g.rotation.y),hz=Math.cos(a.g.rotation.y);let slow=1,dg=0;
     const test=(ox,oz,uid)=>{const dx=ox-px,dz=oz-pz;if(Math.abs(dx)>0.08||Math.abs(dz)>0.08)return;const f=dx*hx+dz*hz,l=dx*hz-dz*hx;if(f<=-0.005||f>0.07||Math.abs(l)>0.022)return;
@@ -2526,6 +2537,7 @@ function buildWorld(){
     for(const o of agents){if((o.kind!=='car'&&o.kind!=='bus')||!o.g.visible)continue;const dx=o.g.position.x-px,dz=o.g.position.z-pz;if(Math.abs(dx)>0.14||Math.abs(dz)>0.14)continue;
       const f=dx*hx+dz*hz,l=dx*hz-dz*hx,big=o.kind==='bus';if(f<=-0.03||f>(big?0.16:0.1)||Math.abs(l)>(big?0.08:0.055))continue;
       if((o.v||0)>0.02){if(f<0.08)slow=0}else{dg=l>0?0.06:-0.06;if(f<0.05)slow=Math.min(slow,0.35)}}
+    {const ax=px+hx*0.05,az=pz+hz*0.05;if(onCarriageway(ax,az)>0&&onCarriageway(px,pz)<=0){a.cc2=(a.cc2||0)-1;if(a.cc2<=0){a.cc2=12;a.xsafe=crossSafe(ax,az)}if(!a.xsafe)slow=0}else a.xsafe=true}
     if(slow===0&&(a.wt=(a.wt||0)+1)>90){slow=0.4;a.wt=0}else if(slow>0)a.wt=0;a.slow=slow;a.dg=dg}
   function pedNear(x,z,r){for(const o of agents)if(o.kind==='ped'&&o.g.visible&&Math.abs(o.g.position.x-x)<r&&Math.abs(o.g.position.z-z)<r)return o;return null}
   function carStep(a,dt){if(a.hold>0){a.hold-=dt;a.v=0;return 0}const len=a.cum[a.cum.length-1],rem=len-a.d;const cls=G.E[a.e][2];let target=a.sp*(CLSP[cls]||1),stopAt=Infinity;
@@ -2560,10 +2572,11 @@ function buildWorld(){
       for(const o of agents){if(o===a||!o.g.visible||(o.kind!=='car'&&o.kind!=='bus'))continue;const dx=o.g.position.x-px,dz=o.g.position.z-pz;if(Math.abs(dx)>0.25||Math.abs(dz)>0.25)continue;
         const big=a.kind==='bus'||o.kind==='bus',f=dx*hx+dz*hz,l=Math.abs(dx*hz-dz*hx);if(f<=0||f>(big?0.24:0.17)||l>0.04)continue;if((a.bw||0)>2&&a.uid<o.uid)continue;
         stopAt=Math.min(stopAt,f-(big?0.16:0.1));blocked=true}
+      for(const v of tveh){if(v.m!=='bus'&&v.m!=='tram')continue;for(const pt of v.parts){const dx=pt.position.x-px,dz=pt.position.z-pz;if(Math.abs(dx)>0.4||Math.abs(dz)>0.4)continue;const f=dx*hx+dz*hz,l=Math.abs(dx*hz-dz*hx);if(f>0&&f<0.3&&l<0.05){stopAt=Math.min(stopAt,f-0.19);blocked=true}}}
       // people in the road ahead (you, or someone crossing): stop well short of them, and never give up waiting
-      const person=(ox,oz)=>{const dx=ox-px,dz=oz-pz;if(Math.abs(dx)>0.3||Math.abs(dz)>0.3)return;const f=dx*hx+dz*hz,l=Math.abs(dx*hz-dz*hx);if(f>-0.02&&f<0.3&&l<0.085)stopAt=Math.min(stopAt,f-0.09)};
+      const person=(ox,oz)=>{const dx=ox-px,dz=oz-pz;if(Math.abs(dx)>0.3||Math.abs(dz)>0.3)return;const f=dx*hx+dz*hz,l=Math.abs(dx*hz-dz*hx);if(f>-0.02&&f<0.35&&l<0.085)stopAt=Math.min(stopAt,f-0.12)};
       if(!IN.on&&av.visible&&onCarriageway(av.position.x,av.position.z)>0)person(av.position.x,av.position.z);
-      for(const o of agents)if(o.kind==='ped'&&o.g.visible&&roadDepth(o.g.position.x,o.g.position.z)[0]>0)person(o.g.position.x,o.g.position.z);
+      for(const o of agents)if(o.kind==='ped'&&o.g.visible&&onCarriageway(o.g.position.x,o.g.position.z)>0)person(o.g.position.x,o.g.position.z);
       a.bw=blocked&&a.v<0.02?(a.bw||0)+dt:blocked?a.bw||0:0}
     if(a.v===undefined)a.v=target;
     if(stopAt<0.8){const g=Math.max(0,stopAt);const tg=Math.min(target,Math.sqrt(2*1.4*g));if(a.v>tg)a.v=Math.max(tg,a.v-1.6*dt);else a.v+=(tg-a.v)*(1-Math.exp(-dt*1.8));if(g<0.002){a.v=0;return 0}return Math.min(a.v*dt,g)}
@@ -2778,11 +2791,13 @@ function buildWorld(){
   // ---------- accidents ----------
   let accCool=0;
   function lieDown(on){const m=av.userData.model||av.children.find(c=>c.type==='Group');av.rotation.z=on?Math.PI/2:0;av.position.y=on?0.012:0.01}
-  function accidentCheck(dt){accCool-=dt;if(accCool>0||IN.on||walk||rideState||busy||!av.visible)return;const x=av.position.x,z=av.position.z;
+  function accidentCheck(dt){accCool-=dt;if(accCool>0||IN.on||rideState||!av.visible)return;const x=av.position.x,z=av.position.z;
     if(DR.on){if(Math.abs(DR.v)<0.45)return;for(const a of agents){if((a.kind!=='car'&&a.kind!=='bus'&&a.kind!=='ped')||!a.g.visible)continue;if(Math.hypot(a.g.position.x-DR.g.position.x,a.g.position.z-DR.g.position.z)<0.05){accCool=60;DR.v=0;a.v=0;
         accidentHappened(a.kind==='ped'?'pedestrian':'collision',DR.g.position.x,DR.g.position.z);return}}return}
     if(onCarriageway(x,z)<=0&&roadDepth(x,z)[0]<-0.004)return;
-    for(const a of agents){if((a.kind!=='car'&&a.kind!=='bus')||!a.g.visible||!(a.v>0.06))continue;const dx=a.g.position.x-x,dz=a.g.position.z-z;if(Math.hypot(dx,dz)<0.032){accCool=90;a.v=0;a.hold=4;accidentHappened('hit',x,z);return}}}
+    for(const a of agents){if((a.kind!=='car'&&a.kind!=='bus')||!a.g.visible||!(a.v>0.06))continue;const dx=a.g.position.x-x,dz=a.g.position.z-z;if(Math.hypot(dx,dz)<0.032){accCool=90;a.v=0;a.hold=4;if(walk){walk=null;busy=false;render()}accidentHappened('hit',x,z);return}}
+    for(const v of tveh){if((v.m!=='bus'&&v.m!=='tram')||!(v.v>0.06))continue;const q=v.parts[0].position;if(Math.hypot(q.x-x,q.z-z)<0.05){accCool=90;v.v=0;v.dwell=6;if(walk){walk=null;busy=false;render()}accidentHappened('hit',x,z);return}}
+    for(const E of emerg){if(!(E.v>0.06))continue;if(Math.hypot(E.g.position.x-x,E.g.position.z-z)<0.04){accCool=90;E.v=0;if(walk){walk=null;busy=false;render()}accidentHappened('hit',x,z);return}}}
   // ---------- buses from the stop you are standing at ----------
   function busLinesAt(x,z){if(!transitOn)return [];const ids=new Set();const gx=Math.floor(x/2),gz=Math.floor(z/2);for(let i=-1;i<=1;i++)for(let j=-1;j<=1;j++){const s=TGRID.get((gx+i)+','+(gz+j));if(s)s.forEach(v=>ids.add(v))}
     const out=[],seen=new Set();
@@ -2981,12 +2996,18 @@ function buildWorld(){
       else{const ns=R.stopsD.find(s=>s>v.d+0.001&&s>v.lastStop+0.01);let stopIsStation=false;if(ns!==undefined&&ns-v.d<stopAt){stopAt=ns-v.d;stopIsStation=true}
         for(const s of R.sigD){if(s.d<v.d-0.004)continue;if(s.d-v.d>0.8)break;const st=sigState(s.c,s.ax,T);if(st!=='g'&&!(st==='y'&&s.d-v.d<0.05)&&s.d-v.d<stopAt){stopAt=s.d-v.d;stopIsStation=false}break}
         for(const o of tveh)if(o!==v&&o.R===R&&o.d>v.d){const g=o.d-v.d-o.gapL;if(g<stopAt){stopAt=g;stopIsStation=false}}
+        if(v.m==='bus'||v.m==='tram'){const P0=v.parts[0].position,hx=Math.sin(v.parts[0].rotation.y),hz=Math.cos(v.parts[0].rotation.y);
+          const ahead=(x,z,minGap)=>{const dx=x-P0.x,dz=z-P0.z;if(Math.abs(dx)>0.5||Math.abs(dz)>0.5)return;const f=dx*hx+dz*hz,l=Math.abs(dx*hz-dz*hx);if(f>0&&f<0.45&&l<0.05&&f-minGap<stopAt){stopAt=Math.max(0,f-minGap);stopIsStation=false}};
+          for(const o of agents)if(o.g.visible&&(o.kind==='car'||o.kind==='bus'||(o.kind==='ped'&&onCarriageway(o.g.position.x,o.g.position.z)>0)))ahead(o.g.position.x,o.g.position.z,o.kind==='ped'?0.18:0.2);
+          if(av.visible&&!IN.on&&onCarriageway(av.position.x,av.position.z)>0)ahead(av.position.x,av.position.z,0.2);for(const E of emerg)ahead(E.g.position.x,E.g.position.z,0.22)}
         if(stopAt<1.2){const g=Math.max(0,stopAt);const tg=Math.min(target,Math.sqrt(2*(v.m==='ferry'?0.3:1.2)*g));if(v.v>tg)v.v=Math.max(tg,v.v-1.4*dt);else v.v+=(tg-v.v)*(1-Math.exp(-dt*1.5));
           if(g<0.003){v.v=0;if(stopIsStation){v.lastStop=v.d+0.002;v.dwell=v.m==='bus'?4:v.m==='ferry'?10:7}}}
         else v.v+=(target-v.v)*(1-Math.exp(-dt*1.2));
         v.d=Math.min(R.L,v.d+Math.min(v.v*dt,Math.max(0,stopAt)))}
       let back=0;const hid=inTunnel(R,v.d);
-      v.parts.forEach((p,i)=>{const dd=Math.max(0,v.d-back-v.carL[i]/2);back+=v.carL[i]+0.01;const q=posOnR(R,dd);p.visible=tunDepth(R,dd)<0.26;p.position.set(q.x,v.m==='ferry'?0.008:0.012+deckAt(q.x,q.z),q.z);
+      v.parts.forEach((p,i)=>{const dd=Math.max(0,v.d-back-v.carL[i]/2);back+=v.carL[i]+0.01;const q=posOnR(R,dd);p.visible=tunDepth(R,dd)<0.26;
+        if(v.m==='bus'){const sg=roadDepth(q.x,q.z)[1],L=Math.hypot(q.dx,q.dz)||1;if(sg){const lo=G.ow[sg[6]]?Math.max(0,sg[4]-0.045):sg[4]*0.5;v.lo=(v.lo===undefined?lo:v.lo+(lo-v.lo)*0.1);q.x-=q.dz/L*v.lo;q.z+=q.dx/L*v.lo}}
+        p.position.set(q.x,v.m==='ferry'?0.008:0.012+deckAt(q.x,q.z),q.z);
         p.rotation.y=Math.atan2(q.dx,q.dz)-(p.userData.boat?Math.PI/2:0)});
       if(v.label){const q=v.parts[0].position;v.label.position.set(q.x,v.m==='ferry'?0.22:0.15,q.z);v.label.visible=!hid&&Math.hypot(q.x-fx,q.z-fz)<4.5}}}
   // bus stops with shelters and an ad panel, at the real stop positions
@@ -3789,7 +3810,12 @@ function buildWorld(){
         if(tvx||tvz){const tr=Math.atan2(tvx,tvz);let dr=tr-av.rotation.y;dr=Math.atan2(Math.sin(dr),Math.cos(dr));av.rotation.y+=dr*(1-Math.exp(-dt*11))}
         moving=moved>spd*dt*0.3&&spd>0.05;running=moving&&spd>0.45;stuckCheck(dt,!!(tvx||tvz),moved>spd*dt*0.25)}else{vel.set(0,0);stuckCheck(dt,!!(tvx||tvz),false)}}
     freeT+=dt;if(freeT>0.4){freeT=0;if(IN.on||DR.on){freeDist=0;freeRun=0}else if(freeDist>0||S.pos.x!==av.position.x){window.__slCommit&&window.__slCommit(freeDist,freeRun,av.position.x,av.position.z);freeDist=0;freeRun=0}}
-    if(walk){const tgt=walk.path[walk.i];const d=tgt.clone().sub(av.position);d.y=0;walk.t=(walk.t||0)+dt;
+    if(walk){const onNow=onCarriageway(av.position.x,av.position.z)>0;if(onNow)walk.wasOn=true;else if(walk.wasOn){walk.wasOn=false;walk.onRoad=false}
+      if(!walk.onRoad&&!onNow){walk.ck=(walk.ck||0)-dt;if(walk.ck<=0){walk.ck=0.2;const ah=aheadOnPath(walk,0.06);
+        if(onCarriageway(ah.x,ah.z)>0){const ok=crossSafe(ah.x,ah.z)||(walk.waitT||0)>40;walk.blocked=!ok;if(ok)walk.onRoad=true}else walk.blocked=false}}
+      if(walk.blocked){walk.waitT=(walk.waitT||0)+dt;if(!walk.told){walk.told=1;toast('Waiting for a safe gap to cross')}}
+    }
+    if(walk&&!walk.blocked){const tgt=walk.path[walk.i];const d=tgt.clone().sub(av.position);d.y=0;walk.t=(walk.t||0)+dt;
       // ease in when setting off and out when arriving, instead of starting and stopping at full speed
       const ease=Math.min(1,0.3+walk.t*1.6,0.18+(walk.L-walk.dist)/(walk.speed*0.45+1e-6));const step=walk.speed*dt*ease;
       if(d.length()<=step){av.position.copy(tgt);walk.dist+=d.length();walk.i++;if(walk.i>=walk.path.length){const cb=walk.done;walk=null;cb()}}

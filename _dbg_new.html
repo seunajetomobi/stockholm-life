@@ -3000,6 +3000,29 @@ function buildWorld(){
   const STATIONS=[['Stockholms centralstation',59.3303,18.0581,'central'],['Stockholm Södra',59.3137,18.0626,'sodra'],['Stockholms östra (Roslagsbanan)',59.3456,18.0716,'ostra'],['Slussen (Saltsjöbanan)',59.3196,18.0740,'saltsjo']];
   STATIONS.forEach(([n,la,lo,id])=>{const [x,z]=P(la,lo);const p={i:POIS.length,cat:0,catName:'amenity',type:'station',name:n,x,z,hours:'',addr:'',flags:id};POIS.push(p);const k=Math.floor(x/2)+','+Math.floor(z/2);let a=poiGrid.get(k);if(!a)poiGrid.set(k,a=[]);a.push(p);IMPORTANT.add('station')});
   ICON.amenity.station='🚆';ICON.amenity.bus_stop='🚏';
+  // ---------- station entrance signs: SL's T / J / L signs with the real line colours (data/e.json, from OpenStreetMap) ----------
+  ICON.amenity.subway_entrance='T';ICON.amenity.tram_stop='🚋';
+  const ENT=[],entSigns=[],entTex=new Map(),SIGNCOL={T:'#0089CA',J:'#EC619F',S:'#878787'};
+  if(CITY&&CITY.e){const EL=CITY.e.lines;for(const [x100,z100,kind,ename,sname,li] of CITY.e.e){const x=x100/100,z=z100/100,lines=li.map(i=>EL[i]);
+      const name=sname||ename||'Station';const p={i:POIS.length,cat:0,catName:'amenity',type:kind==='T'?'subway_entrance':kind==='S'?'tram_stop':'station',name:kind==='T'&&ename&&ename!==sname?`${name} · ${ename}`:name,x,z,hours:'',addr:ename||'',flags:'ent',lines};
+      POIS.push(p);const k=Math.floor(x/2)+','+Math.floor(z/2);let a=poiGrid.get(k);if(!a)poiGrid.set(k,a=[]);a.push(p);ENT.push({x,z,kind,name,ename,lines,p,sp:null})}}
+  function entSignTex(kind,name,lines){const key=kind+'|'+name+'|'+lines.map(l=>l[0]).join(',');let t=entTex.get(key);if(t)return t;
+    const W=256,c=document.createElement('canvas'),g=c.getContext('2d'),per=6,rows=Math.ceil(lines.length/per),H=200+rows*44;c.width=W;c.height=H;
+    g.fillStyle='#1b232b';g.beginPath();g.roundRect?g.roundRect(4,4,W-8,H-8,18):g.rect(4,4,W-8,H-8);g.fill();
+    const col=kind==='L'&&lines[0]?lines[0][1]:SIGNCOL[kind]||'#0089CA';g.fillStyle=col;g.beginPath();g.arc(W/2,64,52,0,7);g.fill();
+    g.fillStyle='#fff';g.font='800 72px Arial';g.textAlign='center';g.textBaseline='middle';g.fillText(kind==='S'?'S':kind,W/2,68);
+    g.font='700 26px "Familjen Grotesk",Arial';let nm=name;while(g.measureText(nm).width>W-24&&nm.length>4)nm=nm.slice(0,-2)+'…';g.fillText(nm,W/2,148);
+    lines.forEach((l,i)=>{const r=Math.floor(i/per),n=Math.min(per,lines.length-r*per),w=36,gap=4,x0=W/2-(n*w+(n-1)*gap)/2+(i%per)*(w+gap),y=182+r*44;
+      g.fillStyle=l[1];g.fillRect(x0,y,w,34);g.fillStyle='#fff';g.font=`700 ${l[0].length>2?15:20}px Arial`;g.fillText(l[0],x0+w/2,y+18)});
+    t=new THREE.CanvasTexture(c);t.anisotropy=4;t.userData={aspect:H/W};entTex.set(key,t);return t}
+  const entPoleG=new THREE.CylinderGeometry(0.0022,0.0022,0.11,6);entPoleG.translate(0,0.055,0);const entPoleM=plain(0x4a5560);SHARED_GEO.add(entPoleG);
+  let lastEnt=0;
+  function updateEntrances(fx,fz){const now=performance.now();if(now-lastEnt<600)return;lastEnt=now;
+    for(const e of ENT){const near=Math.abs(e.x-fx)<9&&Math.abs(e.z-fz)<9;
+      if(near&&!e.sp){const t=entSignTex(e.kind,e.name,e.lines);const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:t,transparent:true}));const w=e.kind==='S'?0.04:0.05;
+        sp.scale.set(w,w*t.userData.aspect,1);sp.center.set(0.5,0);sp.position.set(e.x,0.11+deckAt(e.x,e.z),e.z);sp.userData.poi=e.p;sp.renderOrder=4;
+        const pole=new THREE.Mesh(entPoleG,entPoleM);pole.position.set(e.x,0.006+deckAt(e.x,e.z),e.z);pole.castShadow=true;scene.add(sp,pole);e.sp=sp;e.pole=pole;entSigns.push(sp)}
+      else if(!near&&e.sp){scene.remove(e.sp,e.pole);e.sp.material.dispose();entSigns.splice(entSigns.indexOf(e.sp),1);e.sp=null;e.pole=null}}}
   if(transitOn&&CITY.t.stops){const seenStop=new Set();for(const s0 of CITY.t.stops){if(s0[4]!=='bus')continue;const x=s0[0]/100,z=s0[1]/100;const kk=s0[2]+Math.round(x*4)+','+Math.round(z*4);if(seenStop.has(kk))continue;seenStop.add(kk);
     const p={i:POIS.length,cat:0,catName:'amenity',type:'bus_stop',name:s0[2]||'Bus stop',x,z,hours:'',addr:'',flags:'stop'};POIS.push(p);const k=Math.floor(x/2)+','+Math.floor(z/2);let a=poiGrid.get(k);if(!a)poiGrid.set(k,a=[]);a.push(p)}}
   let lastPoi=0;
@@ -3360,6 +3383,7 @@ function buildWorld(){
     let hit=null,hd=1e9;const px=e.clientX-r.left,py=e.clientY-r.top;const v=new THREE.Vector3();const kpx=r.height/(2*Math.tan(camera.fov*Math.PI/360));
     for(const [i,sp] of [...poiSprites,...poiDots]){if(!sp.visible)continue;v.copy(sp.position).project(camera);if(v.z>1)continue;const sx=(v.x*0.5+0.5)*r.width,sy=(-v.y*0.5+0.5)*r.height;const w=sp.scale.x/2*kpx,h=sp.scale.y*kpx;
       if(px>sx-w&&px<sx+w&&py<sy&&py>sy-h){const d=Math.abs(px-sx);if(d<hd){hd=d;hit=sp}}}
+    if(!hit&&entSigns.length){const sh=ray.intersectObjects(entSigns,false)[0];if(sh)hit=sh.object}
     if(hit){showPoi(hit.userData.poi);return}
     {const pd=pedAt(px,py,r);if(pd){pd.hold=3;meetStranger({g:Math.random()<0.5?'f':'m'});return}}
     const p=tapPoint();if(!p)return;
@@ -3579,7 +3603,7 @@ function buildWorld(){
     if(IN.on){interiorTick(dt,T);$('labels').style.display='none';renderer.render(inScene,camera);return}else $('labels').style.display='';
     const fx=controls.target.x,fz=controls.target.z,camD=camera.position.distanceTo(controls.target);
     sky.position.copy(camera.position);
-    updateTiles(fx,fz);pumpTiles();updatePois(fx,fz,camD);updateDetail();updateStreetLabels(fx,fz,camD);updateSignals(T);updateTransit(dt,fx,fz,T);updateAir(dt,T,fx,fz);updateCrowds(dt);
+    updateTiles(fx,fz);pumpTiles();updatePois(fx,fz,camD);updateEntrances(fx,fz);updateDetail();updateStreetLabels(fx,fz,camD);updateSignals(T);updateTransit(dt,fx,fz,T);updateAir(dt,T,fx,fz);updateCrowds(dt);
     const qs=QS[Q];const fogFar=(qs.mid+0.5)*TS;const wetFog=(S.weather==='rain'||S.weather==='snow'?0.7:1)*(S.wx&&liveFresh()&&S.wx.vis?clamp(S.wx.vis/20000,0.3,1):1);scene.fog.near=Math.max(camD*1.2,fogFar*0.4*wetFog);scene.fog.far=Math.max(fogFar*wetFog,camD*2.2);
     const sc=Math.max(1.5,Math.min(camD,30));Object.assign(sun.shadow.camera,{left:-sc,right:sc,top:sc,bottom:-sc});sun.shadow.camera.updateProjectionMatrix();
     waterNormal.offset.x=T*0.02;waterNormal.offset.y=T*0.013;
@@ -3626,7 +3650,7 @@ $('restart').onclick=()=>modal(`<h2>Start over?</h2><p>Your current life in Stoc
 async function loadCity(){
   const parts=[['b','buildings'],['r','streets'],['m','parks, water and places']];const out={};let n=0;
   for(const [k,label] of parts){$('loadtxt').textContent=`Loading ${label}…`;out[k]=await gunzipFetch(`data/${k}.json`);n++;$('loadbar').style.width=(n/parts.length*100)+'%'}
-  for(const k of ['x','t','o']){try{$('loadtxt').textContent=k==='t'?'Loading bus, tram, train and ferry lines…':k==='o'?'Loading one-way streets and lanes…':'Loading traffic lights…';out[k]=await gunzipFetch(`data/${k}.json`)}catch(e){}}
+  for(const k of ['x','t','o','e']){try{$('loadtxt').textContent=k==='t'?'Loading bus, tram, train and ferry lines…':k==='o'?'Loading one-way streets and lanes…':k==='e'?'Loading station entrances…':'Loading traffic lights…';out[k]=await gunzipFetch(`data/${k}.json`)}catch(e){}}
   return out}
 function matchServices(){if(!CITY)return;const pois=CITY.m.pois.map((p,i)=>({i,cat:p[0],catName:CITY.m.cats[p[0]],type:p[1],name:p[2],x:p[3]/100,z:p[4]/100,hours:p[5]||'',addr:p[6]||''}));
   for(const k in SVC){const s=SVC[k];let best=null,bd=1e9;for(const p of pois){if(!s.find(p))continue;const d=Math.hypot(p.x-s.near[0],p.z-s.near[1]);if(d<bd){bd=d;best=p}}

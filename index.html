@@ -295,6 +295,12 @@ h2.hero{font-size:34px;background:linear-gradient(90deg,var(--sweblue),#3a86ff 4
 .wxnow{display:flex;gap:12px;align-items:center;margin:6px 0 4px}.wxnow .wxbig{font-size:44px;line-height:1}.wxnow b{font-size:28px}.wxnow small{display:block;color:var(--muted);font-size:12px;margin-top:2px}
 .wxwear{margin:4px 0 8px;padding-left:18px;font-size:13px;line-height:1.5}
 .wxhours{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(46px,1fr);gap:4px;overflow-x:auto;padding-bottom:4px}.wxhours div{display:grid;justify-items:center;gap:1px;background:var(--surface2);border-radius:8px;padding:5px 2px;font-size:12px}.wxhours span{font-size:18px}.wxhours small{color:var(--muted);font-size:10.5px}
+.places{position:absolute;left:var(--gut);top:calc(var(--boardH,74px) + 96px + env(safe-area-inset-top,0px));z-index:2;display:grid;gap:6px}
+.places button{display:grid;grid-template-columns:30px auto;align-items:center;gap:7px;padding:4px 10px 4px 4px;border:0;border-radius:20px;background:var(--chip);color:var(--chip-ink);font:600 12px "Familjen Grotesk",sans-serif;cursor:pointer;box-shadow:0 3px 10px rgba(0,0,0,.25)}
+.places button i{display:grid;place-items:center;width:30px;height:30px;border-radius:50%;background:var(--c)}.places button svg{width:17px;height:17px;fill:none;stroke:#fff;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.places button:disabled{opacity:.45}.places button:hover:not(:disabled){filter:brightness(1.15)}
+@media (max-width:640px){.places{top:auto;bottom:calc(196px + env(safe-area-inset-bottom,0px));grid-auto-flow:column}.places button{grid-template-columns:30px;padding:4px}.places button span{display:none}}
+.invrow{display:grid;grid-template-columns:1fr auto;gap:4px 10px;padding:8px 10px;border-radius:10px;background:var(--surface2);margin:6px 0}.invrow b{font-size:14px}.invrow small{color:var(--muted);font-size:11.5px}.invrow .up{color:var(--good)}.invrow .dn{color:var(--bad)}.invrow .btns{grid-column:1/-1;display:flex;gap:6px;flex-wrap:wrap}.invrow .btns button{padding:4px 9px;border-radius:12px;border:1px solid var(--line);background:var(--surface);font:600 12px inherit;cursor:pointer;color:var(--fg)}
 .deptabs{display:flex;gap:6px;flex-wrap:wrap;margin:4px 0 8px}.deptabs button{border:1px solid var(--line);background:var(--surface2);border-radius:14px;padding:4px 10px;font:600 12px inherit;color:var(--fg);cursor:pointer}.deptabs button.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
 .deps{display:grid;gap:4px}.dep{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;padding:6px 8px;background:var(--board);color:var(--board-ink);border-radius:8px}.dep .ln{min-width:30px;text-align:center;padding:3px 6px;border-radius:6px;color:#fff;font:700 13px "IBM Plex Mono",monospace}
 .dep.fl{border:0;width:100%;text-align:left;cursor:pointer;font:inherit}.dep .dst{font-size:13.5px;line-height:1.25}.dep .dst small{display:block;color:#9fb0bd;font-size:11px}.dep .tm{font:600 14px "IBM Plex Mono",monospace;color:var(--amber);text-align:right}.dep .tm small{display:block}.dep .late{color:#ff8a80;font-size:11px}.dep.can .dst,.dep.can .tm{text-decoration:line-through;opacity:.6}
@@ -317,6 +323,7 @@ h2.hero{font-size:34px;background:linear-gradient(90deg,var(--sweblue),#3a86ff 4
   </header>
   <div class="next" id="next" hidden></div>
   <div class="ridechip" id="ride"></div>
+  <div class="places" id="places" aria-label="Your places"></div>
   <div class="hint" id="hint">Joystick or WASD to walk · tap a street to auto-walk · tap a shop to look · drag to turn</div>
   <div class="ctrls"><button id="zfind" aria-label="Find shops and places">⌕</button><button id="zin" aria-label="Zoom in">+</button><button id="zout" aria-label="Zoom out">−</button><button id="zme" aria-label="Center on you" style="font-size:16px">◎</button></div>
   <div class="inhud" id="inhud"><b id="inTitle"></b><button id="inLeave">Leave</button></div><button class="inact" id="inAct"></button>
@@ -931,7 +938,7 @@ function uiInit(){document.querySelectorAll('#dock button').forEach(b=>b.onclick
   $('apps').innerHTML=PHONE_APPS.map((a,i)=>`<button class="app" data-i="${i}" data-k="${a[4]||''}"><span class="ic" style="background:${a[2]}">${glyphSVG(a[1])}</span><span>${a[0]}</span></button>`).join('');
   $('apps').querySelectorAll('.app').forEach(b=>b.onclick=()=>PHONE_APPS[+b.dataset.i][3]())}
 const PHONE_APPS=[['Chatt','chat','#1faa59',()=>openChats(),'chat'],['Mail','mail','#2f6fd6',()=>openMailbox(),'mail'],['To-do','check','#e07a1f',()=>openTodo(),'todo'],['Bag','bag','#8a5a2b',()=>openBag(),'bag'],
-  ['Bank','wallet','#0f6b5c',()=>openBank()],['SL','train','#c8102e',()=>openTravelPicker()],['Find','search','#3b4a57',()=>{const b=$('zfind');b&&b.click()}],['Weather','sun','#f0a020',()=>openWeather()],['Departures','train','#c8102e',()=>openDeparturesApp()],['Flights','plane','#2f6fd6',()=>openFlights()],['Ferries','ferry','#00698F',()=>openFerries()],
+  ['Bank','wallet','#0f6b5c',()=>openBank()],['SL','train','#c8102e',()=>openTravelPicker()],['Find','search','#3b4a57',()=>{const b=$('zfind');b&&b.click()}],['Weather','sun','#f0a020',()=>openWeather()],['Departures','train','#c8102e',()=>openDeparturesApp()],['Flights','plane','#2f6fd6',()=>openFlights()],['Invest','chart','#0f6b5c',()=>openInvest()],['Ferries','ferry','#00698F',()=>openFerries()],
   ['Contacts','people','#2a8a52',()=>openPeople()],['Dating','heart','#d6336c',()=>openDating()],['Jobs','brief','#0b5fa5',()=>openJobs()],['Courses','cap','#6c3fb5',()=>openCourses()],
   ['Housing','house','#a84b32',()=>S.docs.bankid?openHousing():toast('Bostadsförmedlingen needs BankID')],['Bills','card','#a86400',()=>openBills()],['1177','health','#0b7a75',()=>modal(`<div class="phonehead" style="--c:#0b7a75">${glyphSVG('health')}<h2>1177 Vårdguiden</h2></div><p>Medical advice by phone: call 1177, day and night. In an emergency: 112.</p><p class="note">Your vårdcentral: ${S.docs.vc?'registered':'not chosen yet'}. Patient fees in Region Stockholm: akutmottagning 400 kr, ambulance free.</p><div class="row2"><button class="btn ghost" id="no">Close</button></div>`,m=>m.querySelector('#no').onclick=closeModal)],
   ['Election','ballot','#1f3f7a',()=>setTab('civic')],['Movement','fist','#c8342c',()=>{if(S.civ.move)setTab('civic');else startMovement()}],['Rights','scale','#566573',()=>setTab('civic')],['Wait 1 h','clock','#23824f',()=>{if(busy)return;spendTime(1);apply({energy:2});log('You took an hour off.');after()}]];
@@ -1146,36 +1153,38 @@ function buySL(){S.slUntil=S.day+29;log('Bought an SL 30-day card. Tap in, tap o
 
 /* ---------- travel ---------- */
 function walkInfo(tx,tz){const r=W?W.route(S.pos.x,S.pos.z,tx,tz):{pts:[[S.pos.x,S.pos.z],[tx,tz]],len:Math.hypot(tx-S.pos.x,tz-S.pos.z)*1.3};const min=r.len*50/80;return {r,min,km:r.len*0.05,e:Math.ceil(min/60*7)}}
-function openTravel(k){
-  if(busy)return;
-  if(k===S.loc&&Math.hypot(S.pos.x-D[k].x,S.pos.z-D[k].z)<1){toast('You are already in '+D[k].name);return}
-  const toHome=k===homeD()&&S.addr;const tx=toHome?S.addr.x:D[k].x+0.3,tz=toHome?S.addr.z:D[k].z+0.3;const w=walkInfo(tx,tz);
-  const ns=nearestStation(S.pos.x,S.pos.z),dst=D[k].st;
+// k: a district, or dest {x,z,name,blurb,arrive} for any spot (home, work, a friend's place); arrive() runs when you get there
+function openTravel(k,dest){
+  if(busy)return;const nm=dest?dest.name:D[k].name,bl=dest?dest.blurb||'':D[k].blurb;const arrive=()=>{after();if(dest&&dest.arrive)setTimeout(dest.arrive,350)};
+  if(dest&&Math.hypot(S.pos.x-dest.x,S.pos.z-dest.z)<0.25){if(dest.arrive)dest.arrive();else toast('You are already there');return}
+  if(!dest&&k===S.loc&&Math.hypot(S.pos.x-D[k].x,S.pos.z-D[k].z)<1){toast('You are already in '+D[k].name);return}
+  const toHome=!dest&&k===homeD()&&S.addr;const tx=dest?dest.x:toHome?S.addr.x:D[k].x+0.3,tz=dest?dest.z:toHome?S.addr.z:D[k].z+0.3;const w=walkInfo(tx,tz);
+  const ns=nearestStation(S.pos.x,S.pos.z),dst=dest?nearestStation(tx,tz).name:D[k].st;
   const tr=ns.name!==dst?transitRoute(ns.name,dst):null;
   let trMin=0,toSt=null,fromSt=null;
   if(tr){toSt=walkInfo(STP[ns.name][0],STP[ns.name][1]);const s2=STP[dst];fromSt={min:Math.hypot(s2[0]-tx,s2[1]-tz)*1.3*50/80};trMin=toSt.min+tr.min+4+fromSt.min}
   const hasCard=S.slUntil>=S.day,canWalk=S.energy>=w.e,canRide=tr&&(hasCard||S.money>=TICKET);const tq=taxiQuote(w.km);
   const legsHtml=tr?`<span class="legs">${tr.legs.map(l=>`<span class="leg" style="background:${l.line.col}">${l.short} · ${l.stops.length-1} stop${l.stops.length>2?'s':''}</span>`).join('')}</span>`:'';
   const legsText=tr?`Walk ${fmtDur(toSt.min)} to ${ns.name}, then `+tr.legs.map(l=>`${l.line.name} to ${l.stops[l.stops.length-1]}`).join(', then '):'';
-  modal(`<h2>To ${D[k].name}</h2><p>${D[k].blurb}</p><div class="choices">
+  modal(`<h2>To ${esc2(nm)}</h2><p>${bl}</p><div class="choices">
     <button class="choice" id="tWalk" ${canWalk?'':'disabled'}><b>Walk · ${fmtDur(w.min)}</b><small>${w.km.toFixed(1)} km along real streets · free · −${w.e} energy${isLight(S.hour)?' · counts as daylight':''}${canWalk?'':' · too tired'}</small></button>
     <button class="choice" id="tRide" ${canRide?'':'disabled'}><b>Public transport · ${tr?fmtDur(trMin):'–'}</b><small>${tr?legsText+'. '+(hasCard?'SL card':kr(TICKET)+' ticket'):'No useful T-bana route from here'}${tr&&!canRide?' · can\'t afford it':''}</small>${legsHtml}</button>
     ${tr&&!hasCard?`<button class="choice" id="tDodge"><b>Same trip without a ticket (plankning)</b><small>Saves ${kr(TICKET)} · if inspectors check you: 1 500 kr tilläggsavgift</small></button>`:''}
     ${S.car?`<button class="choice" id="tCar" ${canDrive()?'':'disabled'}><b>Drive your car · ${fmtDur(w.km/(rushNow()?18:30)*60+3)}</b><small>${canDrive()?`Fuel about ${kr(w.km*1.9)}${rushNow()?' · rush hour traffic':''} · the car is parked there`:'No valid driving licence'}</small></button>`:''}
     <button class="choice" id="tTaxi" ${S.money>=tq.price?'':'disabled'}><b>Taxi · ${fmtDur(tq.min)} · about ${kr(tq.price)}</b><small>Door to door${rushNow()?' · rush hour traffic':''} · taxi prices in Stockholm are set freely, this is a typical fare${S.money>=tq.price?'':' · can\'t afford it'}</small></button>
   </div><div class="row2"><button class="btn ghost" id="mClose">Stay here</button></div>`,m=>{
-    const tc=m.querySelector('#tCar');if(tc)tc.onclick=()=>{closeModal();const min=w.km/(rushNow()?18:30)*60+3;S.money-=Math.round(w.km*1.9);S.car.x=tx+0.05;S.car.z=tz;S.pos={x:tx,z:tz};updateLoc();log(`Drove to ${D[k].name}, ${fmtDur(min)}.`);spendTime(min/60);W&&(W.placeAvatar(tx,tz,true),W.syncCar());after()};
-    m.querySelector('#tTaxi').onclick=()=>{closeModal();S.money-=tq.price;S.pos={x:tx,z:tz};updateLoc();log(`Taxi to ${D[k].name}, ${fmtDur(tq.min)} (${kr(tq.price)}).`);spendTime(tq.min/60);W&&W.placeAvatar(tx,tz,true);after()};
+    const tc=m.querySelector('#tCar');if(tc)tc.onclick=()=>{closeModal();const min=w.km/(rushNow()?18:30)*60+3;S.money-=Math.round(w.km*1.9);S.car.x=tx+0.05;S.car.z=tz;S.pos={x:tx,z:tz};updateLoc();log(`Drove to ${nm}, ${fmtDur(min)}.`);spendTime(min/60);W&&(W.placeAvatar(tx,tz,true),W.syncCar());arrive()};
+    m.querySelector('#tTaxi').onclick=()=>{closeModal();S.money-=tq.price;S.pos={x:tx,z:tz};updateLoc();log(`Taxi to ${nm}, ${fmtDur(tq.min)} (${kr(tq.price)}).`);spendTime(tq.min/60);W&&W.placeAvatar(tx,tz,true);arrive()};
     m.querySelector('#mClose').onclick=closeModal;
-    m.querySelector('#tWalk').onclick=()=>{closeModal();goWalk(w,tx,tz,'to '+D[k].name)};
+    m.querySelector('#tWalk').onclick=()=>{closeModal();goWalk(w,tx,tz,'to '+nm,dest&&dest.arrive)};
     const rideGo=dodge=>{closeModal();busy=true;render();if(!hasCard&&!dodge)S.money-=TICKET;if(dodge)plankCheck();
-      const done=()=>{busy=false;S.pos={x:tx,z:tz};updateLoc();if(rushNow()){apply({mood:-1});log('Packed carriage: it\'s rush hour.','minus')}log(`${tr.legs.map(l=>l.short+' '+l.stops[0]+'–'+l.stops[l.stops.length-1]).join(', ')} to ${D[k].name}, ${fmtDur(trMin)}${hasCard?'':` (${kr(TICKET)})`}.`);spendTime(trMin/60);after()};
+      const done=()=>{busy=false;S.pos={x:tx,z:tz};updateLoc();if(rushNow()){apply({mood:-1});log('Packed carriage: it\'s rush hour.','minus')}log(`${tr.legs.map(l=>l.short+' '+l.stops[0]+'–'+l.stops[l.stops.length-1]).join(', ')} to ${nm}, ${fmtDur(trMin)}${hasCard?'':` (${kr(TICKET)})`}.`);spendTime(trMin/60);arrive()};
       W?W.ride(toSt.r,tr,[tx,tz],done):done()};m.querySelector('#tRide').onclick=()=>rideGo(false);const tdg=m.querySelector('#tDodge');if(tdg)tdg.onclick=()=>rideGo(true);
   });
 }
-function goWalk(w,tx,tz,label){busy=true;render();
+function goWalk(w,tx,tz,label,cb){busy=true;render();
   const done=()=>{busy=false;const ep=w.r.pts[w.r.pts.length-1];S.pos={x:ep[0],z:ep[1]};apply({energy:-w.e,mood:isLight(S.hour)&&w.min>10?2:0});if(isLight(S.hour)&&w.min>10)S.sunToday=true;updateLoc();
-    if(w.min>=5)log(`Walked ${label} (${w.km.toFixed(1)} km, ${fmtDur(w.min)}).`);spendTime(w.min/60);after()};
+    if(w.min>=5)log(`Walked ${label} (${w.km.toFixed(1)} km, ${fmtDur(w.min)}).`);spendTime(w.min/60);after();if(cb)setTimeout(cb,350)};
   W?W.walkPath(w.r.pts,done):done()}
 function walkTo(x,z,label){if(busy)return;const w=walkInfo(x,z);
   if(S.energy<w.e){toast('Too tired to walk that far');return}
@@ -1320,6 +1329,7 @@ const GLYPHS={
   book:'M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2zM4 19V5M9 7h6',cap:'M2 9l10-5 10 5-10 5zM6 11v5c3 2 9 2 12 0v-5M22 9v6',church:'M12 2v6M9.5 4h5M6 22V12l6-4 6 4v10zM10 22v-4h4v4',
   pill:'M8.5 15.5l7-7a3.5 3.5 0 0 1 5 5l-7 7a3.5 3.5 0 0 1-5-5zM12 12l3.5 3.5',bottle:'M10 3h4v4l2 3v11H8V10l2-3zM8 14h8',car:'M5 15l1.5-5h11L19 15M4 15h16v4H4zM7 19v2M17 19v2M7.5 17h.01M16.5 17h.01',
   mail:'M3 6h18v12H3zM3 6l9 7 9-7',star:'M12 3l2.8 5.8 6.2.9-4.5 4.4 1 6.2L12 17.3l-5.5 3 1-6.2L3 9.7l6.2-.9z',brief:'M3 8h18v12H3zM9 8V5h6v3M3 13h18',
+  chart:'M4 20h16M5 16l4-5 3 3 6-8M15 6h3v3',
   flower:'M12 14v7M12 7a2.5 2.5 0 1 0 .01 0M12 4.5V3M15 8h1.5M7.5 8H9M12 11.5V13M9 15c-2 0-3-1-3-2.5 1.5 0 3 1 3 2.5zM15 17c2 0 3-1 3-2.5-1.5 0-3 1-3 2.5z',pin:'M12 21s7-6.3 7-12a7 7 0 1 0-14 0c0 5.7 7 12 7 12zM12 6.5a2.5 2.5 0 1 0 .01 0',
   chat:'M4 5h16v11H9l-5 4zM8 10h.01M12 10h.01M16 10h.01',check:'M4 6h4M4 12h4M4 18h4M11 6h9M11 12h9M11 18h9',card:'M3 6h18v12H3zM3 10h18M7 15h4',heart:'M12 20s-8-5-8-11a4.5 4.5 0 0 1 8-2.5A4.5 4.5 0 0 1 20 9c0 6-8 11-8 11z',
   people:'M9 11a3.5 3.5 0 1 0 .01 0M2.5 20c.8-3.5 3.4-5.5 6.5-5.5s5.7 2 6.5 5.5M16 4.5a3 3 0 0 1 0 6M18 14c2 .6 3.3 2.6 3.7 5.5',house:'M3 11l9-7 9 7M5 10v10h14V10M10 20v-6h4v6',
@@ -1445,6 +1455,69 @@ async function flightDetail(hex){const a=LIVEFL.ac.find(x=>x.hex===hex);if(!a)re
     <dt>Speed</dt><dd>${Math.round(a.gs*1.852)} km/h · heading ${Math.round(a.trk)}°</dd></dl>
     <p class="note">Live ADS-B position; the route is the airline's usual route for this flight number (adsbdb.com).</p><div class="row2"><button class="btn" id="look">Look at it</button><button class="btn ghost" id="no">Back</button></div>`,m=>{
     m.querySelector('#no').onclick=()=>openFlights();m.querySelector('#look').onclick=()=>{closeModal();W&&W.lookAtFlight&&W.lookAtFlight(hex)}})}
+
+/* =================== YOUR PLACES: home, work, family, friends and investments, one tap from wherever you are =================== */
+function randomAddrNear(k){if(!CITY||!D[k])return null;const hub=D[k],R=CITY.r,cand=[];
+  for(let t=0;t<4000&&cand.length<60;t++){const i=Math.floor(Math.random()*R.edges.length),e=R.edges[i];if(!e[3]||![8,9,10].includes(e[2])||e[5]<30)continue;
+    const ax=R.nodes[2*e[0]]/100,az=R.nodes[2*e[0]+1]/100,bx=R.nodes[2*e[1]]/100,bz=R.nodes[2*e[1]+1]/100,mx=(ax+bx)/2,mz=(az+bz)/2;if(Math.hypot(mx-hub.x,mz-hub.z)<HUB_R*0.8)cand.push([e,ax,az,bx,bz,mx,mz])}
+  if(!cand.length)return {street:hub.name,num:1,x:hub.x+0.3,z:hub.z+0.3,dist:hub.name};
+  const [e,ax,az,bx,bz,mx,mz]=cand[Math.floor(Math.random()*cand.length)],dx=bx-ax,dz=bz-az,L=Math.hypot(dx,dz)||1;
+  return {street:R.names[e[3]],num:1+Math.floor(Math.random()*60),x:mx-dz/L*0.11,z:mz+dx/L*0.11,dist:hub.name}}
+const addrLine=a=>a?`${a.street} ${a.num}, ${a.dist}`:'';
+function goHome(){if(S.home==='none'||!S.addr){toast('You have no home right now: try Housing, a shelter or a friend\'s sofa');return}
+  openTravel(null,{x:S.addr.x,z:S.addr.z,name:'Home',blurb:addrText(),arrive:()=>{if(W&&W.enterHome&&Math.hypot(S.pos.x-S.addr.x,S.pos.z-S.addr.z)<0.6)W.enterHome()}})}
+// where you work: a real place of the right kind in your job's neighbourhood, chosen once per job
+const JOBPLACE={barista:['cafe'],guide:['museum','attraction','information','gallery'],usk:['hospital','clinic','doctors'],uskcert:['hospital','clinic'],dev:['office','company','it'],itsup:['office','it','company','computer'],
+  consult:['office','company','consulting','financial'],cleaner:['office','company'],kitchen:['restaurant'],cook:['restaurant'],warehouse:['warehouse','logistics','wholesale','storage'],barnsk:['kindergarten','childcare'],taxidrv:['taxi']};
+function workPlace(){const j=JOBS[S.job];if(!j||j.where==='any'||!D[j.where])return null;
+  if(!S.workAddr||S.workAddr.job!==S.job){const hub=D[j.where];let w=null;const near=W&&W.nearPlaces?W.nearPlaces(hub.x,hub.z,JOBPLACE[S.job]||['office'],12):[];
+    if(near.length){const p=near[Math.floor(Math.random()*Math.min(4,near.length))];w={x:p.x,z:p.z,name:p.name,addr:p.addr||hub.name}}else{const a=randomAddrNear(j.where);w={x:a.x,z:a.z,name:j.name,addr:addrLine(a)}}
+    S.workAddr={job:S.job,...w}}return S.workAddr}
+function goWork(){const j=JOBS[S.job];if(!j){toast('No job yet: open Jobs');try{openJobs()}catch(e){}return}
+  if(j.where==='any'){const a=workAct();if(a)doAct(a);return}
+  const w=workPlace();openTravel(null,{x:w.x,z:w.z,name:'Work · '+w.name,blurb:`${esc2(j.name)} · ${esc2(w.addr||'')}`,arrive:()=>{const a=workAct();modal(`<h2>At work · ${esc2(w.name)}</h2><p>${esc2(j.name)}.</p><div class="row2"><button class="btn" id="go">${esc2(a?a.l:'Work a shift')}</button><button class="btn ghost" id="no">Not now</button></div>`,m=>{m.querySelector('#no').onclick=closeModal;m.querySelector('#go').onclick=()=>{closeModal();if(a)doAct(a)}})}})}
+// family: in Stockholm you can visit (your parents live in Vasastan); otherwise a video call home
+function familyHere(){return ['local','over'].includes(S.bg)}
+function famHome(){if(!familyHere())return null;if(!S.famAddr){S.famAddr=S.home==='parents'&&S.addr?{...S.addr}:randomAddrNear('vasastan')}return S.famAddr}
+function goFamily(){const fh=famHome();
+  if(fh){openTravel(null,{x:fh.x,z:fh.z,name:'Mamma och pappa',blurb:addrLine(fh),arrive:()=>familyVisit()});return}
+  const where=(S.fam&&S.fam.where)||S.from||'home';const late=S.hour>=23||S.hour<7;
+  modal(`<div class="phonehead" style="--c:#1faa59">${glyphSVG('people')}<h2>Family in ${esc2(where)}</h2></div><p>Your family is far away, in ${esc2(where)}. A video call costs nothing${late?', but it is the middle of the night there too.':'.'}</p><div class="row2"><button class="btn" id="go" ${late?'disabled':''}>Video call (30 min)</button><button class="btn ghost" id="no">Close</button></div>`,m=>{
+    m.querySelector('#no').onclick=closeModal;m.querySelector('#go').onclick=()=>{closeModal();if(S.flags.famCall===S.day){toast('You already called today');return}S.flags.famCall=S.day;apply({mood:6,social:8});spendTime(0.5);log(`Video call with your family in ${where}. +6 mood, +8 social.`,'plus');pushChat('fam',false,pickR(['Vi saknar dig! Ät ordentligt nu.','Kul att se dig. Har du hittat jobb?','Ring snart igen ❤️']));after()}})}
+function familyVisit(){modal(`<h2>At your parents'</h2><p>Mamma has coffee on before you are through the door.</p><div class="choices"><button class="choice" id="a"><b>Dinner with the family · 2 h</b><small>Free · +10 mood, +12 social, +30 food</small></button><button class="choice" id="b"><b>Just a quick fika · 30 min</b><small>+4 mood, +5 social</small></button></div><div class="row2"><button class="btn ghost" id="no">Leave</button></div>`,m=>{
+  m.querySelector('#no').onclick=closeModal;m.querySelector('#a').onclick=()=>{closeModal();apply({mood:10,social:12,hunger:30});spendTime(2);log('Dinner at your parents\'. +10 mood, +12 social.','plus');after()};
+  m.querySelector('#b').onclick=()=>{closeModal();apply({mood:4,social:5});spendTime(0.5);log('Fika with your parents.','plus');after()}})}
+// friends: everyone you know with friendship 30+ has a real address somewhere in town
+function friendHome(p){if(!p.home){const ks=Object.keys(D).filter(k=>D[k]&&!/arlanda/i.test(k));p.home=randomAddrNear(pickR(ks))}return p.home}
+function goFriends(){const L=S.people.filter(p=>p.fr>=30&&!['partner','sambo','engaged','married'].includes(p.st)).sort((a,b)=>b.fr-a.fr);
+  if(!L.length){toast('No close friends yet: meet people at fika, SFI, the gym or meetups');return}
+  modal(`<div class="phonehead" style="--c:#2a8a52">${glyphSVG('chat')}<h2>Visit a friend</h2></div><div class="choices">${L.slice(0,10).map((p,i)=>{const h=friendHome(p);return `<button class="choice" data-i="${i}"><b>${esc2(p.n)}</b><small>${esc2(addrLine(h))} · ${Math.round(Math.hypot(h.x-S.pos.x,h.z-S.pos.z)*0.05*10)/10} km · friendship ${Math.round(p.fr)}</small></button>`}).join('')}</div><div class="row2"><button class="btn ghost" id="no">Close</button></div>`,m=>{
+    m.querySelector('#no').onclick=closeModal;m.querySelectorAll('[data-i]').forEach(b=>b.onclick=()=>{const p=L[+b.dataset.i],h=friendHome(p);closeModal();openTravel(null,{x:h.x,z:h.z,name:p.n+"'s place",blurb:addrLine(h),arrive:()=>friendVisit(p)})})})}
+function friendVisit(p){if(S.hour>=23||S.hour<8){modal(`<h2>${esc2(p.n)}'s door</h2><p>No one answers: it's ${String(Math.floor(S.hour)).padStart(2,'0')}:${String(Math.round(S.hour%1*60)).padStart(2,'0')}. ${esc2(p.n)} is asleep.</p><div class="row2"><button class="btn ghost" id="no">OK</button></div>`,m=>m.querySelector('#no').onclick=closeModal);return}
+  modal(`<h2>At ${esc2(p.n)}'s</h2><p>${esc2(p.n)} lets you in and puts the kettle on.</p><div class="choices"><button class="choice" id="a"><b>Hang out · 2 h</b><small>+12 social, +6 mood, friendship up</small></button><button class="choice" id="b"><b>Cook dinner together · 2 h · ${kr(120)}</b><small>Your share of the food · +14 social, +8 mood, +30 food</small></button></div><div class="row2"><button class="btn ghost" id="no">Leave</button></div>`,m=>{
+    m.querySelector('#no').onclick=closeModal;m.querySelector('#a').onclick=()=>{closeModal();apply({social:12,mood:6,energy:-4});p.fr=Math.min(100,p.fr+6);p.last=S.day;spendTime(2);log(`Hung out at ${p.n}'s.`,'plus');after()};
+    m.querySelector('#b').onclick=()=>{if(S.money<120){toast('Not enough money');return}closeModal();S.money-=120;apply({social:14,mood:8,hunger:30});p.fr=Math.min(100,p.fr+8);p.last=S.day;spendTime(2);log(`Cooked dinner with ${p.n} (120 kr).`,'plus');after()}})}
+// investments: an ISK at a bank or broker (Avanza/Nordnet style) with four funds; prices move every game day
+const FUNDS={glob:{n:'Global index fund',s:'Thousands of companies worldwide · low fee',mu:0.00030,sd:0.009},swe:{n:'Sverige index fund',s:'The Stockholm stock exchange (OMXS30)',mu:0.00030,sd:0.011},
+  rant:{n:'Short bond fund (räntefond)',s:'Low risk, low return',mu:0.00010,sd:0.0012},tech:{n:'Tech fund',s:'High risk: big swings both ways',mu:0.00045,sd:0.02}};
+function invInit(){if(!S.inv)S.inv={h:{},day:S.day,log:[]};return S.inv}
+function invTick(){const I=invInit();while(I.day<S.day){I.day++;for(const k in I.h){const f=FUNDS[k],h=I.h[k];if(!f||!h)continue;const z=Math.sqrt(-2*Math.log(Math.random()||1e-9))*Math.cos(2*Math.PI*Math.random());const r=f.mu+f.sd*z;h.prev=h.v;h.v=Math.max(0,h.v*Math.exp(r))}}}
+const invTotal=()=>{const I=invInit();let v=0,c=0;for(const k in I.h){v+=I.h[k].v;c+=I.h[k].cost}return {v,c}};
+function openInvest(){invTick();const I=invInit();if(!S.docs.bankid){modal(`<div class="phonehead" style="--c:#0f6b5c">${glyphSVG('chart')}<h2>Invest</h2></div><p>To open an investeringssparkonto (ISK) you need a Swedish bank account and BankID.</p><div class="row2"><button class="btn ghost" id="no">Close</button></div>`,m=>m.querySelector('#no').onclick=closeModal);return}
+  const t=invTotal(),pct=x=>(x>=0?'+':'')+(x*100).toFixed(1)+'%';
+  modal(`<div class="phonehead" style="--c:#0f6b5c">${glyphSVG('chart')}<h2>Invest · ISK</h2></div><dl class="kv"><dt>Portfolio</dt><dd><b>${kr(Math.round(t.v))}</b>${t.c?` · <span class="${t.v>=t.c?'up':'dn'}">${pct(t.v/t.c-1)} since you bought</span>`:''}</dd><dt>Cash</dt><dd>${kr(S.money)}</dd></dl>
+    ${Object.entries(FUNDS).map(([k,f])=>{const h=I.h[k];const day=h&&h.prev?h.v/h.prev-1:0;return `<div class="invrow"><div><b>${f.n}</b><br><small>${f.s}</small></div><div style="text-align:right">${h?`<b>${kr(Math.round(h.v))}</b><br><small class="${day>=0?'up':'dn'}">${pct(day)} today</small>`:'<small>—</small>'}</div>
+      <div class="btns">${[500,2000,10000].map(a=>`<button data-buy="${k}" data-a="${a}" ${S.money<a?'disabled':''}>Buy ${kr(a)}</button>`).join('')}${h&&h.v>1?`<button data-sell="${k}">Sell all</button>`:''}</div></div>`}).join('')}
+    <p class="note">Fund prices move once per game day, like a random walk around a realistic long-run return. ISK tax (a small yearly schablonskatt) is not modelled. Past returns are no guarantee.</p><div class="row2"><button class="btn ghost" id="no">Close</button></div>`,m=>{
+    m.querySelector('#no').onclick=closeModal;
+    m.querySelectorAll('[data-buy]').forEach(b=>b.onclick=()=>{const k=b.dataset.buy,a=+b.dataset.a;if(S.money<a)return;S.money-=a;const h=I.h[k]||(I.h[k]={v:0,cost:0,prev:0});h.v+=a;h.cost+=a;if(!h.prev)h.prev=h.v;log(`Bought ${FUNDS[k].n} for ${kr(a)}.`);save();openInvest()});
+    m.querySelectorAll('[data-sell]').forEach(b=>b.onclick=()=>{const k=b.dataset.sell,h=I.h[k];const v=Math.round(h.v);S.money+=v;log(`Sold ${FUNDS[k].n} for ${kr(v)} (${v>=h.cost?'gain':'loss'} ${kr(Math.abs(v-Math.round(h.cost)))}).`,v>=h.cost?'plus':'minus');delete I.h[k];save();openInvest()})})}
+const PLACEBTN=[['home','house','#a84b32','Home',()=>goHome()],['work','brief','#0b5fa5','Work',()=>goWork()],['fam','people','#1faa59','Family',()=>goFamily()],['friends','chat','#2a8a52','Friends',()=>goFriends()],['inv','chart','#0f6b5c','Invest',()=>openInvest()]];
+function renderPlaces(){const el=document.getElementById('places');if(!el||!S)return;
+  if(!el.dataset.built){el.innerHTML=PLACEBTN.map(([k,g,c,l])=>`<button data-pl="${k}" style="--c:${c}" title="${l}"><i>${glyphSVG(g)}</i><span>${l}</span></button>`).join('');el.dataset.built=1;
+    el.querySelectorAll('[data-pl]').forEach(b=>b.onclick=()=>{if(busy){toast('You are on the move');return}const f=PLACEBTN.find(x=>x[0]===b.dataset.pl);f&&f[4]()})}
+  const lbl={home:S.home==='none'?'No home':'Home',work:S.job&&JOBS[S.job]?'Work':'Find work',inv:(()=>{const t=S.inv?invTotal().v:0;return t>1?kr(Math.round(t)):'Invest'})()};
+  el.querySelectorAll('[data-pl]').forEach(b=>{const t=lbl[b.dataset.pl];if(t)b.querySelector('span').textContent=t})}
 
 /* =================== PHONE: notifications, Chatt, Mail, To-do, Bag =================== */
 const esc2=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -1801,7 +1874,7 @@ function sleep(passedOut,mode){if(S.home==='none'&&!mode)mode='out';
     else if(S.docs.fk){S.pay+=Math.round(j.rate*8*0.8);log(`Sjukpenning from Försäkringskassan: ${kr(Math.round(j.rate*8*0.8))} added to lön.`,'plus')}
     else log('No sjukpenning: you never registered with Försäkringskassan.','minus')}
   if(S.weather==='rain'&&!S.coat&&!(S.bag&&S.bag.paraply)){apply({mood:-1})}
-  S.day++;if(S.docs.queue)S.queue+=QUEUE_SPEED*(policy('housing')?1.3:1);processBills();crimeDaily();S.sunToday=false;S.applied={};S.flags.sunMin=0;rollWeather();setTimeout(()=>wearTip(),1500);
+  S.day++;if(S.docs.queue)S.queue+=QUEUE_SPEED*(policy('housing')?1.3:1);processBills();crimeDaily();S.sunToday=false;S.applied={};S.flags.sunMin=0;rollWeather();try{invTick()}catch(e){}setTimeout(()=>wearTip(),1500);
   if(!(S.sick>S.day))S.flags.karens=0;
   S.hunger=clamp(S.hunger-18,0,100);S.hygiene=clamp(S.hygiene-8,0,100);
   if(mode==='hospital'){S.energy=clamp(S.energy+40,0,100);S.hour=9;apply({hunger:30,hygiene:20})}
@@ -1973,7 +2046,7 @@ function render(){try{if(S){renderTodo();badges();renderAbout()}}catch(e){}
   $('papers').innerHTML=[...papers(),{s:canDrive()?'ok':'todo',l:canDrive()?'OK':'—',n:'Driving licence',w:licText()},{s:S.addr?'ok':'todo',l:S.addr?'OK':'—',n:'Home address',w:addrText()},...Object.keys(S.certs).map(c=>({s:'ok',l:'✓',n:'Certificate',w:(Object.values(COURSES).find(x=>x.cert===c)||{name:c}).name}))].map(p=>`<li><span class="st ${p.s}">${p.l}</span><b>${p.n}</b><small>${p.w}</small></li>`).join('');
   $('goals').innerHTML=`<li class="${aspirationDone()?'done':''}"><span class="box"></span><span><b>Life goal:</b> ${ASPIRATIONS[S.aspiration].l}</span><span class="p">${S.points} pts</span></li>`+(S.aspiration==='stockholmer'?'':`<li><span></span><span style="font-size:12px">${ASPIRATIONS[S.aspiration].d}</span><span></span></li>`)+goals().map(g=>`<li class="${g.done?'done':''}"><span class="box"></span><span>${g.l}</span><span class="p">${g.p}</span></li>`).join('')+S.wants.map(w=>{const W8=WANTS.find(x=>x[0]===w.id);return `<li class="${w.done?'done':''}"><span class="box"></span><span>Today: ${W8?W8[1]:w.id}</span><span class="p">+10</span></li>`}).join('');
   $('log').innerHTML=S.log.slice(0,30).map(e=>`<li><time>d${e.d} ${hhmm(e.h)}</time><span class="${e.cls}">${e.t}</span></li>`).join('');
-  W&&W.refresh();renderNeeds();renderGuide();if(TAB==='civic')renderCivic();
+  W&&W.refresh();renderNeeds();renderGuide();renderPlaces();if(TAB==='civic')renderCivic();
 }
 
 /* =================== 3D WORLD =================== */
@@ -3622,7 +3695,9 @@ function buildWorld(){
         if(tvx||tvz){const tr=Math.atan2(tvx,tvz);let dr=tr-av.rotation.y;dr=Math.atan2(Math.sin(dr),Math.cos(dr));av.rotation.y+=dr*(1-Math.exp(-dt*11))}
         moving=moved>spd*dt*0.3&&spd>0.05;running=moving&&spd>0.45;stuckCheck(dt,!!(tvx||tvz),moved>spd*dt*0.25)}else{vel.set(0,0);stuckCheck(dt,!!(tvx||tvz),false)}}
     freeT+=dt;if(freeT>0.4){freeT=0;if(IN.on||DR.on){freeDist=0;freeRun=0}else if(freeDist>0||S.pos.x!==av.position.x){window.__slCommit&&window.__slCommit(freeDist,freeRun,av.position.x,av.position.z);freeDist=0;freeRun=0}}
-    if(walk){const tgt=walk.path[walk.i];const d=tgt.clone().sub(av.position);d.y=0;const step=walk.speed*dt;
+    if(walk){const tgt=walk.path[walk.i];const d=tgt.clone().sub(av.position);d.y=0;walk.t=(walk.t||0)+dt;
+      // ease in when setting off and out when arriving, instead of starting and stopping at full speed
+      const ease=Math.min(1,0.3+walk.t*1.6,0.18+(walk.L-walk.dist)/(walk.speed*0.45+1e-6));const step=walk.speed*dt*ease;
       if(d.length()<=step){av.position.copy(tgt);walk.dist+=d.length();walk.i++;if(walk.i>=walk.path.length){const cb=walk.done;walk=null;cb()}}
       else{d.normalize();av.position.addScaledVector(d,step);const tr=Math.atan2(d.x,d.z);let dr=tr-av.rotation.y;dr=Math.atan2(Math.sin(dr),Math.cos(dr));av.rotation.y+=dr*(1-Math.exp(-dt*12));walk.dist+=step}moving=true}
     if(rideState&&rideState.bus){follow=busTick(dt)}else if(rideState&&rideState.v2){follow=rideTick(dt)}else if(rideState){const R=rideState;R.d=Math.min(R.len,R.d+R.sp*dt);let i=1;while(i<R.cum.length-1&&R.cum[i]<R.d)i++;const a=R.pts[i-1],b=R.pts[i],u=clamp((R.d-R.cum[i-1])/((R.cum[i]-R.cum[i-1])||1),0,1);

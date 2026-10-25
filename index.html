@@ -2239,7 +2239,8 @@ function buildWorld(){
   let Q=(()=>{try{return localStorage.getItem('sl-quality')}catch(e){return null}})()||(coarse?'low':'high');
   const QS={low:{near:1,mid:3,trees:1000,npc:20,cars:14,bikes:6,buses:3,lamps:70,shadow:1024,clouds:10},high:{near:2,mid:5,trees:3400,npc:36,cars:26,bikes:12,buses:6,lamps:160,shadow:2048,clouds:18}};
   function setQuality(q){Q=q;try{localStorage.setItem('sl-quality',q)}catch(e){};$('qLow').classList.toggle('on',q==='low');$('qHigh').classList.toggle('on',q==='high');
-    sun.shadow.mapSize.set(QS[q].shadow,QS[q].shadow);if(sun.shadow.map){sun.shadow.map.dispose();sun.shadow.map=null}clearTiles()}
+    sun.shadow.mapSize.set(QS[q].shadow,QS[q].shadow);if(sun.shadow.map){sun.shadow.map.dispose();sun.shadow.map=null}
+    const sh=q==='high';if(renderer.shadowMap.enabled!==sh){renderer.shadowMap.enabled=sh;scene.traverse(o=>{if(o.material)(Array.isArray(o.material)?o.material:[o.material]).forEach(m=>m.needsUpdate=true)})}clearTiles()}
   $('qLow').onclick=()=>setQuality('low');$('qHigh').onclick=()=>setQuality('high');
 
   // ---------- lights ----------
@@ -2493,7 +2494,7 @@ function buildWorld(){
   const decG=new THREE.IcosahedronGeometry(0.06,1);decG.translate(0,0.11,0);
   const flowerG=new THREE.IcosahedronGeometry(0.006,0);flowerG.translate(0,0.006,0);
   const postG=new THREE.CylinderGeometry(0.0025,0.003,0.11,5);postG.translate(0,0.055,0);
-  const bulbG=new THREE.SphereGeometry(0.008,8,6);bulbG.translate(0,0.112,0);
+  const bulbG=new THREE.SphereGeometry(0.008,6,4);bulbG.translate(0,0.112,0);
   const trunkMat=plain(0x5a4636),conMat=new THREE.MeshLambertMaterial({color:0xffffff}),decMat=new THREE.MeshLambertMaterial({color:0xffffff}),flowerMat=new THREE.MeshLambertMaterial({color:0xffffff});
   const postMat=plain(0x2f3a40),bulbMat=new THREE.MeshBasicMaterial({color:0x555044});
   const SHARED_GEO=new Set([trunkG,conG,decG,flowerG,postG,bulbG]);
@@ -3324,9 +3325,9 @@ const POSTERS_CITY=[['#f2b705','#1b1b1b','KANELBULLE','Färskt varje morgon','Ba
         if(con){cons.setMatrixAt(ic,M);cons.setColorAt(ic,C(tc.con));ic++}else{decs.setMatrixAt(id,M);decs.setColorAt(id,C(tc.dec[Math.floor(rnd()*tc.dec.length)]));id++}});
       // conMat/decMat are shared across tiles: a mesh without instanceColor would crash the shared instancing-colour shader
       if(!ic)cons.setColorAt(0,C(tc.con));if(!id)decs.setColorAt(0,C(tc.dec[0]));
-      cons.count=ic;decs.count=id;[trunks,cons,decs].forEach(m=>{m.castShadow=true;m.instanceMatrix.needsUpdate=true;if(m.instanceColor)m.instanceColor.needsUpdate=true;grp.add(m)});grp.userData.spots=spots;grp.userData.cheap=[trunks,cons,decs]}
+      cons.count=ic;decs.count=id;[trunks,cons,decs].forEach(m=>{m.castShadow=false;m.instanceMatrix.needsUpdate=true;if(m.instanceColor)m.instanceColor.needsUpdate=true;grp.add(m)});grp.userData.spots=spots;grp.userData.cheap=[trunks,cons,decs]}
     if(bushes.length){const bc=bushColors();const bm=new THREE.InstancedMesh(bushG,bushMat,bushes.length);bushes.forEach(([x,z,s],i)=>{M.compose(V.set(x,0.003,z),Qq.setFromAxisAngle(UP,rnd()*6),SC.set(s,s*(0.8+rnd()*0.5),s));bm.setMatrixAt(i,M);bm.setColorAt(i,C(bc[Math.floor(rnd()*bc.length)]))});
-      bm.instanceMatrix.needsUpdate=true;bm.instanceColor.needsUpdate=true;bm.castShadow=true;bm.receiveShadow=true;grp.add(bm)}
+      bm.instanceMatrix.needsUpdate=true;bm.instanceColor.needsUpdate=true;bm.castShadow=false;bm.receiveShadow=true;grp.add(bm)}
     if([9,10].includes(m)&&!snowy&&spots.length){const LC=[0xd9822b,0xe8a33a,0xc4502a,0xb5873a,0xf0c04a,0x9a5a2a];const lv=[];for(const sp of spots){if(sp[3])continue;const k=m===10?5:3;for(let j=0;j<k;j++)lv.push([sp[0]+(rnd()-0.5)*0.15,sp[1]+(rnd()-0.5)*0.15,0.5+rnd()*0.9]);if(lv.length>3000)break}
       if(lv.length){const lm=new THREE.InstancedMesh(leafG,leafMat,lv.length);lv.forEach(([x,z,s],i)=>{M.compose(V.set(x,0.0102+rnd()*0.0004,z),Qq.setFromAxisAngle(UP,rnd()*6),SC.set(s,1,s*(0.6+rnd()*0.6)));lm.setMatrixAt(i,M);lm.setColorAt(i,C(LC[Math.floor(rnd()*LC.length)]))});
         lm.instanceMatrix.needsUpdate=true;lm.instanceColor.needsUpdate=true;lm.receiveShadow=true;grp.add(lm)}}
@@ -3365,6 +3366,11 @@ const POSTERS_CITY=[['#f2b705','#1b1b1b','KANELBULLE','Färskt varje morgon','Ba
     for(const [k,t] of tiles){const w=want.get(k);if(w===undefined){disposeGroup(t.g);tiles.delete(k);if(t.level===2){colByTile.delete(k);roadByTile.delete(k)}}else if(w!==t.level){t.stale=true}}
     const todo=[];for(const [k,lv] of want){const t=tiles.get(k);if(!t||t.stale){const [a,b]=k.split(',').map(Number);todo.push([k,lv,Math.hypot(a-ci,b-cj)])}}
     todo.sort((a,b)=>a[2]-b[2]);pending=todo}
+  // draw only the tiles the camera can see: each tile is a 500 m square, with room for tall buildings and shadows at the edges
+  const tileFr=new THREE.Frustum(),tileM=new THREE.Matrix4(),tileBox=new THREE.Box3();
+  function cullTiles(){tileM.multiplyMatrices(camera.projectionMatrix,camera.matrixWorldInverse);tileFr.setFromProjectionMatrix(tileM);
+    for(const [k,t] of tiles){const c=k.indexOf(','),i=+k.slice(0,c),j=+k.slice(c+1);tileBox.min.set(i*TS-0.6,-0.1,j*TS-0.6);tileBox.max.set((i+1)*TS+0.6,3,(j+1)*TS+0.6);t.g.visible=tileFr.intersectsBox(tileBox)}
+    for(const [k,d] of detailTiles)if(d.g)d.g.visible=true}
   function pumpTiles(){const t0=performance.now();while(pending.length&&performance.now()-t0<12){const [k,lv]=pending.shift();const old=tiles.get(k);if(old&&old.level===lv&&!old.stale)continue;if(old){disposeGroup(old.g);if(old.level===2){colByTile.delete(k);roadByTile.delete(k)}}tiles.set(k,{g:buildTile(k,lv),level:lv})}}
 
   // ---------- landmarks the footprints alone can't show ----------
@@ -4048,8 +4054,10 @@ const POSTERS_CITY=[['#f2b705','#1b1b1b','KANELBULLE','Färskt varje morgon','Ba
   // ================= real 3D models from the Blender asset workshop =================
   const MODELS={ready:false,chars:{},clips:{},cars:[],bus:null,busBlue:null,boats:{},trees:{}};
   function fixMaterials(root){root.traverse(o=>{if(!o.isMesh)return;o.castShadow=true;o.receiveShadow=true;if(o.isSkinnedMesh)o.frustumCulled=false;
-    (Array.isArray(o.material)?o.material:[o.material]).forEach(m=>{if(!m||m.userData.fixed)return;m.userData.fixed=1;m.alphaTest=0;m.transparent=false;m.opacity=1;
-      if(m.color&&m.color.convertLinearToSRGB)m.color.convertLinearToSRGB();if(m.map)m.map.encoding=THREE.LinearEncoding;if('metalness' in m)m.metalness=Math.min(m.metalness,0.2);m.needsUpdate=true})})}
+    // physically based materials are expensive on integrated GPUs: the low-poly models look the same with simple Lambert shading
+    const conv=m=>{if(!m||m.userData.fixed)return m;let k=m;if(m.isMeshStandardMaterial||m.isMeshPhysicalMaterial){k=new THREE.MeshLambertMaterial({color:m.color,map:m.map,side:m.side,vertexColors:m.vertexColors,emissive:m.emissive,emissiveMap:m.emissiveMap});k.name=m.name}
+      k.userData.fixed=1;k.alphaTest=0;k.transparent=false;k.opacity=1;if(o.isSkinnedMesh)k.skinning=true;if(k.color&&k.color.convertLinearToSRGB)k.color.convertLinearToSRGB();if(k.map)k.map.encoding=THREE.LinearEncoding;k.needsUpdate=true;return k};
+    o.material=Array.isArray(o.material)?o.material.map(conv):conv(o.material)})}
   function makeTemplate(scene,o){fixMaterials(scene);const holder=new THREE.Group();holder.add(scene);scene.rotation.y=o.rotY||0;holder.updateMatrixWorld(true);
     const box=new THREE.Box3().setFromObject(holder),s=box.getSize(new THREE.Vector3()),c=box.getCenter(new THREE.Vector3());let sx,sy,sz;
     if(o.height){sx=sy=sz=o.height/Math.max(s.y,1e-6)}else{const L=(o.axis==='x'?s.x:s.z)||1e-6;sx=sy=sz=o.length/L;if(o.width)(o.axis==='x'?(sz=o.width/Math.max(s.z,1e-6)):(sx=o.width/Math.max(s.x,1e-6)));if(o.h)sy=o.h/Math.max(s.y,1e-6)}
@@ -4058,7 +4066,7 @@ const POSTERS_CITY=[['#f2b705','#1b1b1b','KANELBULLE','Färskt varje morgon','Ba
       if(typeof data==='string'){const bin=atob(data),u=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);loader.parse(u.buffer,'',res,rej)}
       else loader.parse(JSON.stringify(data),'',res,rej)}catch(e){rej(e)}})}
   const treeTpls={};
-  function simplifyGeo(g){try{if(THREE.SimplifyModifier&&g.attributes.position.count>500){const r=new THREE.SimplifyModifier().modify(g,Math.floor(g.attributes.position.count*0.6));r.computeVertexNormals();if(r.attributes.position.count>24)return r}}catch(e){}return g}
+  function simplifyGeo(g){try{if(THREE.SimplifyModifier&&g.attributes.position.count>500){const r=new THREE.SimplifyModifier().modify(g,Math.floor(g.attributes.position.count*0.75));r.computeVertexNormals();if(r.attributes.position.count>24)return r}}catch(e){}return g}
   function treePrims(scene){fixMaterials(scene);scene.updateMatrixWorld(true);const box=new THREE.Box3().setFromObject(scene);const h=Math.max(box.max.y-box.min.y,1e-6),c=box.getCenter(new THREE.Vector3());const prims=[];
     scene.traverse(o=>{if(!o.isMesh)return;let g=o.geometry.clone();g.applyMatrix4(o.matrixWorld);g.translate(-c.x,-box.min.y,-c.z);g.scale(1/h,1/h,1/h);g=simplifyGeo(g);
       const m=Array.isArray(o.material)?o.material[0]:o.material;prims.push({geo:g,mat:m})});return prims}
@@ -4104,7 +4112,7 @@ const POSTERS_CITY=[['#f2b705','#1b1b1b','KANELBULLE','Färskt varje morgon','Ba
   let suitcase=null;function syncLuggage(){const want=!!(S&&S.flags&&S.flags.luggage)&&!IN.on;if(want&&!suitcase){suitcase=new THREE.Group();const b=new THREE.Mesh(new THREE.BoxGeometry(0.014,0.022,0.009),plain(0x2c4a6e));b.position.y=0.013;suitcase.add(b);
       const h=new THREE.Mesh(new THREE.BoxGeometry(0.002,0.018,0.002),plain(0x222222));h.position.set(0,0.032,0);suitcase.add(h);for(const sx of [-1,1]){const w=new THREE.Mesh(new THREE.CylinderGeometry(0.0018,0.0018,0.002,8),plain(0x111111));w.rotation.z=Math.PI/2;w.position.set(sx*0.005,0.002,0);suitcase.add(w)}
       suitcase.position.set(0.012,0,-0.012);suitcase.rotation.x=-0.25;av.add(suitcase)}else if(!want&&suitcase){av.remove(suitcase);suitcase=null}}
-  function modelPed(){const keys=Object.keys(MODELS.chars);const inst=THREE.SkeletonUtils.clone(MODELS.chars[pickR(keys)]);try{tintModel(inst,randomOutfit())}catch(e){}const g=new THREE.Group();const s=new THREE.Group();s.add(inst);s.scale.setScalar(0.06+Math.random()*0.008);g.add(s);
+  function modelPed(){const keys=Object.keys(MODELS.chars);const inst=THREE.SkeletonUtils.clone(MODELS.chars[pickR(keys)]);inst.traverse(o=>{if(o.isMesh)o.castShadow=false});try{tintModel(inst,randomOutfit())}catch(e){}const g=new THREE.Group();const s=new THREE.Group();s.add(inst);s.scale.setScalar(0.06+Math.random()*0.008);g.add(s);
     const mixer=new THREE.AnimationMixer(inst);if(MODELS.clips.Walk){const act=mixer.clipAction(MODELS.clips.Walk);act.play();act.time=Math.random()*MODELS.clips.Walk.duration}g.userData={mixer};scene.add(g);return g}
   function applyModels(){
     MODELS.ready=Object.keys(MODELS.chars).length>0||MODELS.cars.length>0;if(!MODELS.ready)return;
@@ -4119,7 +4127,7 @@ const POSTERS_CITY=[['#f2b705','#1b1b1b','KANELBULLE','Färskt varje morgon','Ba
   function variantsFor(conifer){const s=seasonTag();const out=[];for(const k of Object.keys(treeTpls)){const tag=(k.match(/_(Autumn|Snow)/)||[''])[0];const sp=k.split('_')[0];
       if(conifer?sp!=='PineTree':sp==='PineTree')continue;const want=sp==='PineTree'&&s==='_Autumn'?'':s;if(tag===want)out.push(k)}return out}
   function setCheap(tileG,vis){(tileG.userData.cheap||[]).forEach(m=>m.visible=vis)}
-  function buildDetail(key,t){const spots=t.g.userData.spots;if(!spots||!spots.length)return null;const cap=Q==='low'?110:230;const grp=new THREE.Group();const byVar=new Map();seed=hashStr(key+'detail');
+  function buildDetail(key,t){const spots=t.g.userData.spots;if(!spots||!spots.length)return null;const cap=Q==='low'?70:150;const grp=new THREE.Group();const byVar=new Map();seed=hashStr(key+'detail');
     for(const sp of spots.slice(0,cap)){const vs=variantsFor(sp[3]);if(!vs.length)continue;const v=vs[Math.floor(rnd()*vs.length)];let a=byVar.get(v);if(!a)byVar.set(v,a=[]);a.push(sp)}
     if(!byVar.size)return null;const M=new THREE.Matrix4(),Qq=new THREE.Quaternion(),V=new THREE.Vector3(),SC=new THREE.Vector3(),UP=new THREE.Vector3(0,1,0);
     for(const [v,list] of byVar)for(const pr of treeTpls[v]){const im=new THREE.InstancedMesh(pr.geo,pr.mat,list.length);list.forEach((sp,i)=>{const h=0.17*sp[2];M.compose(V.set(sp[0],0.003,sp[1]),Qq.setFromAxisAngle(UP,(sp[0]*7.1+sp[1]*3.3)%6.28),SC.set(h,h,h));im.setMatrixAt(i,M)});
@@ -4127,7 +4135,7 @@ const POSTERS_CITY=[['#f2b705','#1b1b1b','KANELBULLE','Färskt varje morgon','Ba
     scene.add(grp);return grp}
   function updateDetail(){const now=performance.now();if(now-lastDetail<500||!Object.keys(treeTpls).length)return;lastDetail=now;
     const tag=seasonTag();if(tag!==updateDetail.tag){updateDetail.tag=tag;for(const [k,d] of detailTiles){scene.remove(d.g);const t=tiles.get(k);if(t&&t.g===d.tileG)setCheap(t.g,true)}detailTiles.clear()}
-    const ci=Math.floor(av.position.x/TS),cj=Math.floor(av.position.z/TS),want=new Set();for(let i=-1;i<=1;i++)for(let j=-1;j<=1;j++)want.add((ci+i)+','+(cj+j));
+    const ax=av.position.x,az=av.position.z,ci=Math.floor(ax/TS),cj=Math.floor(az/TS),want=new Set(),R=Q==='low'?2.5:4;for(let i=-1;i<=1;i++)for(let j=-1;j<=1;j++){const x0=(ci+i)*TS,z0=(cj+j)*TS,dx=Math.max(x0-ax,0,ax-x0-TS),dz=Math.max(z0-az,0,az-z0-TS);if(Math.hypot(dx,dz)<R)want.add((ci+i)+','+(cj+j))}
     for(const [k,d] of detailTiles){const t=tiles.get(k);if(!want.has(k)||!t||t.g!==d.tileG){scene.remove(d.g);if(t&&t.g===d.tileG)setCheap(t.g,true);detailTiles.delete(k)}}
     for(const k of want){if(detailTiles.has(k))continue;const t=tiles.get(k);if(!t||t.level!==2)continue;const g=buildDetail(k,t);if(g){setCheap(t.g,false);detailTiles.set(k,{g,tileG:t.g})}}}
   loadModels().catch(e=>console.warn('models',e));
@@ -4135,6 +4143,10 @@ const POSTERS_CITY=[['#f2b705','#1b1b1b','KANELBULLE','Färskt varje morgon','Ba
   function resize(){const r=stage.getBoundingClientRect();renderer.setSize(r.width,r.height,false);camera.aspect=r.width/r.height;camera.updateProjectionMatrix()}
   new ResizeObserver(resize).observe(stage);resize();
   setQuality(Q);
+  // if this device can't keep ~24 fps on High for 6 s, switch to Fast once (the player can switch back in Settings)
+  {let n=0,t0=0,checks=0;const probe=t=>{if(document.hidden||IN.on||CUT.on){t0=0;n=0;requestAnimationFrame(probe);return}if(!t0){t0=t;n=0}n++;
+    if(t-t0>6000){const fps=n*1000/(t-t0);checks++;if(fps<24&&Q==='high'){let asked=false;try{asked=localStorage.getItem('sl-quality-auto')==='1'}catch(e){}
+        if(!asked){try{localStorage.setItem('sl-quality-auto','1')}catch(e){}setQuality('low');toast(`Switched to Fast graphics for smoother play (${Math.round(fps)} fps on High)`)}return}if(checks>=3)return;t0=0}requestAnimationFrame(probe)};setTimeout(()=>requestAnimationFrame(probe),12000)}
 
   const clock=new THREE.Clock(),v=new THREE.Vector3();let whereT=0;
   function tick(){
@@ -4189,7 +4201,7 @@ const POSTERS_CITY=[['#f2b705','#1b1b1b','KANELBULLE','Färskt varje morgon','Ba
     if(IN.on){interiorTick(dt,T);$('labels').style.display='none';renderer.render(inScene,camera);return}else $('labels').style.display='';
     const fx=controls.target.x,fz=controls.target.z,camD=camera.position.distanceTo(controls.target);
     sky.position.copy(camera.position);
-    updateTiles(fx,fz);pumpTiles();updatePois(fx,fz,camD);updateEntrances(fx,fz);updateDetail();updateStreetLabels(fx,fz,camD);updateSignals(T);updateTransit(dt,fx,fz,T);updateAir(dt,T,fx,fz);updateCrowds(dt);
+    updateTiles(fx,fz);pumpTiles();camera.updateMatrixWorld();cullTiles();updatePois(fx,fz,camD);updateEntrances(fx,fz);updateDetail();updateStreetLabels(fx,fz,camD);updateSignals(T);updateTransit(dt,fx,fz,T);updateAir(dt,T,fx,fz);updateCrowds(dt);
     const qs=QS[Q];const fogFar=(qs.mid+0.5)*TS;const wetFog=(S.weather==='rain'||S.weather==='snow'?0.7:1)*(S.wx&&liveFresh()&&S.wx.vis?clamp(S.wx.vis/20000,0.3,1):1);scene.fog.near=Math.max(camD*1.2,fogFar*0.4*wetFog);scene.fog.far=Math.max(fogFar*wetFog,camD*2.2);
     const sc=Math.max(1.5,Math.min(camD,30));Object.assign(sun.shadow.camera,{left:-sc,right:sc,top:sc,bottom:-sc});sun.shadow.camera.updateProjectionMatrix();
     waterNormal.offset.x=T*0.02;waterNormal.offset.y=T*0.013;

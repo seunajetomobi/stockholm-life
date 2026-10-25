@@ -2501,6 +2501,18 @@ function buildWorld(){
   const CLSP=[1.35,1.1,1.3,1.05,1.1,1,1,0.95,0.85,0.65,0.4,0.4,0.5,0.5,0.5];
   function zebraBusy(zc){const r=zc.w+0.05;if(Math.abs(av.position.x-zc.x)<r&&Math.abs(av.position.z-zc.z)<r)return true;
     for(const o of agents)if(o.kind==='ped'&&o.g.visible&&Math.abs(o.g.position.x-zc.x)<r&&Math.abs(o.g.position.z-zc.z)<r)return true;return false}
+  // personal space: a pedestrian slows down and steps aside for someone right in front (other people, you); never walks through them
+  function pedAvoid(a){const px=a.g.position.x,pz=a.g.position.z,hx=Math.sin(a.g.rotation.y),hz=Math.cos(a.g.rotation.y);let slow=1,dg=0;
+    const test=(ox,oz,uid)=>{const dx=ox-px,dz=oz-pz;if(Math.abs(dx)>0.08||Math.abs(dz)>0.08)return;const f=dx*hx+dz*hz,l=dx*hz-dz*hx;if(f<=-0.005||f>0.07||Math.abs(l)>0.022)return;
+      if(Math.abs(f)<0.006&&Math.abs(l)<0.012&&uid!==undefined&&uid>a.uid)return; // right on top of each other: the older one walks on, the newer one waits
+      dg=l>0?0.024:-0.024;if(f<0.03)slow=Math.min(slow,f<0.014?0:0.3)};
+    test(av.position.x,av.position.z);for(const o of agents)if(o!==a&&o.kind==='ped'&&o.g.visible)test(o.g.position.x,o.g.position.z,o.uid);
+    // vehicles: wait for a moving one, walk around a stopped one (so a car waiting for you and you waiting for it can't lock up)
+    for(const o of agents){if((o.kind!=='car'&&o.kind!=='bus')||!o.g.visible)continue;const dx=o.g.position.x-px,dz=o.g.position.z-pz;if(Math.abs(dx)>0.14||Math.abs(dz)>0.14)continue;
+      const f=dx*hx+dz*hz,l=dx*hz-dz*hx,big=o.kind==='bus';if(f<=-0.03||f>(big?0.16:0.1)||Math.abs(l)>(big?0.08:0.055))continue;
+      if((o.v||0)>0.02){if(f<0.08)slow=0}else{dg=l>0?0.06:-0.06;if(f<0.05)slow=Math.min(slow,0.35)}}
+    if(slow===0&&(a.wt=(a.wt||0)+1)>90){slow=0.4;a.wt=0}else if(slow>0)a.wt=0;a.slow=slow;a.dg=dg}
+  function pedNear(x,z,r){for(const o of agents)if(o.kind==='ped'&&o.g.visible&&Math.abs(o.g.position.x-x)<r&&Math.abs(o.g.position.z-z)<r)return o;return null}
   function carStep(a,dt){if(a.hold>0){a.hold-=dt;a.v=0;return 0}const len=a.cum[a.cum.length-1],rem=len-a.d;const cls=G.E[a.e][2];let target=a.sp*(CLSP[cls]||1),stopAt=Infinity;
     // the vehicle ahead in our lane, on this street or just past the junction on the street we turn into
     for(const o of agents){if(o===a||!o.g.visible||(o.kind!=='car'&&o.kind!=='bus'))continue;let gp;
@@ -2529,6 +2541,10 @@ function buildWorld(){
       for(const o of agents){if(o===a||!o.g.visible||(o.kind!=='car'&&o.kind!=='bus'))continue;const dx=o.g.position.x-px,dz=o.g.position.z-pz;if(Math.abs(dx)>0.25||Math.abs(dz)>0.25)continue;
         const big=a.kind==='bus'||o.kind==='bus',f=dx*hx+dz*hz,l=Math.abs(dx*hz-dz*hx);if(f<=0||f>(big?0.24:0.17)||l>0.04)continue;if((a.bw||0)>2&&a.uid<o.uid)continue;
         stopAt=Math.min(stopAt,f-(big?0.16:0.1));blocked=true}
+      // people in the road ahead (you, or someone crossing): stop well short of them, and never give up waiting
+      const person=(ox,oz)=>{const dx=ox-px,dz=oz-pz;if(Math.abs(dx)>0.3||Math.abs(dz)>0.3)return;const f=dx*hx+dz*hz,l=Math.abs(dx*hz-dz*hx);if(f>-0.02&&f<0.3&&l<0.085)stopAt=Math.min(stopAt,f-0.09)};
+      if(!IN.on&&av.visible&&onCarriageway(av.position.x,av.position.z)>0)person(av.position.x,av.position.z);
+      for(const o of agents)if(o.kind==='ped'&&o.g.visible&&roadDepth(o.g.position.x,o.g.position.z)[0]>0)person(o.g.position.x,o.g.position.z);
       a.bw=blocked&&a.v<0.02?(a.bw||0)+dt:blocked?a.bw||0:0}
     if(a.v===undefined)a.v=target;
     if(stopAt<0.8){const g=Math.max(0,stopAt);const tg=Math.min(target,Math.sqrt(2*1.4*g));if(a.v>tg)a.v=Math.max(tg,a.v-1.6*dt);else a.v+=(tg-a.v)*(1-Math.exp(-dt*1.8));if(g<0.002){a.v=0;return 0}return Math.min(a.v*dt,g)}
@@ -3549,6 +3565,7 @@ function buildWorld(){
       if(wallHit(nx,nz)){if(!wallHit(x,z))return false;if(colliding(nx,nz,AV_R*0.6)&&!colliding(x,z,AV_R*0.6))return false}
       if(inWater(nx,nz)&&!nearRoad(nx,nz,0.02))return false;
       if(onMedian(nx,nz)&&!onMedian(x,z))return false;
+      {const o=pedNear(nx,nz,0.016);if(o&&Math.hypot(o.g.position.x-nx,o.g.position.z-nz)<Math.hypot(o.g.position.x-x,o.g.position.z-z))return false}
       const r1=onCarriageway(nx,nz);if(r1>0){const r0=onCarriageway(x,z);if(!(r0>0&&r1<r0-1e-6))return false}
       return true};
     if(ok(x+dx,z+dz))return [x+dx,z+dz];
@@ -3720,13 +3737,13 @@ function buildWorld(){
     const sc=Math.max(1.5,Math.min(camD,30));Object.assign(sun.shadow.camera,{left:-sc,right:sc,top:sc,bottom:-sc});sun.shadow.camera.updateProjectionMatrix();
     waterNormal.offset.x=T*0.02;waterNormal.offset.y=T*0.013;
     if(G){ensureAgents(av.position.x,av.position.z);
-      for(const a of agents){if(!a.g.visible||a.e<0)continue;const p=agentStep(a,(a.kind==='car'||a.kind==='bus')?carStep(a,dt):a.sp*dt);if(!p)continue;const cls=G.E[a.e][2];let off;
+      for(const a of agents){if(!a.g.visible||a.e<0)continue;const p=agentStep(a,(a.kind==='car'||a.kind==='bus')?carStep(a,dt):a.sp*dt*(a.kind==='ped'?a.slow??1:1));if(!p)continue;const cls=G.E[a.e][2];let off;
         if(a.kind==='ped'){if(a.side===undefined){a.side=Math.random()<0.5?1:-1;a.pk=1;a.pkS=1}const base=(isFootC(cls)?0.007:RW[cls]/2+0.024)*a.side;a.cc=(a.cc||0)-dt;
           if(a.cc<=0){a.cc=0.1;let t=-1;for(const f of [1,0.5,0]){const o=base*f;if(!colliding(p.x-p.dz*o,p.z+p.dx*o,0.009)){t=f;break}}
             if(t<0){a.stuck=0;a.e=-1;a.g.visible=false;continue}else{a.stuck=0;a.pk=t}}
-          a.pkS+=(a.pk-a.pkS)*Math.min(1,dt*6);off=base*a.pkS}
+          a.pkS+=(a.pk-a.pkS)*Math.min(1,dt*6);a.dgS=(a.dgS||0)+((a.dg||0)-(a.dgS||0))*Math.min(1,dt*5);off=base*a.pkS+a.dgS}
         else if(a.kind==='bike')off=cls===13?0.012:RW[cls]/2-0.02;else{a.offS+=(a.offT-a.offS)*Math.min(1,dt*2.2);off=a.offS}
-        {const gx=p.x-p.dz*off,gz=p.z+p.dx*off;a.g.position.set(gx,0.01+deckAt(gx,gz),gz)}a.g.rotation.y=Math.atan2(p.dx,p.dz);
+        {const gx=p.x-p.dz*off,gz=p.z+p.dx*off;a.g.position.set(gx,0.01+deckAt(gx,gz),gz)}a.g.rotation.y=Math.atan2(p.dx,p.dz);if(a.kind==='ped')pedAvoid(a);
         if(a.kind==='ped'){if(a.g.userData.mixer)a.g.userData.mixer.update(dt*a.sp/0.075);else animPerson(a.g,a.sp*dt,dt,true,NPC_S)}else if(a.kind==='bike'){const r=a.g.userData.rider;animPerson(r,a.sp*dt,dt,true,1)}}}
     trains.forEach(tr=>{if(tr.wait>0){tr.wait-=dt;return}tr.t+=tr.dir*tr.sp*dt;if(tr.t>=tr.len||tr.t<=0){tr.t=clamp(tr.t,0,tr.len);tr.dir*=-1;tr.wait=3}const p=posOn(tr,tr.t);tr.g.position.set(p.x,0.012,p.z);tr.g.rotation.y=Math.atan2(p.dx,p.dz)+(tr.dir>0?0:Math.PI)});
     boats.forEach(b=>{const a=b.ph+T*b.sp,x=b.cx+Math.cos(a)*b.rx,z=b.cz+Math.sin(a)*b.rz,nx=b.cx+Math.cos(a+0.01)*b.rx,nz=b.cz+Math.sin(a+0.01)*b.rz;b.g.position.set(x,0.008+Math.sin(T*2+b.ph)*0.004,z);b.g.rotation.y=Math.atan2(nx-x,nz-z)-Math.PI/2;b.g.rotation.z=Math.sin(T*1.3+b.ph)*0.03});

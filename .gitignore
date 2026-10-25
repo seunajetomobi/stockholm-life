@@ -1,0 +1,6 @@
+# Python / editor leftovers
+__pycache__/
+*.pyc
+.DS_Store
+# Overpass downloads used by tools/osm_lanes.py
+osm_lanes.json

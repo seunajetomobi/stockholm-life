@@ -1804,7 +1804,7 @@ const TRAITS_ME=[['outgoing','Outgoing',{social:10,charisma:8}],['shy','Shy',{ch
 const HOBBIES=['Football','Gym','Running','Music','Dancing','Cooking','Gaming','Reading','Hiking','Art','Photography','Tech','Fashion','Faith community','Volunteering','Movies'];
 const MARITAL=[['single','Single'],['relationship','In a relationship'],['married','Married'],['divorced','Divorced'],['widowed','Widowed']];
 const EDU=[['basic','Compulsory school',0],['upper','Upper secondary (gymnasium)',4],['uni','University degree',10],['phd','PhD',16]];
-function intro(){const F={kind:'stockholm',over:false,city:SWE_CITIES[0][0],nat:'Nigeria',from:'Nigeria',route:0,purpose:'work',name:'Alex',age:27,gender:'m',marital:'single',kids:0,edu:'upper',prof:'',eng:'good',traits:['kind'],hobbies:['Music'],bio:'',look:'',skin:'',height:'avg',build:'avg',hair:'auto',pref:'any',asp:''};
+function intro(){const F={kind:'stockholm',over:false,city:SWE_CITIES[0][0],nat:'Nigeria',from:'Nigeria',route:0,purpose:'work',name:'Alex',age:27,gender:'m',marital:'single',kids:0,edu:'upper',prof:'',eng:'good',traits:['kind'],hobbies:['Music'],bio:'',look:'',skin:'',height:'avg',build:'avg',hair:'auto',headw:'none',headCol:'0x1d2733',beard:'none',glasses:'no',pref:'any',asp:''};
   const draw=()=>{const nat=COUNTRIES.find(c=>c[0]===F.nat)||COUNTRIES[1];const rts=routesFrom(F.from);if(F.route>=rts.length)F.route=0;const rt=rts[F.route];
     const papers=F.kind!=='abroad'?'':nat[2]==='se'?'You are Swedish: no permit needed. Re-register your address at Skatteverket.':nat[2]==='nordic'?'Nordic citizens can live and work in Sweden freely. You only register at Skatteverket.':nat[2]==='eu'?'EU/EEA citizens have a right of residence: no permit card. Register at Skatteverket once you have work or studies.':F.purpose==='study'?'You have a residence permit for studies. First stop: Migrationsverket for your permit card.':'Your work permit was approved from abroad. First stop: Migrationsverket for your permit card.';
     const border=F.kind!=='abroad'||!rt?'':rt.sch?`Your last flight leaves from ${rt.last}, inside the Schengen area. ${nat[2]==='noneu'&&rt.last!==(COUNTRIES.find(c=>c[0]===F.from)||[])[5]?`You pass passport control in ${rt.last} when you enter Schengen, `:''}so there is <b>no passport control at Arlanda</b>.`:`Your last flight leaves from ${rt.last}, outside the Schengen area: <b>you go through Swedish passport control at Arlanda</b>.`;
@@ -1837,6 +1837,10 @@ function intro(){const F={kind:'stockholm',over:false,city:SWE_CITIES[0][0],nat:
     <div class="two"><label class="f">Height<select data-f="height">${[['short','Short'],['avg','Average'],['tall','Tall']].map(([k,n])=>`<option value="${k}" ${F.height===k?'selected':''}>${n}</option>`).join('')}</select></label>
       <label class="f">Build<select data-f="build">${[['slim','Slim'],['avg','Average'],['athletic','Athletic'],['heavy','Heavy']].map(([k,n])=>`<option value="${k}" ${F.build===k?'selected':''}>${n}</option>`).join('')}</select></label></div>
     <div class="two"><label class="f">Hair<select data-f="hair">${HAIRPICK.map(([k,n])=>`<option value="${k}" ${F.hair===k?'selected':''}>${n}</option>`).join('')}</select></label><p class="note" style="align-self:end">Your character is drawn from these: gender, age (grey hair later in life), skin tone, height and build.</p></div>
+    <div class="two"><label class="f">Headwear<select data-f="headw">${[['none','None'],['hijab','Hijab'],['turban','Turban'],['kippah','Kippah'],['kufi','Kufi'],['cap','Cap'],['beanie','Beanie']].map(([k,n])=>`<option value="${k}" ${F.headw===k?'selected':''}>${n}</option>`).join('')}</select></label>
+      <label class="f">Headwear colour<select data-f="headCol">${[['0x1d2733','Black'],['0x23395d','Navy'],['0xf1ede4','White'],['0xd8c3a0','Beige'],['0x6e1f2a','Maroon'],['0x2f5d3a','Green'],['0x8a8f96','Grey'],['0xb3473a','Red'],['0xd9a441','Saffron']].map(([k,n])=>`<option value="${k}" ${F.headCol===k?'selected':''}>${n}</option>`).join('')}</select></label></div>
+    <div class="two">${F.gender!=='f'?`<label class="f">Facial hair<select data-f="beard">${[['none','None'],['stubble','Stubble'],['short','Short beard'],['full','Full beard'],['moustache','Moustache']].map(([k,n])=>`<option value="${k}" ${F.beard===k?'selected':''}>${n}</option>`).join('')}</select></label>`:''}
+      <label class="f">Glasses<select data-f="glasses"><option value="no" ${F.glasses==='no'?'selected':''}>No</option><option value="yes" ${F.glasses==='yes'?'selected':''}>Yes</option></select></label></div>
     <div class="two"><label class="f">Interested in dating<select data-f="pref"><option value="f" ${F.pref==='f'?'selected':''}>Women</option><option value="m" ${F.pref==='m'?'selected':''}>Men</option><option value="any" ${F.pref==='any'?'selected':''}>Anyone</option></select></label>
       <label class="f">Life goal<select data-f="asp">${Object.entries(ASPIRATIONS).map(([k,a])=>`<option value="${k}" ${F.asp===k?'selected':''}>${a.l}</option>`).join('')}</select></label></div>
     <button class="btn big" id="go">${F.kind==='abroad'?'✈ Fly to Stockholm':F.kind==='sweden'?'🚆 Travel to Stockholm':'Start in Stockholm'}</button>`,m=>{
@@ -1876,7 +1880,7 @@ function applyOrigin(o){try{if(W&&W.inside&&W.inside())W.exitInterior(true)}catc
   try{applyMe(o)}catch(e){console.warn('me',e)}save();render()}
 // hair colour and body from the start form; 'auto' greys with age
 const HAIRPICK=[['auto','Natural for my age'],['0x1b1b1b','Black'],['0x3b2414','Dark brown'],['0x6a4426','Brown'],['0x9b5a2a','Auburn'],['0xd9b36c','Blond'],['0xe8d6a8','Light blond'],['0xa8341f','Red'],['0x9a9690','Grey'],['0xdedbd5','White']];
-function applyBody(o){if(!o||!S)return;S.body={h:o.height||'avg',b:o.build||'avg'};const age=+o.age||27;
+function applyBody(o){if(!o||!S)return;S.body={h:o.height||'avg',b:o.build||'avg'};S.style={head:o.headw||'none',headCol:parseInt(o.headCol||'0x1d2733',16),beard:o.gender==='f'?'none':(o.beard||'none'),glasses:o.glasses==='yes'};if(o.kind==='abroad'||o.kind==='sweden')S.flags.luggage=1;const age=+o.age||27;
   if(o.hair&&o.hair!=='auto')S.outfit.hair=parseInt(o.hair,16);else if(age>=64)S.outfit.hair=0xdedbd5;else if(age>=52)S.outfit.hair=0x9a9690;else if(age>=45&&Math.random()<0.5)S.outfit.hair=0x6e6a64;
   if(W&&W.setLook)W.setLook(S.look)}
 const _newGame=newGame;newGame=function(n,bg,lk,pf,as,sk,o){_newGame(n,bg,lk,pf,as,sk);try{applyBody(o)}catch(e){console.warn('body',e)}try{applyOrigin(o);todoRoll();renderTodo();badges()}catch(e){console.warn('origin',e)}};
@@ -3466,7 +3470,7 @@ function buildWorld(){
       o=new THREE.Group();const s=new THREE.Group();s.add(inst);s.scale.setScalar(0.078);o.add(s);if(MODELS.clips.Idle){const mx=new THREE.AnimationMixer(inst);const a=mx.clipAction(MODELS.clips.Idle);a.play();a.time=Math.random()*2;IN.mixers.push(mx)}}
     else{o=person(pickR(CLOTHES),AV_S);scene.remove(o)}o.position.set(x,0,z);o.rotation.y=ry||0;g.add(o);IN.col.push([x-0.025,x+0.025,z-0.025,z+0.025]);return o}
   const HW=0.34,HD=0.25;
-  function buildRoom(kind,p,opts){const g=new THREE.Group();const [fl,wl]=kind==='arlanda'?[0xc9ced3,0xeef1f3]:(RPAL[kind]||RPAL.shop);
+  function buildRoom(kind,p,opts){const g=new THREE.Group();const HT=(HOMES[S&&S.home]||{}).type;const [fl,wl]=kind==='arlanda'?[0xc9ced3,0xeef1f3]:kind==='home'?({andrahand:[0x9c8a74,0xd9d2c4],student:[0xb5a48c,0xeae6dc],parents:[0xa47c55,0xe9dfc9],forstahand:[0xc9a77c,0xf2efe8]}[HT]||RPAL.home||[0xc9a77c,0xf2efe8]):(RPAL[kind]||RPAL.shop);
     inBox(g,HW*2,0.004,HD*2,fl,0,0,-0.004);inBox(g,HW*2,0.14,0.01,wl,0,-HD);inBox(g,0.01,0.14,HD*2,wl,-HW,0);inBox(g,0.01,0.14,HD*2,wl,HW,0);
     inBox(g,0.08,0.002,0.03,0x2a9d5a,0,HD-0.02,0.001,true);spot(0,HD-0.02,kind==='arlanda'?'Exit: trains, buses and taxis':'Leave',()=>exitInterior(),0.06);
     const title=p?p.name:'';const TX=[-0.25,-0.13,0.13,0.25];const tables=(n,y0)=>{for(let i=0;i<n;i++){const x=TX[i%4],z=y0;solid(g,0.07,0.03,0.07,0x6d4c41,x,z);inBox(g,0.03,0.025,0.03,0x8d6e63,x-0.055,z);inBox(g,0.03,0.025,0.03,0x8d6e63,x+0.055,z)}};
@@ -3516,10 +3520,33 @@ function buildWorld(){
       for(let r=0;r<2;r++)for(let i=0;i<5;i++)inBox(g,0.035,0.025,0.035,0x546e7a,-0.14+i*0.06,0.04+r*0.08);for(let i=0;i<3;i++)npc(g,null,null,-0.14+i*0.12,0.12,Math.PI);
       IN.queue=0;spot(-0.25,HD-0.13,'Take a queue number (kölapp)',()=>takeQueue(ag));spot(0,-HD+0.13,'Counter',()=>{if(!IN.queue){toast('Take a queue number at the red machine first');return}agencyDesk(p,ag)})}
     else if(kind==='school'){for(let i=0;i<4;i++){solid(g,0.08,0.035,0.05,0xbdbdbd,-0.2+i*0.13,0)}solid(g,0.2,0.1,0.006,0x263238,0,-HD+0.006,0.04);spot(0,0.08,'Reception',()=>actionsMenu(p))}
-    else if(kind==='home'){solid(g,0.12,0.03,0.18,0x3949ab,-0.24,-0.12);inBox(g,0.1,0.012,0.04,0xffffff,-0.24,-0.19,0.03);solid(g,0.2,0.05,0.05,0xeeeeee,0.2,-HD+0.04);solid(g,0.05,0.11,0.05,0xfafafa,0.31,-HD+0.04);
-      solid(g,0.07,0.12,0.07,0xb3e5fc,HW-0.05,0.17);solid(g,0.14,0.035,0.06,S.outfit?S.outfit.top:0x8d6e63,-0.14,0.09);solid(g,0.12,0.07,0.01,0x111111,-0.04,-HD+0.008,0.04);solid(g,0.08,0.03,0.04,0x795548,0.04,-0.06);inBox(g,0.03,0.02,0.002,0x90caf9,0.04,-0.075,0.03);
-      solid(g,0.06,0.13,0.04,0x8d6e63,-HW+0.04,0.12);spot(-0.24,-0.02,'Bed',()=>homeMenu('bed'));spot(0.17,-HD+0.11,'Kitchen',()=>homeMenu('kitchen'));spot(HW-0.12,0.17,'Shower',()=>homeMenu('shower'));
-      spot(-0.14,0.16,'Sofa and TV',()=>homeMenu('sofa'));spot(0.04,-0.0,'Desk and laptop',()=>homeMenu('desk'));spot(-HW+0.1,0.12,'Wardrobe',()=>homeMenu('wardrobe'));
+    else if(kind==='home'){// furnished the way that kind of Stockholm home really is: a sublet room, a student corridor room, your childhood room, or your own flat
+      const H=HOMES[S.home]||{},t=H.type||'forstahand',rich=S.money>60000||(S.jobLevel||0)>=2,two=/2 rok/.test(H.name||'');
+      const bed=(x,z,w,c)=>{solid(g,w,0.03,0.18,c,x,z);inBox(g,w*0.85,0.012,0.04,0xffffff,x,z-0.07,0.03);inBox(g,w,0.01,0.11,c===0x3949ab?0x5c6bc0:0xd9cfc0,x,z+0.03,0.03)};
+      const plant=(x,z)=>{inBox(g,0.022,0.02,0.022,0x8d6e63,x,z);inBox(g,0.03,0.04,0.03,0x2e7d32,x,z,0.02)};
+      if(t==='andrahand'){// sublet: the landlord's old furniture, one room, the kitchen and bathroom shared
+        bed(-0.24,-0.12,0.09,0x6d6a5f);solid(g,0.09,0.03,0.05,0x8d7b68,0.05,-HD+0.04);inBox(g,0.03,0.02,0.002,0x90caf9,0.05,-HD+0.03,0.03);solid(g,0.05,0.12,0.04,0x9e8b75,-HW+0.04,0.12);
+        inBox(g,0.16,0.002,0.12,0x8b5e3c,-0.1,0.05,0);if(S.flags.luggage||S.day<4)inBox(g,0.03,0.045,0.02,0x2c4a6e,-0.12,-0.19);inBox(g,0.004,0.06,0.04,0xffffff,HW-0.006,-0.05,0.05,true);
+        spot(-0.24,-0.02,'Bed',()=>homeMenu('bed'));spot(0.05,-HD+0.11,'Desk and laptop',()=>homeMenu('desk'));spot(-HW+0.1,0.12,'Wardrobe',()=>homeMenu('wardrobe'));
+        spot(0.2,0.1,'Shared kitchen',()=>homeMenu('kitchen'));spot(HW-0.12,0.17,'Shared bathroom',()=>homeMenu('shower'));spot(-0.1,0.07,'Sit on the bed with your phone',()=>homeMenu('sofa'))}
+      else if(t==='student'){// corridor room: bed, desk with books, shelf, posters; the kitchen is down the corridor
+        bed(-0.24,-0.12,0.085,0x37474f);solid(g,0.12,0.03,0.05,0xf5f5f5,0.08,-HD+0.04);for(let i=0;i<4;i++)inBox(g,0.008,0.025,0.02,[0xc62828,0x1565c0,0xf9a825,0x2e7d32][i],0.04+i*0.012,-HD+0.03,0.03);
+        inBox(g,0.03,0.02,0.002,0x90caf9,0.1,-HD+0.03,0.03);solid(g,0.05,0.13,0.03,0xbdbdbd,-HW+0.04,0.1);inBox(g,0.05,0.07,0.002,0x6a1b9a,-0.1,-HD+0.006,0.06,true);inBox(g,0.04,0.05,0.002,0xef6c00,0.22,-HD+0.006,0.07,true);
+        solid(g,0.04,0.05,0.04,0xeeeeee,0.26,0.12);spot(-0.24,-0.02,'Bed',()=>homeMenu('bed'));spot(0.08,-HD+0.11,'Desk: study',()=>homeMenu('desk'));spot(-HW+0.1,0.1,'Wardrobe',()=>homeMenu('wardrobe'));
+        spot(0.24,0.18,'Corridor kitchen',()=>homeMenu('kitchen'));spot(HW-0.12,-0.02,'Corridor shower',()=>homeMenu('shower'));spot(-0.08,0.08,'Hang out with your phone',()=>homeMenu('sofa'))}
+      else if(t==='parents'){// back in your childhood room in your parents' flat
+        bed(-0.24,-0.12,0.085,0x1565c0);solid(g,0.1,0.03,0.05,0xd7ccc8,0.06,-HD+0.04);inBox(g,0.06,0.08,0.002,0x2e7d32,-0.24,-HD+0.006,0.06,true);inBox(g,0.03,0.03,0.03,0xffb300,0.26,-HD+0.03,0.05);
+        solid(g,0.06,0.13,0.04,0xf5f0e6,-HW+0.04,0.12);inBox(g,0.14,0.002,0.1,0xb71c1c,-0.08,0.05,0);solid(g,0.12,0.035,0.06,0x8d6e63,0.18,0.12);npc(g,'OldClassy_Female',null,0.25,0.2,Math.PI);
+        spot(-0.24,-0.02,'Your old bed',()=>homeMenu('bed'));spot(0.06,-HD+0.11,'Your old desk',()=>homeMenu('desk'));spot(-HW+0.1,0.12,'Wardrobe',()=>homeMenu('wardrobe'));
+        spot(0.2,0.04,"Mamma's kitchen",()=>homeMenu('kitchen'));spot(HW-0.12,-0.1,'Bathroom',()=>homeMenu('shower'));spot(0.16,0.18,'Family sofa and TV',()=>homeMenu('sofa'))}
+      else{// your own flat (förstahand): bed, sofa and TV, a kitchen table, plants; nicer things when you can afford them
+        bed(-0.24,-0.12,0.12,0x3949ab);solid(g,0.2,0.05,0.05,0xeeeeee,0.2,-HD+0.04);solid(g,0.05,0.11,0.05,0xfafafa,0.31,-HD+0.04);solid(g,0.07,0.12,0.07,0xb3e5fc,HW-0.05,0.17);
+        solid(g,0.14,0.035,0.06,S.outfit?S.outfit.top:0x8d6e63,-0.14,0.09);solid(g,rich?0.16:0.12,rich?0.09:0.07,0.01,0x111111,-0.04,-HD+0.008,0.04);solid(g,0.08,0.03,0.04,0x795548,0.04,-0.06);inBox(g,0.03,0.02,0.002,0x90caf9,0.04,-0.075,0.03);
+        solid(g,0.06,0.13,0.04,0x8d6e63,-HW+0.04,0.12);solid(g,0.07,0.025,0.07,0xd7b98e,0.12,0.06);plant(HW-0.03,-HD+0.03);plant(-0.3,0.2);
+        if(rich){inBox(g,0.08,0.06,0.002,0xf4a261,0.12,-HD+0.006,0.07,true);inBox(g,0.004,0.1,0.004,0x222222,-0.22,0.16);inBox(g,0.03,0.012,0.03,0xfff3c4,-0.22,0.16,0.1,true);plant(0.3,0.2)}
+        if(two){inBox(g,0.01,0.14,0.2,0xf2efe8,0.0,-HD+0.1);inBox(g,0.08,0.03,0.12,0xfff3e0,0.16,-0.12)}
+        spot(-0.24,-0.02,'Bed',()=>homeMenu('bed'));spot(0.17,-HD+0.11,'Kitchen',()=>homeMenu('kitchen'));spot(HW-0.12,0.17,'Shower',()=>homeMenu('shower'));
+        spot(-0.14,0.16,'Sofa and TV',()=>homeMenu('sofa'));spot(0.04,-0.0,'Desk and laptop',()=>homeMenu('desk'));spot(-HW+0.1,0.12,'Wardrobe',()=>homeMenu('wardrobe'))}
       const pt=partner();if(pt&&(pt.st==='sambo'||pt.st==='married'))npc(g,pt.look.model,pt.look,0.06,0.16,Math.PI);
       if(S.kids.length){solid(g,0.05,0.03,0.07,0xfff3e0,-0.12,-0.18);spot(-0.12,-0.1,'Your child',()=>homeMenu('kid'))}
       if(pt&&(pt.st==='sambo'||pt.st==='married'))spot(0.06,0.09,`Talk to ${pt.n}`,()=>homeMenu('partner'))}
@@ -3531,7 +3558,7 @@ function buildWorld(){
     const dl=new THREE.DirectionalLight(0xffffff,kind==='club'?0.2:0.55);dl.position.set(0.3,1,0.6);inScene.add(dl);inScene.add(buildRoom(kind,p,opts||{}));
     IN.prev=av.position.clone();IN.prevVis=av.visible;scene.remove(av);inScene.add(av);av.position.set(0,0,HD-0.06);av.rotation.y=Math.PI;av.visible=true;vel.set(0,0);
     IN.cam={p:camera.position.clone(),t:controls.target.clone(),min:controls.minDistance,max:controls.maxDistance};controls.minDistance=0.15;controls.maxDistance=1.1;controls.target.set(0,0.02,0.04);camera.position.set(0,0.42,0.62);
-    if(kind==='arlanda'){av.position.set(0,0,-HD+0.07);av.rotation.y=0}scene.fog&&(IN.fog=scene.fog);IN.on=true;$('inhud').style.display='flex';$('inTitle').textContent=p?p.name:(kind==='home'?'Home · '+addrText():'Inside');if(p)S.seen[kindSeen(kind)]=S.day;hideHint()}
+    if(kind==='arlanda'){av.position.set(0,0,-HD+0.07);av.rotation.y=0}if(kind==='home'&&S.flags.luggage){S.flags.luggage=0;log('You unpack your suitcase. Home at last.','plus');setTimeout(()=>save(),50)}scene.fog&&(IN.fog=scene.fog);IN.on=true;$('inhud').style.display='flex';$('inTitle').textContent=p?p.name:(kind==='home'?'Home · '+addrText():'Inside');if(p)S.seen[kindSeen(kind)]=S.day;hideHint()}
   function kindSeen(k){return k==='restaurant'||k==='cafe'?'eatout':k==='gym'?'gym':k==='clothes'?'clothes':'visit'}
   function exitInterior(force){if(!IN.on)return;if(IN.kind==='arlanda'&&S&&S.flags.arlanda&&force!==true){airportSpot('exit');return}inScene.remove(av);scene.add(av);av.position.copy(IN.prev);av.visible=IN.prevVis;controls.minDistance=IN.cam.min;controls.maxDistance=IN.cam.max;camera.position.copy(IN.cam.p);controls.target.copy(IN.cam.t);
     IN.on=false;IN.mixers=[];inScene=null;$('inhud').style.display='none';$('inAct').style.display='none';DESK=null;closeModal();vel.set(0,0)}
@@ -3871,7 +3898,29 @@ function buildWorld(){
   function setAvState(st){if(!avActs[st]||st===avState)return;const next=avActs[st];next.reset().play();if(avActs[avState])avActs[avState].crossFadeTo(next,0.22,false);avState=st}
   function setLook(name){if(!MODELS.ready)return;const keys=Object.keys(MODELS.chars);if(!keys.length)return;const tpl=MODELS.chars[name]||MODELS.chars[keys[0]];
     if(avModel)av.remove(avModel);const inst=THREE.SkeletonUtils.clone(tpl);avModel=new THREE.Group();avModel.add(inst);{const b=(S&&S.body)||{},k=0.078/AV_S,h={short:0.93,avg:1,tall:1.07}[b.h]||1,w={slim:0.9,avg:1,athletic:1.06,heavy:1.18}[b.b]||1;avModel.scale.set(k*h*w,k*h,k*h*w)}av.add(avModel);applyOutfit();
-    av.userData.body.visible=false;avMixer=new THREE.AnimationMixer(inst);avActs={};['Idle','Walk','Run'].forEach(k=>{if(MODELS.clips[k])avActs[k]=avMixer.clipAction(MODELS.clips[k])});avState='';setAvState('Idle')}
+    av.userData.body.visible=false;try{applyStyle(inst)}catch(e){console.warn('style',e)}avMixer=new THREE.AnimationMixer(inst);avActs={};['Idle','Walk','Run'].forEach(k=>{if(MODELS.clips[k])avActs[k]=avMixer.clipAction(MODELS.clips[k])});avState='';setAvState('Idle')}
+  // headwear, facial hair and glasses on the model's Head bone, sized from the model itself; covering headwear hides the hair
+  function applyStyle(inst){const st=S&&S.style;{let r=inst;while(r.parent)r=r.parent;r.updateMatrixWorld(true)}const head=inst.getObjectByName('Head');
+    inst.traverse(m=>{if(!m.isMesh)return;const mats=Array.isArray(m.material)?m.material:[m.material];mats.forEach(mt=>{if(/^hair$/i.test(mt.name||''))mt.visible=!(st&&['hijab','turban','beanie'].includes(st.head))})});
+    if(!st||!head)return;const box=new THREE.Box3();inst.traverse(m=>{if(m.isMesh)box.expandByObject(m)});const hp=new THREE.Vector3(),ws=new THREE.Vector3();head.getWorldPosition(hp);head.getWorldScale(ws);
+    const R=Math.max(1e-4,(box.max.y-hp.y)*0.5),k=R/ws.y;const g=new THREE.Group();g.position.y=k*0.95;const col=st.headCol||0x1d2733,M=c=>new THREE.MeshLambertMaterial({color:c});
+    const sph=(r,c,ph0,ph1,th0,th1)=>new THREE.Mesh(new THREE.SphereGeometry(r,16,12,ph0||0,ph1||Math.PI*2,th0||0,th1||Math.PI),M(c));
+    if(st.head==='hijab'){// an open wrap: covers the head, sides and neck, leaves the face free
+      const a=new THREE.Mesh(new THREE.SphereGeometry(k*1.08,18,14,Math.PI/2+0.8,Math.PI*2-1.6,0,Math.PI*0.92),M(col));a.material.side=THREE.DoubleSide;a.scale.set(1,1.05,1.03);g.add(a);
+      const top=sph(k*1.09,col,0,Math.PI*2,0,Math.PI*0.32);g.add(top);const n=new THREE.Mesh(new THREE.CylinderGeometry(k*0.82,k*1.08,k*0.9,18,1,true,Math.PI/2+0.55,Math.PI*2-1.1),M(col));n.material.side=THREE.DoubleSide;n.position.y=-k*0.95;g.add(n)}
+    else if(st.head==='turban'){const t=new THREE.Mesh(new THREE.TorusGeometry(k*0.78,k*0.32,10,20),M(col));t.rotation.x=Math.PI/2;t.position.y=k*0.35;g.add(t);const c=sph(k*0.85,col,0,Math.PI*2,0,Math.PI/2);c.position.y=k*0.35;g.add(c)}
+    else if(st.head==='kippah'){const c=sph(k*0.55,col,0,Math.PI*2,0,Math.PI/3.5);c.position.set(0,k*0.62,-k*0.15);g.add(c)}
+    else if(st.head==='kufi'){const c=new THREE.Mesh(new THREE.CylinderGeometry(k*0.92,k*1.0,k*0.55,18),M(col));c.position.y=k*0.62;g.add(c)}
+    else if(st.head==='cap'){const c=sph(k*1.03,col,0,Math.PI*2,0,Math.PI/2);c.position.y=k*0.2;g.add(c);const b=new THREE.Mesh(new THREE.CylinderGeometry(k*0.7,k*0.7,k*0.06,16,1,false,-Math.PI/2,Math.PI),M(col));b.position.set(0,k*0.22,k*0.75);g.add(b)}
+    else if(st.head==='beanie'){const c=sph(k*1.05,col,0,Math.PI*2,0,Math.PI/1.85);c.position.y=k*0.12;g.add(c);const r=new THREE.Mesh(new THREE.TorusGeometry(k*1.0,k*0.12,8,20),M(col));r.rotation.x=Math.PI/2;r.position.y=k*0.2;g.add(r)}
+    const hc=S.outfit.hair;if(st.beard&&st.beard!=='none'){if(st.beard==='moustache'){const m=new THREE.Mesh(new THREE.BoxGeometry(k*0.5,k*0.09,k*0.1),M(hc));m.position.set(0,-k*0.42,k*0.97);g.add(m)}
+      else{const bd=sph(k*(st.beard==='full'?0.9:0.82),hc,Math.PI*0.15,Math.PI*0.7,Math.PI*0.62,Math.PI*0.38);bd.position.set(0,-k*0.22,k*(st.beard==='stubble'?0.06:0.14));if(st.beard==='stubble')bd.material.transparent=true,bd.material.opacity=0.55;g.add(bd)}}
+    if(st.glasses){const gm=M(0x15181b);for(const sx of [-1,1]){const r=new THREE.Mesh(new THREE.TorusGeometry(k*0.2,k*0.035,6,14),gm);r.position.set(sx*k*0.3,-k*0.02,k*1.0);g.add(r)}const br=new THREE.Mesh(new THREE.BoxGeometry(k*0.2,k*0.04,k*0.04),gm);br.position.set(0,-k*0.0,k*1.0);g.add(br)}
+    head.add(g)}
+  // newly arrived: a suitcase rolls along behind you until you reach your new home
+  let suitcase=null;function syncLuggage(){const want=!!(S&&S.flags&&S.flags.luggage)&&!IN.on;if(want&&!suitcase){suitcase=new THREE.Group();const b=new THREE.Mesh(new THREE.BoxGeometry(0.014,0.022,0.009),plain(0x2c4a6e));b.position.y=0.013;suitcase.add(b);
+      const h=new THREE.Mesh(new THREE.BoxGeometry(0.002,0.018,0.002),plain(0x222222));h.position.set(0,0.032,0);suitcase.add(h);for(const sx of [-1,1]){const w=new THREE.Mesh(new THREE.CylinderGeometry(0.0018,0.0018,0.002,8),plain(0x111111));w.rotation.z=Math.PI/2;w.position.set(sx*0.005,0.002,0);suitcase.add(w)}
+      suitcase.position.set(0.012,0,-0.012);suitcase.rotation.x=-0.25;av.add(suitcase)}else if(!want&&suitcase){av.remove(suitcase);suitcase=null}}
   function modelPed(){const keys=Object.keys(MODELS.chars);const inst=THREE.SkeletonUtils.clone(MODELS.chars[pickR(keys)]);try{tintModel(inst,randomOutfit())}catch(e){}const g=new THREE.Group();const s=new THREE.Group();s.add(inst);s.scale.setScalar(0.06+Math.random()*0.008);g.add(s);
     const mixer=new THREE.AnimationMixer(inst);if(MODELS.clips.Walk){const act=mixer.clipAction(MODELS.clips.Walk);act.play();act.time=Math.random()*MODELS.clips.Walk.duration}g.userData={mixer};scene.add(g);return g}
   function applyModels(){
@@ -3940,7 +3989,7 @@ function buildWorld(){
     if(!IN.on&&!DR.on&&!rideState){if(av.parent!==scene)scene.add(av);if(!av.visible&&!avHidden)av.visible=true;if(avHidden)av.visible=false;if(av.rotation.z===0)av.position.y=0.01+deckAt(av.position.x,av.position.z);unstick()}accidentCheck(dt);emergTick(dt,T);cityCalls(dt,T,av.position.x,av.position.z);hoverTick(dt);
     if(avMixer){const fast=running||(walk&&walk.speed>1.2);setAvState(moving?(fast?'Run':'Walk'):'Idle');if(avActs.Walk)avActs.Walk.timeScale=walk?Math.min(2.2,0.8+walk.speed*0.4):1;avMixer.update(dt);avModel.position.y=emoteT>0?Math.abs(Math.sin(T*10))*0.4*emoteT/AV_S*0.05:0}
     else{animPerson(av,av.position.distanceTo(lastAv),dt,moving,AV_S,running);if(emoteT>0){av.userData.body.position.y+=Math.abs(Math.sin(T*10))*0.6*emoteT;av.userData.lArm.rotation.x=-2.6*emoteT;av.userData.rArm.rotation.x=-2.6*emoteT}}
-    lastAv.copy(av.position);emoteT=Math.max(0,emoteT-dt*0.8);
+    lastAv.copy(av.position);emoteT=Math.max(0,emoteT-dt*0.8);if((T*4|0)%4===0)syncLuggage();
     ring.material.opacity=0.55+0.3*Math.sin(T*3);
     const before=controls.target.clone();controls.target.lerp(new THREE.Vector3(follow.x,0.02,follow.z),1-Math.exp(-dt*((moving||rideState||walk)?9:5)));camera.position.add(controls.target.clone().sub(before));controls.update();flightLookTick(dt);
     // third-person camera: when a building is between you and the camera, move in closer (quickly) and back out to your own zoom (slowly);

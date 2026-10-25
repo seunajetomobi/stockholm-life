@@ -121,7 +121,7 @@ button:focus-visible,[tabindex]:focus-visible,input:focus-visible,select:focus-v
   left:var(--gut);right:var(--gutR);bottom:calc(82px + env(safe-area-inset-bottom,0px));max-height:min(62vh,640px)}
 .drawer[hidden]{display:none}
 @media (min-width:900px){.drawer{left:auto;width:400px;top:calc(var(--boardH,74px) + 18px + env(safe-area-inset-top,0px));max-height:none}
-  .next{max-width:min(420px,calc(100% - 460px))}.ctrls{right:calc(var(--gutR) + 412px)}.attrib{right:calc(var(--gutR) + 462px)}}
+  .next{max-width:min(420px,calc(100% - 460px))}.ctrls{right:var(--gutR);bottom:calc(12px + env(safe-area-inset-bottom,0px));grid-auto-flow:column;z-index:7}.attrib{right:var(--gutR);bottom:calc(64px + env(safe-area-inset-bottom,0px))}}
 .dhead{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px 10px;border-bottom:1px solid var(--line)}
 .dhead b{font:700 20px var(--display);letter-spacing:.04em;text-transform:uppercase}
 .dhead button{border:0;background:var(--surface2);border-radius:8px;width:32px;height:32px}
@@ -328,6 +328,10 @@ h2.hero{font-size:34px;background:linear-gradient(90deg,var(--sweblue),#3a86ff 4
   .modal{max-height:calc(100dvh - 24px)}.dep{grid-template-columns:auto 1fr auto;gap:7px;padding:6px}.dep .dst{font-size:12.5px}
   .callscr>div,.ringing>div{min-width:0;width:calc(100% - 48px);padding:22px 18px}
 }
+.dialer{display:grid;justify-items:center;gap:8px;margin:4px 0 10px}.dnum{font:600 26px "IBM Plex Mono",monospace;min-height:36px;letter-spacing:.06em}
+.keys{display:grid;grid-template-columns:repeat(3,58px);gap:8px}.keys button{height:52px;border-radius:50%;border:0;background:var(--surface2);font:600 22px inherit;color:var(--fg);cursor:pointer}.keys button:active{filter:brightness(.9)}
+.drow{display:flex;gap:16px;align-items:center}.dcall{width:60px;height:60px;border-radius:50%;border:0;background:#23a55a;color:#fff;font-size:24px;cursor:pointer}.ddel{border:0;background:none;font-size:22px;color:var(--muted);cursor:pointer}
+.quick{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}.quick button{border:1px solid var(--line);background:var(--surface);border-radius:14px;padding:5px 11px;font:600 12px inherit;color:var(--fg);cursor:pointer}.quick .q112{background:#c8102e;color:#fff;border-color:#c8102e}
 .deptabs{display:flex;gap:6px;flex-wrap:wrap;margin:4px 0 8px}.deptabs button{border:1px solid var(--line);background:var(--surface2);border-radius:14px;padding:4px 10px;font:600 12px inherit;color:var(--fg);cursor:pointer}.deptabs button.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
 .deps{display:grid;gap:4px}.dep{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;padding:6px 8px;background:var(--board);color:var(--board-ink);border-radius:8px}.dep .ln{min-width:30px;text-align:center;padding:3px 6px;border-radius:6px;color:#fff;font:700 13px "IBM Plex Mono",monospace}
 .dep.fl{border:0;width:100%;text-align:left;cursor:pointer;font:inherit}.dep .dst{font-size:13.5px;line-height:1.25}.dep .dst small{display:block;color:#9fb0bd;font-size:11px}.dep .tm{font:600 14px "IBM Plex Mono",monospace;color:var(--amber);text-align:right}.dep .tm small{display:block}.dep .late{color:#ff8a80;font-size:11px}.dep.can .dst,.dep.can .tm{text-decoration:line-through;opacity:.6}
@@ -964,10 +968,10 @@ function uiInit(){document.querySelectorAll('#dock button').forEach(b=>b.onclick
   const fit=()=>{const b=$('board');if(b)document.documentElement.style.setProperty('--boardH',b.offsetHeight+'px')};fit();if(window.ResizeObserver)new ResizeObserver(fit).observe($('board'));
   $('apps').innerHTML=PHONE_APPS.map((a,i)=>`<button class="app" data-i="${i}" data-k="${a[4]||''}"><span class="ic" style="background:${a[2]}">${a[1].startsWith('txt:')?`<b class="ict${a[1].length>6?' sm':''}">${a[1].slice(4)}</b>`:glyphSVG(a[1])}</span><span>${a[0]}</span></button>`).join('');
   $('apps').querySelectorAll('.app').forEach(b=>b.onclick=()=>PHONE_APPS[+b.dataset.i][3]())}
-const PHONE_APPS=[['Phone','txt:☎','#23824f',()=>openCalls()],['Chatt','chat','#1faa59',()=>openChats(),'chat'],['Mail','mail','#2f6fd6',()=>openMailbox(),'mail'],['Kivra','txt:K','#f2b705',()=>openKivra()],
+const PHONE_APPS=[["Phone","txt:☎","#23824f",()=>openCalls()],['Chatt','chat','#1faa59',()=>openChats(),'chat'],['Mail','mail','#2f6fd6',()=>openMailbox(),'mail'],['Kivra','txt:K','#f2b705',()=>openKivra()],
   ['BankID','txt:iD','#193e4f',()=>openBankID()],['Swish','txt:S','#2db3a6',()=>openSwish()],['Handelsbanken','txt:H','#005b97',()=>openBankApp('handelsbanken')],['Swedbank','txt:S','#ee7203',()=>openBankApp('swedbank')],['SEB','txt:SEB','#41a62a',()=>openBankApp('seb')],
   ['SL','txt:SL','#c8102e',()=>openSLApp()],['SJ','txt:SJ','#2b2f33',()=>openRailApp('SJ')],['Mälartåg','txt:M','#e24b46',()=>openRailApp('Mälartåg')],['Flights','plane','#2f6fd6',()=>openFlights()],
-  ['1177','txt:1177','#0b7a75',()=>careOpen()],['Alltid öppet','txt:ö','#1d70b7',()=>openAlltidOppet()],['112','txt:112','#c8102e',()=>open112()],
+  ['1177','txt:1177','#0b7a75',()=>careOpen()],['Alltid öppet','txt:ö','#1d70b7',()=>openAlltidOppet()],['112','txt:112','#c8102e',()=>dial('112')],
   ['SVT Nyheter','txt:SVT','#1a6e3d',()=>openNews('svt')],['DN','txt:DN','#1b1b1b',()=>openNews('dn')],['Aftonbladet','txt:AB','#e2001a',()=>openNews('ab')],['Expressen','txt:EXP','#c9a800',()=>openNews('exp')],['Ekot','txt:SR','#224b7d',()=>openNews('ekot')],
   ['Weather','sun','#f0a020',()=>openWeather()],['Departures','train','#c8102e',()=>openDeparturesApp()],['Ferries','ferry','#00698F',()=>openFerries()],['Invest','chart','#0f6b5c',()=>openInvest()],['Bank','wallet','#0f6b5c',()=>openBank()],
   ['To-do','check','#e07a1f',()=>openTodo(),'todo'],['Bag','bag','#8a5a2b',()=>openBag(),'bag'],['Find','search','#3b4a57',()=>{const b=$('zfind');b&&b.click()}],
@@ -1556,13 +1560,26 @@ function renderPlaces(){const el=document.getElementById('places');if(!el||!S)re
 function contactsForCall(){const L=[];if(S.fam||familyHere())L.push({id:'fam',n:(S.fam&&S.fam.n)||'Mamma',what:'Family'});const pt=partner();if(pt)L.push({id:pt.id,n:pt.n,what:'Partner',p:pt});
   S.people.filter(p=>p!==pt).sort((a,b)=>b.fr-a.fr).slice(0,12).forEach(p=>L.push({id:p.id,n:p.n,what:p.fr>=55?'Close friend':p.fr>=30?'Friend':'Acquaintance',p}));
   if(S.job&&JOBS[S.job])L.push({id:'boss',n:'Your manager',what:JOBS[S.job].name});return L}
-function openCalls(){const L=contactsForCall();
-  modal(`<div class="phonehead" style="--c:#23824f">${glyphSVG('chat')}<h2>Phone</h2></div><div class="choices">${L.map((c,i)=>`<button class="choice" data-i="${i}"><b>📞 ${esc2(c.n)}</b><small>${esc2(c.what)}</small></button>`).join('')||'<p class="note">No contacts yet.</p>'}
-    <button class="choice" data-n="1177"><b>📞 1177 Vårdguiden</b><small>Nurse advice, day and night</small></button><button class="choice" data-n="11414"><b>📞 114 14 Polisen</b><small>Police, when it is not an emergency</small></button><button class="choice sos" data-n="112"><b>📞 112 SOS Alarm</b><small>Emergencies only: ambulance, police, fire</small></button></div><div class="row2"><button class="btn ghost" id="no">Close</button></div>`,m=>{
-    m.querySelector('#no').onclick=closeModal;m.querySelectorAll('[data-i]').forEach(b=>b.onclick=()=>{closeModal();callPerson(L[+b.dataset.i])});
-    m.querySelectorAll('[data-n]').forEach(b=>b.onclick=()=>{closeModal();const n=b.dataset.n;if(n==='112')open112();else if(n==='1177')call1177();else callScreen('Polisen 114 14','Polisen',()=>modal(`<h2>Polisen 114 14</h2><p>"Polisen, vad gäller det?" You can report a crime that has already happened, like a stolen bike, here or online at polisen.se.</p><div class="row2"><button class="btn ghost" id="no">Hang up</button></div>`,m2=>m2.querySelector('#no').onclick=closeModal))})})}
+function openCalls(){const L=contactsForCall();let num='';
+  modal(`<div class="phonehead" style="--c:#23824f">${glyphSVG('chat')}<h2>Phone</h2></div>
+    <div class="dialer"><div class="dnum" id="dnum">&nbsp;</div><div class="keys">${['1','2','3','4','5','6','7','8','9','*','0','#'].map(k=>`<button data-k="${k}">${k}</button>`).join('')}</div>
+      <div class="drow"><button class="dcall" id="dcall" aria-label="Call">📞</button><button class="ddel" id="ddel" aria-label="Delete">⌫</button></div>
+      <div class="quick"><button data-q="112" class="q112">112 SOS</button><button data-q="1177">1177</button><button data-q="11414">114 14</button></div></div>
+    <h3>Contacts</h3><div class="choices">${L.map((c,i)=>`<button class="choice" data-i="${i}"><b>📞 ${esc2(c.n)}</b><small>${esc2(c.what)}</small></button>`).join('')||'<p class="note">No contacts yet.</p>'}</div><div class="row2"><button class="btn ghost" id="no">Close</button></div>`,m=>{
+    const show=()=>{m.querySelector('#dnum').textContent=num.replace(/^(\d{3})(\d{2})(\d+)/,'$1 $2 $3')||' '};
+    m.querySelector('#no').onclick=closeModal;m.querySelectorAll('[data-k]').forEach(b=>b.onclick=()=>{if(num.length<14){num+=b.dataset.k;show()}});
+    m.querySelector('#ddel').onclick=()=>{num=num.slice(0,-1);show()};m.querySelectorAll('[data-q]').forEach(b=>b.onclick=()=>{num=b.dataset.q;show();m.querySelector('#dcall').click()});
+    m.querySelector('#dcall').onclick=()=>{if(!num)return;closeModal();dial(num)};
+    m.querySelectorAll('[data-i]').forEach(b=>b.onclick=()=>{closeModal();callPerson(L[+b.dataset.i])})})}
+// what happens when you dial a number
+function dial(n){n=n.replace(/\D/g,'');
+  if(n==='112'){callScreen('112','SOS Alarm',()=>open112());return}
+  if(n==='1177'){call1177();return}
+  if(n==='11414'){callScreen('Polisen 114 14','Polisen',()=>modal(`<h2>Polisen 114 14</h2><p>"Polisen, vad gäller det?" You can report a crime that has already happened, like a stolen bike, here or online at polisen.se.</p><div class="row2"><button class="btn ghost" id="no">Hang up</button></div>`,m=>m.querySelector('#no').onclick=closeModal));return}
+  if(n==='90101'){callScreen('Mind Självmordslinjen','90101',()=>{apply({mood:6});modal(`<h2>Mind Självmordslinjen</h2><p>Someone listens without judging. You don't have to give your name. Talking helps a little. If you are in danger right now, call 112.</p><div class="row2"><button class="btn ghost" id="no">Hang up</button></div>`,m=>m.querySelector('#no').onclick=closeModal)});return}
+  callScreen(n.replace(/^(\d{3})(\d{2})(\d+)/,'$1 $2 $3'),'',null,()=>toast('Numret du har slagit är inte i bruk · the number is not in use'))}
 function callScreen(name,sub,onAnswer,noAnswer){const el=document.createElement('div');el.className='callscr';el.innerHTML=`<div><small>Calling…</small><b>${esc2(name)}</b><span>${esc2(sub||'')}</span><button class="hang">Hang up</button></div>`;document.body.appendChild(el);
-  let done=false;const end=()=>{if(done)return;done=true;el.remove()};el.querySelector('.hang').onclick=end;setTimeout(()=>{if(done)return;end();if(noAnswer)noAnswer();else onAnswer()},2200)}
+  let done=false;const end=()=>{if(done)return;done=true;el.remove()};el.querySelector('.hang').onclick=end;setTimeout(()=>{if(done)return;end();if(noAnswer)noAnswer();else if(onAnswer)onAnswer()},2200)}
 function callPerson(c){const late=S.hour>=23||S.hour<7,p=c.p;const answers=!late&&(c.id==='fam'||c.id==='boss'||!p||Math.random()<0.45+p.fr/150);
   callScreen(c.n,c.what,()=>{if(c.id==='boss'){modal(`<h2>${esc2(c.n)}</h2><p>"Hej! Är allt bra? We'll see you on your next shift."</p><div class="row2"><button class="btn ghost" id="no">Hang up</button></div>`,m=>m.querySelector('#no').onclick=closeModal);return}
     modal(`<h2>On the phone with ${esc2(c.n)}</h2><div class="choices"><button class="choice" id="a"><b>Catch up · 20 min</b><small>+6 social, +3 mood</small></button>${p?`<button class="choice" id="b"><b>Invite them over / visit them</b><small>Go to ${esc2(c.n)}'s place</small></button>`:''}</div><div class="row2"><button class="btn ghost" id="no">Hang up</button></div>`,m=>{
@@ -1646,7 +1663,7 @@ function openNews(k){const N=NEWS[k];modal(`<div class="phonehead" style="--c:${
   try{const L=(await newsItems(k)).slice(0,14);el.innerHTML=L.length?`<ul class="news">${L.map(e=>`<li><a href="${esc2(e.u||'#')}" target="_blank" rel="noopener"><b>${esc2(e.t||'')}</b></a>${e.when&&!isNaN(e.when)?` <small>${e.when.toLocaleTimeString('sv-SE',{hour:'2-digit',minute:'2-digit'})}</small>`:''}<br><small>${esc2((e.d||'').replace(/<[^>]+>/g,'').slice(0,160))}</small></li>`).join('')}</ul><p class="note">Live headlines from ${N.n}. Tap one to read it on their site.</p>`:'<p class="note">No headlines right now.</p>'}
   catch(e){el.innerHTML=`<p class="note">Couldn't load ${N.n} (${esc2(e.message||String(e))}).</p>`}})}
 // a 112 button and a care chip that stay on screen
-function renderSOS(){let b=document.getElementById('sos112');if(!b){b=document.createElement('button');b.id='sos112';b.className='sos112';b.innerHTML='112';b.title='Emergency call 112';b.onclick=()=>open112();(document.getElementById('stage')||document.body).appendChild(b)}
+function renderSOS(){{const b=document.getElementById('sos112');if(b)b.remove()}
   let c=document.getElementById('carechip');const n=S&&careNeed();if(n){if(!c){c=document.createElement('button');c.id='carechip';c.className='carechip';c.onclick=()=>careOpen();(document.getElementById('stage')||document.body).appendChild(c)}c.innerHTML=`${glyphSVG('health')}<span>Care · ${esc2(n.what)}</span>`}else if(c)c.remove()}
 
 /* =================== PHONE: notifications, Chatt, Mail, To-do, Bag =================== */
@@ -2674,6 +2691,12 @@ function buildWorld(){
     {const ax=px+hx*0.05,az=pz+hz*0.05;if(onCarriageway(ax,az)>0&&onCarriageway(px,pz)<=0){a.cc2=(a.cc2||0)-1;if(a.cc2<=0){a.cc2=12;a.xsafe=crossSafe(ax,az)}if(!a.xsafe)slow=0}else a.xsafe=true}
     if(slow===0&&(a.wt=(a.wt||0)+1)>90){slow=0.4;a.wt=0}else if(slow>0)a.wt=0;a.slow=slow;a.dg=dg}
   function pedNear(x,z,r){for(const o of agents)if(o.kind==='ped'&&o.g.visible&&Math.abs(o.g.position.x-x)<r&&Math.abs(o.g.position.z-z)<r)return o;return null}
+  const OVT={n:0};
+  function vehAround(self,px,pz){const out=[],near=q=>Math.abs(q.x-px)<1.8&&Math.abs(q.z-pz)<1.8;
+    for(const o of agents){if(o===self||!o.g.visible)continue;if(o.kind==='ped'){if(near(o.g.position)&&onCarriageway(o.g.position.x,o.g.position.z)>0)out.push([o.g.position,0])}else if(near(o.g.position))out.push([o.g.position,o.v===undefined?o.sp:o.v])}
+    for(const v of tveh)if(v.m==='bus'||v.m==='tram')for(const q of v.parts)if(near(q.position))out.push([q.position,v.v||0]);
+    for(const E of emerg)if(near(E.g.position))out.push([E.g.position,E.v||0]);if(DR.on&&near(DR.g.position))out.push([DR.g.position,Math.abs(DR.v)]);
+    if(av.visible&&!IN.on&&near(av.position)&&onCarriageway(av.position.x,av.position.z)>0)out.push([av.position,0]);return out}
   function carStep(a,dt){if(a.hold>0){a.hold-=dt;a.v=0;return 0}const len=a.cum[a.cum.length-1],rem=len-a.d;const cls=G.E[a.e][2];let target=a.sp*(CLSP[cls]||1),stopAt=Infinity;
     // the vehicle ahead in our lane, on this street or just past the junction on the street we turn into
     for(const o of agents){if(o===a||!o.g.visible||(o.kind!=='car'&&o.kind!=='bus'))continue;let gp;
@@ -2696,6 +2719,9 @@ function buildWorld(){
           const [ox,oz]=headIn(o);if((oc+2<=ac&&(o.v||0)>0.02)||(hx*oz-hz*ox<-0.5&&(a.jw||0)<3)){yielding=true;break}}
         if(yielding)stopAt=Math.min(stopAt,gap)}}
     a.jw=yielding&&a.v<0.02?(a.jw||0)+dt:yielding?a.jw||0:0;
+    // merging: two streets join into the same one -> the vehicle closer to the merge point goes first (ties: the older one)
+    if(rem<0.35&&a.next>=0)for(const o of agents){if(o===a||!o.g.visible||(o.kind!=='car'&&o.kind!=='bus')||o.to!==a.to||o.e===a.e||o.next!==a.next)continue;
+      const orem=o.cum[o.cum.length-1]-o.d;if(orem<rem-0.01||(Math.abs(orem-rem)<=0.01&&o.uid<a.uid)){stopAt=Math.min(stopAt,Math.max(0,rem-0.13));break}}
     // blue lights: pull towards the kerb and slow down when one comes up behind, and never drive into one ahead
     {const px=a.g.position.x,pz=a.g.position.z,hx=Math.sin(a.g.rotation.y),hz=Math.cos(a.g.rotation.y);a.pull=Math.max(0,(a.pull||0)-dt);
       for(const E of emerg){const dx=E.g.position.x-px,dz=E.g.position.z-pz;if(Math.abs(dx)>0.8||Math.abs(dz)>0.8)continue;const f=dx*hx+dz*hz,l=Math.abs(dx*hz-dz*hx);
@@ -2712,6 +2738,18 @@ function buildWorld(){
       if(!IN.on&&av.visible&&onCarriageway(av.position.x,av.position.z)>0)person(av.position.x,av.position.z);
       for(const o of agents)if(o.kind==='ped'&&o.g.visible&&onCarriageway(o.g.position.x,o.g.position.z)>0)person(o.g.position.x,o.g.position.z);
       a.bw=blocked&&a.v<0.02?(a.bw||0)+dt:blocked?a.bw||0:0}
+    // overtaking: stuck behind something slow or stopped (a bus at its stop, a car waiting to turn, a parked emergency vehicle) ->
+    // move to another lane of ours if it is free; on a two-way street, pass in the oncoming lane only with a long clear view and room before the junction
+    if(a.kind==='car'&&a.lw){const px=a.g.position.x,pz=a.g.position.z,hx=Math.sin(a.g.rotation.y),hz=Math.cos(a.g.rotation.y),V=vehAround(a,px,pz);
+      const rel=q=>{const dx=q.x-px,dz=q.z-pz;return [dx*hx+dz*hz,a.offS+dx*(-hz)+dz*hx]};
+      let ahead=null;for(const [q,v] of V){const [f,lat]=rel(q);if(f>0.02&&f<0.45&&Math.abs(lat-a.offS)<a.lw*0.55&&(!ahead||f<ahead.f))ahead={v,f}}
+      a.blkT=ahead&&ahead.f<0.36&&ahead.v<Math.max(0.04,target*0.45)&&a.v<target*0.6?(a.blkT||0)+dt:0;
+      const laneOff=l=>RW[cls]/2-(l+0.5)*a.lw,free=(off,back,fwd)=>{for(const [q] of V){const [f,lat]=rel(q);if(f>-back&&f<fwd&&Math.abs(lat-off)<a.lw*0.8)return false}return true};
+      if(a.ovt){a.ovt.t+=dt;const home=laneOff(a.ovt.back);if(a.ovt.on)target*=1.15;
+        if((a.ovt.t>1.2&&free(home,0.22,0.3))||a.ovt.t>9){a.lane=a.ovt.back;a.offT=home;a.ovt=null}}
+      else if(a.blkT>1.5&&ahead){const my=a.nl,T=Math.round(RW[cls]/a.lw);
+        for(const l of [a.lane+1,a.lane-1]){if(l<0||l>=my)continue;const o=laneOff(l);if(free(o,0.3,0.5)){a.ovt={back:a.lane,t:0,on:false};a.lane=l;a.offT=o;a.blkT=0;OVT.n++;break}}
+        if(!a.ovt&&!G.ow[a.e]&&T>my&&cls>=4&&cls<=9&&rem>1.1&&!SIG.has(a.to)&&!ZEBN.has(a.to)){const o=laneOff(my);if(free(o,0.3,1.6)){a.ovt={back:a.lane,t:0,on:true};a.lane=my;a.offT=o;a.blkT=0;OVT.n++}}}}
     if(a.v===undefined)a.v=target;
     if(stopAt<0.8){const g=Math.max(0,stopAt);const tg=Math.min(target,Math.sqrt(2*1.4*g));if(a.v>tg)a.v=Math.max(tg,a.v-1.6*dt);else a.v+=(tg-a.v)*(1-Math.exp(-dt*1.8));if(g<0.002){a.v=0;return 0}return Math.min(a.v*dt,g)}
     a.v+=(target-a.v)*(1-Math.exp(-dt*(target<a.v?3:1.8)));return a.v*dt}
@@ -3765,7 +3803,7 @@ const POSTERS_CITY=[['#f2b705','#1b1b1b','KANELBULLE','Färskt varje morgon','Ba
   function agentPlace(a,fx,fz){const ok=OKF[a.kind];
     for(let t=0;t<20;t++){const x=fx+(Math.random()-0.5)*12,z=fz+(Math.random()-0.5)*12;const n=nearestNode(x,z,ok);if(n<0)continue;const es=G.adj[n].filter(ei=>ok(G.E[ei])&&mayEnter(a,ei,n));if(!es.length)continue;a.lane=a.offS=undefined;agentEdge(a,es[Math.floor(Math.random()*es.length)],n,ok);return true}return false}
   function agentEdge(a,ei,from,ok){a.e=ei;a.ok=ok;a.from=from;a.pts=edgePts(ei,from);a.cum=[0];for(let i=1;i<a.pts.length;i++)a.cum.push(a.cum[i-1]+Math.hypot(a.pts[i][0]-a.pts[i-1][0],a.pts[i][1]-a.pts[i-1][1]));a.d=0;a.to=G.E[ei][0]===from?G.E[ei][1]:G.E[ei][0];
-    if(!isVeh(a))return;a.next=nextEdge(a,a.to);if(a.kind==='bike')return;
+    if(!isVeh(a))return;a.next=nextEdge(a,a.to);a.ovt=null;a.blkT=0;if(a.kind==='bike')return;
     // lanes: keep right, get into the right lane before a right turn and the left lane before a left turn; buses keep to the kerb lane
     const [my,T]=lanesOf(ei,from),w=RW[G.E[ei][2]];a.nl=my;a.lw=w/T;const t=turnOf(a,a.next);
     a.lane=a.kind==='bus'||t>0?0:t<0?my-1:a.lane===undefined?Math.floor(Math.random()*my):Math.min(a.lane,my-1);

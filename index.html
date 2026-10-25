@@ -2206,7 +2206,7 @@ function buildWorld(){
   // ---------- quality ----------
   const coarse=window.matchMedia&&matchMedia('(pointer:coarse)').matches;
   let Q=(()=>{try{return localStorage.getItem('sl-quality')}catch(e){return null}})()||(coarse?'low':'high');
-  const QS={low:{near:1,mid:3,trees:1000,npc:20,cars:14,bikes:6,buses:3,lamps:70,shadow:1024,clouds:10},high:{near:2,mid:5,trees:2600,npc:36,cars:26,bikes:12,buses:6,lamps:160,shadow:2048,clouds:18}};
+  const QS={low:{near:1,mid:3,trees:1000,npc:20,cars:14,bikes:6,buses:3,lamps:70,shadow:1024,clouds:10},high:{near:2,mid:5,trees:3400,npc:36,cars:26,bikes:12,buses:6,lamps:160,shadow:2048,clouds:18}};
   function setQuality(q){Q=q;try{localStorage.setItem('sl-quality',q)}catch(e){};$('qLow').classList.toggle('on',q==='low');$('qHigh').classList.toggle('on',q==='high');
     sun.shadow.mapSize.set(QS[q].shadow,QS[q].shadow);if(sun.shadow.map){sun.shadow.map.dispose();sun.shadow.map=null}clearTiles()}
   $('qLow').onclick=()=>setQuality('low');$('qHigh').onclick=()=>setQuality('high');
@@ -2349,7 +2349,7 @@ function buildWorld(){
   const lodMat=new THREE.MeshLambertMaterial({vertexColors:true,emissive:0x302010,emissiveIntensity:0,side:THREE.DoubleSide});nightMats.push(lodMat);lodMat.userData.scale=0.35;
   const roofMat=new THREE.MeshLambertMaterial({vertexColors:true,side:THREE.DoubleSide});
   const roadMat=new THREE.MeshLambertMaterial({vertexColors:true});
-  const greenMat=new THREE.MeshLambertMaterial({vertexColors:true});
+  const greenMat=new THREE.MeshLambertMaterial({vertexColors:true,side:THREE.DoubleSide}); // OpenStreetMap areas come in either winding, so draw both faces
 
   // Stockholm facade palettes by part of town
   const PAL={
@@ -2447,7 +2447,7 @@ function buildWorld(){
         else if(cls===13&&w>0.02)run(0,0.0016,0.02,0.03,markC)}}
     if(!vi)return null;const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(Pp,3));const nn=new Float32Array(Pp.length);for(let i=1;i<nn.length;i+=3)nn[i]=1;g.setAttribute('normal',new THREE.BufferAttribute(nn,3));
     g.setAttribute('color',new THREE.Float32BufferAttribute(Cc,3));g.setIndex(I);const m=new THREE.Mesh(g,roadMat);m.receiveShadow=true;return m}
-  const GCOL={grass:0x7fbf5a,wood:0x4f8f45,park:0x72b85a,forest:0x4a8240,pitch:0x5fb257,scrub:0x87a65a,meadow:0x9cc46a,garden:0x7cc062,allotments:0x8cb866,beach:0xeeddb0,cemetery:0x76a868,recreation_ground:0x7cbc5e,golf_course:0x86cc66,nature_reserve:0x5f9a4e};
+  const GCOL={grass:0x6fbf4a,wood:0x3f8a3c,park:0x5fb84a,forest:0x3d7e38,pitch:0x4fb24a,scrub:0x7aa64e,meadow:0x8cc45a,garden:0x6cc052,allotments:0x7cb856,beach:0xeeddb0,cemetery:0x66a858,recreation_ground:0x6cbc4e,golf_course:0x76cc56,nature_reserve:0x4f9a42};
   function greenGeo(list){const Pp=[],Cc=[],I=[],Uv=[];let vi=0;const snow=snowyNow(),autumn=S&&[9,10].includes(today().getMonth())&&!snow;
     for(const g of list){const kind=CITY.m.gkind[g[0]];const pts=pairs(g,1);if(pts.length<3)continue;let col=C(GCOL[kind]||0x7fbf5a);
       if(kind!=='beach')col=grassC(GCOL[kind]||0x7fbf5a,snow);
@@ -2466,11 +2466,11 @@ function buildWorld(){
   const trunkMat=plain(0x5a4636),conMat=new THREE.MeshLambertMaterial({color:0xffffff}),decMat=new THREE.MeshLambertMaterial({color:0xffffff}),flowerMat=new THREE.MeshLambertMaterial({color:0xffffff});
   const postMat=plain(0x2f3a40),bulbMat=new THREE.MeshBasicMaterial({color:0x555044});
   const SHARED_GEO=new Set([trunkG,conG,decG,flowerG,postG,bulbG]);
-  const DENS={wood:46,forest:46,park:12,scrub:16,nature_reserve:28,cemetery:12,garden:8,golf_course:3,recreation_ground:6,grass:1.5,allotments:6};
-  const BUSHD={park:9,garden:14,cemetery:10,recreation_ground:4,grass:3,scrub:22,nature_reserve:8,allotments:16,golf_course:1.5,meadow:2};
+  const DENS={wood:52,forest:52,park:20,scrub:18,nature_reserve:32,cemetery:16,garden:12,golf_course:4,recreation_ground:8,grass:3,allotments:8};
+  const BUSHD={park:16,garden:20,cemetery:14,recreation_ground:6,grass:5,scrub:24,nature_reserve:10,allotments:18,golf_course:2,meadow:3};
   const TULIPS=[0xe63946,0xffd23f,0xffffff,0xff7eb6,0xff9f1c,0x9b5de5];
   function grassC(base,snow){let col=C(base);if(snow)return C(0xeef2f4);const mm=S?today().getMonth():9;
-    if(mm===9||mm===10)return col.lerp(C(0xa69a4a),mm===10?0.45:0.3);if(mm===3)return col.lerp(C(0xa9d873),0.35);if(mm>=11||mm<=2)return col.lerp(C(0x8c9472),0.45);if(mm>=5&&mm<=7)return col.lerp(C(0x4f9e3c),0.2);return col}
+    if(mm===9||mm===10)return col.lerp(C(0x8f9a4a),mm===10?0.28:0.12);if(mm===3)return col.lerp(C(0xa9d873),0.35);if(mm>=11||mm<=2)return col.lerp(C(0x7f8f62),0.35);if(mm>=4&&mm<=8)return col.lerp(C(0x4f9e3c),0.32);return col.lerp(C(0x5f9a48),0.15)}
   function bushColors(){const m=today().getMonth(),snowy=snowyNow();if(snowy)return [0xe8eef2,0xdfe7ec,0xd5dee4];if(m>=11||m<=2)return [0x5d6b4a,0x6b5f4a,0x4f5d44];
     if(m===3)return [0x8fcf5f,0xa6d96a,0x9ccf62];if(m===4)return [0x6fbf4a,0x7fca55,0xf5c6d6,0xffffff,0x6fb84a];if(m>=5&&m<=7)return [0x3f8a3a,0x4f9a45,0x5aa64c,0x2f7a35];
     if(m===8)return [0x5a9a45,0x7a9a3a,0x6a9a40];return [0xb5562b,0xd08a2e,0x8a8a3a,0xc4402a,0x7a6a3a]}
@@ -2517,7 +2517,7 @@ function buildWorld(){
   // ---------- textures: cobblestones (gatsten) and grass ----------
   function texCanvas(draw,rep){const c=document.createElement('canvas');c.width=c.height=256;draw(c.getContext('2d'));const t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.anisotropy=4;return t}
   const cobbleTex=texCanvas(g=>{g.fillStyle='#4a4743';g.fillRect(0,0,256,256);for(let r=0;r<16;r++)for(let k=0;k<16;k++){const x=k*16+(r%2)*8,y=r*16;const v=110+Math.floor(Math.random()*50);g.fillStyle=`rgb(${v},${v-6},${v-14})`;g.beginPath();g.roundRect?g.roundRect(x+1.5,y+1.5,13,13,4):g.rect(x+1.5,y+1.5,13,13);g.fill()}});
-  const grassTex=texCanvas(g=>{g.fillStyle='#d8e6c8';g.fillRect(0,0,256,256);for(let i=0;i<5000;i++){const v=170+Math.floor(Math.random()*85);g.fillStyle=`rgba(${v-40},${v},${v-70},0.55)`;g.fillRect(Math.random()*256,Math.random()*256,1.5,3)}});
+  const grassTex=texCanvas(g=>{g.fillStyle='#e4f0d4';g.fillRect(0,0,256,256);for(let i=0;i<5000;i++){const v=185+Math.floor(Math.random()*70);g.fillStyle=`rgba(${v-45},${v},${v-80},0.45)`;g.fillRect(Math.random()*256,Math.random()*256,1.5,3)}});
   const cobbleMat=new THREE.MeshLambertMaterial({map:cobbleTex});
   const GAMLA=(x,z)=>{const [a,b]=P(59.3278,18.0640),[c,d]=P(59.3215,18.0785);return x>a&&x<c&&z>b&&z<d};
   function cobbleGeo(ids,near){if(!near)return null;const P2=[],U=[],I=[];let vi=0;
@@ -2726,9 +2726,13 @@ function buildWorld(){
   // the strip of road a person may not stand on (the outer edge is allowed where the pavement is squeezed by buildings)
   function onCarriageway(x,z){const [dep,seg]=roadDepth(x,z);if(!seg)return 0;const w=seg[4];const allow=colliding(x,z,0.045)?w*0.3:0.004;const core=dep-allow;return core>0&&!crossingOK(x,z,seg)?core:0}
   // ---------- advertising: lit poster panels on main-street pavements, big billboards by the main roads ----------
-  const POSTERS=[['#f2b705','#1b1b1b','KANELBULLE','Färskt varje morgon','Bageri Solkatten'],['#1d3557','#ffffff','Lär dig svenska','SFI är gratis för dig','som bor i Stockholm'],
+  // sponsor slots: when the game has commercial partners, put their ads here ([background, text colour, headline, line 2, line 3]);
+// they rotate in with the city's own posters on the bus-stop panels and the big billboards
+const SPONSORS=[];
+const POSTERS_CITY=[['#f2b705','#1b1b1b','KANELBULLE','Färskt varje morgon','Bageri Solkatten'],['#1d3557','#ffffff','Lär dig svenska','SFI är gratis för dig','som bor i Stockholm'],
     ['#e63946','#ffffff','REA −50%','Vinterjackor','Nordkap Kläder'],['#2a9d8f','#ffffff','Skärgården','Båtar till Vaxholm','varje dag'],['#6a4c93','#ffffff','KONSERT','Fredag 20.00','Arenan Söder'],
     ['#ff7b00','#1b1b1b','Ny i stan?','Ställ dig i','bostadskön idag'],['#0b6e4f','#ffffff','Cykla mera','Lånecykel','25 kr per dag'],['#14213d','#f2b705','Fika 29 kr','Kaffe + bulle','Kafé Norrsken']];
+  const POSTERS=SPONSORS.length?[...SPONSORS,...SPONSORS,...POSTERS_CITY]:[...POSTERS_CITY,['#ffffff','#0b5fa5','Din annons här','Your ad here','Sponsor Stockholm Life']];
   function posterTex(p,wide){const c=document.createElement('canvas');c.width=wide?512:256;c.height=wide?256:384;const g=c.getContext('2d');const W=c.width,H=c.height;g.fillStyle=p[0];g.fillRect(0,0,W,H);
     g.fillStyle=p[1];g.textAlign='center';g.textBaseline='middle';g.font=`800 ${wide?72:46}px "Familjen Grotesk",Arial`;g.fillText(p[2],W/2,H*(wide?0.34:0.32));
     g.font=`600 ${wide?34:26}px "Familjen Grotesk",Arial`;g.fillText(p[3],W/2,H*(wide?0.62:0.56));g.fillText(p[4],W/2,H*(wide?0.8:0.66));const t=new THREE.CanvasTexture(c);t.anisotropy=4;return t}
@@ -3654,6 +3658,21 @@ function buildWorld(){
       o.position.set(x,0.01,z);o.rotation.y=Math.atan2(cx+0.6-x,cz-z)+(Math.random()-0.5)*0.6;g.add(o);
       if(i%3===0){const s=new THREE.Mesh(new THREE.PlaneGeometry(0.05,0.025),mat);s.position.set(x,0.1,z);s.rotation.y=o.rotation.y;g.add(s);const st=new THREE.Mesh(new THREE.CylinderGeometry(0.0012,0.0012,0.04,4),plain(0x8d6e63));st.position.set(x,0.075,z);g.add(st)}}
     scene.add(g);crowds.push({g,mixers,until:performance.now()+90000});av.position.set(cx+0.45,0.01,cz+0.1);controls.target.copy(av.position)}
+  // ---------- everyday demonstrations: small, permitted, daytime gatherings outside the Riksdag, Rosenbad, Stadshuset, Sergels torg and Medborgarplatsen ----------
+  const DEMO_PLACES=[['Mynttorget, outside the Riksdag',59.3263,18.0713],['Rosenbad (Government Offices)',59.3291,18.0663],['Stadshuset',59.3275,18.0543],['Sergels torg',59.3326,18.0649],['Medborgarplatsen',59.3144,18.0717],['Norra Bantorget',59.3360,18.0562],['Migrationsverket, Sundbyberg',59.3613,17.9719]];
+  const DEMO_CAUSES=['Climate action now','Fridays for Future','Lower rents, shorter queues','Fund our schools','Stop the deportations','Better pay for nurses','Free Palestine','Stand with Ukraine','Cheaper SL fares','Iranian women: Jin, Jiyan, Azadî','Save the archipelago','Animal rights'];
+  let demo=null,demoNext=40;
+  function demoTick(dt,fx,fz){demoNext-=dt;const day=S.hour>=10&&S.hour<18&&!['rain','snow'].includes(S.weather);
+    if(demo&&(performance.now()>demo.until||!day)){scene.remove(demo.g);demo=null;demoNext=200+Math.random()*200}
+    if(!demo&&day&&demoNext<=0){demoNext=200+Math.random()*200;const near=DEMO_PLACES.map(d=>{const [x,z]=P(d[1],d[2]);return [Math.hypot(x-fx,z-fz),d,x,z]}).filter(a=>a[0]<14).sort((a,b)=>a[0]-b[0]);
+      if(near.length&&Math.random()<0.7){const [d,place,x,z]=near[Math.floor(Math.random()*Math.min(2,near.length))],cause=pickR(DEMO_CAUSES);const n=8+Math.floor(Math.random()*16);
+        const g=new THREE.Group(),mat=placard(cause),mixers=[];for(let i=0;i<n;i++){const a=Math.random()*6.28,r=Math.sqrt(Math.random())*0.28,px=x+Math.cos(a)*r,pz=z+Math.sin(a)*r*0.7;if(colliding(px,pz,0.01)||onCarriageway(px,pz)>0)continue;
+          let o;if(MODELS.ready&&Object.keys(MODELS.chars).length){o=modelPed();scene.remove(o);if(o.userData.mixer)mixers.push(o.userData.mixer)}else{o=person(pickR(CLOTHES),NPC_S,1);scene.remove(o)}
+          o.position.set(px,0.01+deckAt(px,pz),pz);o.rotation.y=Math.atan2(x-px,z-pz)+(Math.random()-0.5)*0.8;g.add(o);if(i%3===0){const sg=new THREE.Mesh(new THREE.PlaneGeometry(0.05,0.025),mat);sg.position.set(px,0.1,pz);sg.rotation.y=o.rotation.y;g.add(sg);const st=new THREE.Mesh(new THREE.CylinderGeometry(0.0012,0.0012,0.04,4),plain(0x8d6e63));st.position.set(px,0.075,pz);g.add(st)}}
+        const lb=textSprite('Demonstration · '+cause,{fs:28,icon:'g:fist',iconBg:'#c8342c',bg:'rgba(255,255,255,.95)',fg:'#18212B',scale:0.00036});lb.position.set(x,0.22,z);lb.userData.demo=1;g.add(lb);
+        scene.add(g);demo={g,mixers,until:performance.now()+240000,x,z,cause,place:place[0]};if(d<4)notify('mail','Demonstration · '+place[0],cause+': a permitted demonstration is going on near you.')}}
+    if(demo)demo.mixers.forEach(m=>m.update(dt*0.4))}
+  function demoAt(x,z){return demo&&Math.hypot(demo.x-x,demo.z-z)<0.5?demo:null}
   let stugor=null;
   function setValstugor(on){if(!on&&stugor){scene.remove(stugor);stugor=null;return}if(!on||stugor)return;stugor=new THREE.Group();
     VALSTUGOR.forEach(([la,lo],i)=>{LISTS.forEach((L,j)=>{const [x,z]=P(la,lo);const h=new THREE.Group();const b=new THREE.Mesh(new THREE.BoxGeometry(0.05,0.045,0.04),plain(parseInt(L.col.slice(1),16)));b.position.y=0.03;h.add(b);
@@ -3801,6 +3820,7 @@ function buildWorld(){
       if(px>sx-w&&px<sx+w&&py<sy&&py>sy-h){const d=Math.abs(px-sx);if(d<hd){hd=d;hit=sp}}}
     if(!hit&&entSigns.length){const sh=ray.intersectObjects(entSigns,false)[0];if(sh)hit=sh.object}
     if(hit){showPoi(hit.userData.poi);return}
+    {const gp=tapPoint();const d=gp&&demoAt(gp.x,gp.z);if(d){modal(`<h2>Demonstration · ${esc2(d.place)}</h2><p>"${esc2(d.cause)}". A permitted demonstration (allmän sammankomst): Polisen has given permission, and anyone may join or just listen.</p><div class="row2"><button class="btn" id="j">Join for an hour</button><button class="btn ghost" id="no">Walk on</button></div>`,m=>{m.querySelector('#no').onclick=closeModal;m.querySelector('#j').onclick=()=>{closeModal();walkTo(d.x+0.3,d.z+0.1,'to the demonstration');setTimeout(()=>{apply({social:6,mood:3,fun:4,energy:-4});spendTime(1);log(`Joined the demonstration "${d.cause}" at ${d.place}.`,'plus');after()},400)}});return}}
     {const pd=pedAt(px,py,r);if(pd){pd.hold=3;meetStranger({g:Math.random()<0.5?'f':'m'});return}}
     const p=tapPoint();if(!p)return;
     setTimeout(()=>{if(lastTap&&performance.now()-lastTap>=280)walkTo(p.x,p.z,'')},300)});
@@ -4042,7 +4062,7 @@ function buildWorld(){
     if(rideState&&rideState.bus){follow=busTick(dt)}else if(rideState&&rideState.v2){follow=rideTick(dt)}else if(rideState){const R=rideState;R.d=Math.min(R.len,R.d+R.sp*dt);let i=1;while(i<R.cum.length-1&&R.cum[i]<R.d)i++;const a=R.pts[i-1],b=R.pts[i],u=clamp((R.d-R.cum[i-1])/((R.cum[i]-R.cum[i-1])||1),0,1);
       R.g.position.copy(a.clone().lerp(b,u));const dir=b.clone().sub(a);R.g.rotation.y=Math.atan2(dir.x,dir.z);follow=R.g.position;if(R.d>=R.len)R.done()}
     if(DR.on){driveTick(dt,T);follow=DR.g.position;moving=true}
-    if(!IN.on&&!DR.on&&!rideState){if(av.parent!==scene)scene.add(av);if(!av.visible&&!avHidden)av.visible=true;if(avHidden)av.visible=false;if(av.rotation.z===0)av.position.y=0.01+deckAt(av.position.x,av.position.z);unstick()}accidentCheck(dt);emergTick(dt,T);cityCalls(dt,T,av.position.x,av.position.z);hoverTick(dt);
+    if(!IN.on&&!DR.on&&!rideState){if(av.parent!==scene)scene.add(av);if(!av.visible&&!avHidden)av.visible=true;if(avHidden)av.visible=false;if(av.rotation.z===0)av.position.y=0.01+deckAt(av.position.x,av.position.z);unstick()}accidentCheck(dt);emergTick(dt,T);cityCalls(dt,T,av.position.x,av.position.z);try{demoTick(dt,av.position.x,av.position.z)}catch(e){}hoverTick(dt);
     if(avMixer){const fast=running||(walk&&walk.speed>1.2);setAvState(moving?(fast?'Run':'Walk'):'Idle');if(avActs.Walk)avActs.Walk.timeScale=walk?Math.min(2.2,0.8+walk.speed*0.4):1;avMixer.update(dt);avModel.position.y=emoteT>0?Math.abs(Math.sin(T*10))*0.4*emoteT/AV_S*0.05:0}
     else{animPerson(av,av.position.distanceTo(lastAv),dt,moving,AV_S,running);if(emoteT>0){av.userData.body.position.y+=Math.abs(Math.sin(T*10))*0.6*emoteT;av.userData.lArm.rotation.x=-2.6*emoteT;av.userData.rArm.rotation.x=-2.6*emoteT}}
     lastAv.copy(av.position);emoteT=Math.max(0,emoteT-dt*0.8);if((T*4|0)%4===0)syncLuggage();

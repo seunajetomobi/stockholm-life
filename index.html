@@ -2517,7 +2517,7 @@ function buildWorld(){
   const TRANSIT=[],TGRID=new Map(),tveh=[];const transitOn=!!(CITY&&CITY.t&&CITY.t.routes&&CITY.t.routes.length);
   const BLUE_BUS=new Set(['1','2','3','4','5','6']);
   const modeKey=m=>m==='trolleybus'?'bus':m==='light_rail'?'tram':m==='monorail'?'train':m;
-  const NAMEDCOL={blue:0x0057a8,red:0xc8102e,green:0x3a9a4a,yellow:0xf5c700,orange:0xd77d00,purple:0xa05ea6,pink:0xf166a7,grey:0x878a83,gray:0x878a83,black:0x222222,white:0xf2f2f2};
+  const NAMEDCOL={blue:0x0089ca,red:0xd71d24,green:0x179d4d,yellow:0xf5c700,orange:0xd77d00,purple:0xa05ea6,pink:0xf166a7,grey:0x878a83,gray:0x878a83,black:0x222222,white:0xf2f2f2};
   function hexOf(c){const v=String(c||'').trim().toLowerCase();if(NAMEDCOL[v]!==undefined)return NAMEDCOL[v];const h=v.replace('#','');return /^[0-9a-f]{6}$/.test(h)?parseInt(h,16):null}
   function lineDest(r){const n=(r.name||'').replace(/^[^:]*:\s*/,'');const m=n.split(/\s*(?:=>|→|->|–>|↔)\s*|\s+[-–]\s+/);if(m.length>1)return m[m.length-1].trim();if(r.to)return r.to;const st=r.stops||[];return st.length?st[st.length-1][2]:''}
   function transitLook(r){const op=((r.op||'')+' '+(r.net||'')+' '+(r.name||'')).toLowerCase(),c=hexOf(r.col),m=modeKey(r.m);
@@ -2532,7 +2532,7 @@ function buildWorld(){
       if(/\bsj\b|sj ab|x2000/.test(op))return {body:0x2b2f33,stripe:0xe8e2d0,cars:6,label:'#2b2f33',kind:/nattåg/.test(op)?'SJ night train':'SJ'};if(/transdev|mälartåg/.test(op))return {body:0xe4e4e4,stripe:0xe24b46,cars:4,label:'#b83a36',kind:'Mälartåg · Transdev'};
       if(/roslagsbanan|saltsjöbanan/.test(op))return {body:0xe9e4da,stripe:c||0x7a2a8a,cars:3,label:'#6a2a7a',kind:/roslags/.test(op)?'Roslagsbanan':'Saltsjöbanan'};
       return {body:0xeeeeea,stripe:c||0xd71d85,cars:5,label:'#d71d85',kind:'Pendeltåg'}}
-    if(m==='subway')return {body:0xbfc4c8,stripe:c||0x3a9a4a,cars:6,label:c?'#'+c.toString(16).padStart(6,'0'):'#3a9a4a',kind:'Tunnelbana'+(r.op?' · '+r.op:'')};
+    if(m==='subway')return {body:0x2b5fa6,stripe:c||0x179d4d,cars:6,label:c?'#'+c.toString(16).padStart(6,'0'):'#3a9a4a',kind:'Tunnelbana'+(r.op?' · '+r.op:'')};
     if(m==='tram')return {body:0xeeeeea,stripe:c||0x6a7b86,cars:3,label:c?'#'+c.toString(16).padStart(6,'0'):'#6a7b86',kind:(/^3[01]$/.test(String(r.ref))?'Tvärbanan':/^21$/.test(String(r.ref))?'Lidingöbanan':/^12$/.test(String(r.ref))?'Nockebybanan':/^7N$/.test(String(r.ref))?'Djurgårdslinjen museum tram':/^7$/.test(String(r.ref))?'Spårväg City':'Spårvagn')+(r.op&&r.op!=='SL'?' · '+r.op:'')};
     if(m==='ferry'){const big=/viking|tallink|silja|birka|finnlines|destination gotland|cinderella/.test(op);return {big,label:'#1d5ea8',kind:big?(r.op||'Ferry'):/^8[0-9]$/.test(String(r.ref||''))?'SL boat':'Boat'}}
     return {body:0xdddddd,label:'#555',kind:''}}
@@ -2556,6 +2556,27 @@ function buildWorld(){
   function posOnR(R,d){let lo=1,hi=R.cum.length-1;while(lo<hi){const mid=(lo+hi)>>1;if(R.cum[mid]<d)lo=mid+1;else hi=mid}const i=Math.max(1,lo);const a=R.pts[i-1],b=R.pts[i],u=clamp((d-R.cum[i-1])/((R.cum[i]-R.cum[i-1])||1),0,1);
     return {x:a[0]+(b[0]-a[0])*u,z:a[1]+(b[1]-a[1])*u,dx:b[0]-a[0],dz:b[1]-a[1]}}
   const inTunnel=(R,d)=>R.tun.some(t=>d>=t[0]&&d<=t[1]);
+  // how far inside a tunnel a point on the line is (0 outside); tunnels that start or end the line count as endless at that side
+  function tunDepth(R,d){let dep=0;for(const [a,b] of R.tun)if(d>=a&&d<=b){const da=a<0.02?1e9:d-a,db=b>R.L-0.02?1e9:b-d;dep=Math.max(dep,Math.min(da,db))}return dep}
+  // ---------- tunnel portals: a concrete mouth with a dark opening wherever a rail line or a road goes underground ----------
+  // vehicles stay visible until they are inside the 0.3-deep hood, so they drive into the tunnel instead of vanishing on open track
+  function buildPortals(){const list=[];
+    const add=(x,z,ux,uz,w,h)=>{for(const o of list)if(Math.hypot(o.x-x,o.z-z)<0.3&&Math.abs(o.ux*ux+o.uz*uz)>0.8){o.x=(o.x+x)/2;o.z=(o.z+z)/2;o.w=Math.max(o.w,w+Math.hypot(o.x-x,o.z-z));return}list.push({x,z,ux,uz,w,h})};
+    for(const R of TRANSIT){if(!['train','subway','tram'].includes(R.m))continue;const w=R.m==='tram'?0.12:0.17;
+      for(const [a,b] of R.tun){if(a>0.02&&b-a>0.35){const p=posOnR(R,a),q=posOnR(R,a+0.1),L=Math.hypot(q.x-p.x,q.z-p.z)||1;add(p.x,p.z,(q.x-p.x)/L,(q.z-p.z)/L,w,0.1)}
+        if(b<R.L-0.02&&b-a>0.35){const p=posOnR(R,b),q=posOnR(R,b-0.1),L=Math.hypot(q.x-p.x,q.z-p.z)||1;add(p.x,p.z,(q.x-p.x)/L,(q.z-p.z)/L,w,0.1)}}}
+    if(G)for(let n=0;n<G.N;n++){let tun=-1,open=false;for(const ei of G.adj[n]){const e=G.E[ei];if(e[2]>10)continue;if(e[4]&2)tun=ei;else open=true}
+      if(tun<0||!open)continue;const e=G.E[tun],pts=edgePts(tun,n);if(pts.length<2||e[5]<40)continue;const dx=pts[1][0]-pts[0][0],dz=pts[1][1]-pts[0][1],L=Math.hypot(dx,dz)||1;add(pts[0][0],pts[0][1],dx/L,dz/L,RW[e[2]]+0.04,0.09)}
+    const con=[],blk=[],M=new THREE.Matrix4(),Q=new THREE.Quaternion(),UP=new THREE.Vector3(0,1,0),ONE=new THREE.Vector3(1,1,1),V=new THREE.Vector3();
+    for(const o of list){const yaw=Math.atan2(o.ux,o.uz);Q.setFromAxisAngle(UP,yaw);const D=0.3,T=0.025;
+      const hood=new THREE.BoxGeometry(o.w+2*T,o.h+T,D);M.compose(V.set(o.x+o.ux*D/2,(o.h+T)/2,o.z+o.uz*D/2),Q,ONE);hood.applyMatrix4(M);con.push(hood);
+      for(const sd of [-1,1]){const wing=new THREE.BoxGeometry(T,o.h*0.7,0.16);const q2=new THREE.Quaternion().setFromAxisAngle(UP,yaw+sd*0.35);const rx=o.uz*sd,rz=-o.ux*sd;
+        M.compose(V.set(o.x-o.ux*0.07+rx*(o.w/2+T+0.02),o.h*0.35,o.z-o.uz*0.07+rz*(o.w/2+T+0.02)),q2,ONE);wing.applyMatrix4(M);con.push(wing)}
+      const hole=new THREE.PlaneGeometry(o.w,o.h);M.compose(V.set(o.x-o.ux*0.0015,o.h/2,o.z-o.uz*0.0015),new THREE.Quaternion().setFromAxisAngle(UP,yaw+Math.PI),ONE);hole.applyMatrix4(M);blk.push(hole)}
+    const U=THREE.BufferGeometryUtils;if(!list.length||!U)return 0;
+    const cm=new THREE.Mesh(U.mergeBufferGeometries(con),plain(0x9a958c));cm.castShadow=cm.receiveShadow=true;scene.add(cm);
+    scene.add(new THREE.Mesh(U.mergeBufferGeometries(blk),new THREE.MeshBasicMaterial({color:0x07090b})));return list.length}
+  try{buildPortals()}catch(e){console.warn('tunnel portals',e)}
   const busTpls=new Map();
   function busPart(look){if(MODELS.bus){let t=busTpls.get(look.body);if(!t){t=MODELS.bus.clone(true);t.traverse(o=>{if(o.isMesh&&o.material&&(o.material.name==='Details'||o.material.name==='Top')){o.material=o.material.clone();o.material.color.setHex(look.body)}});busTpls.set(look.body,t)}return t.clone(true)}
     const g=new THREE.Group();const b=new THREE.Mesh(new THREE.BoxGeometry(0.055,0.06,0.24),plain(look.body));b.position.y=0.04;b.castShadow=true;g.add(b);const w=new THREE.Mesh(new THREE.BoxGeometry(0.057,0.018,0.22),new THREE.MeshBasicMaterial({color:0x1a2530}));w.position.y=0.05;g.add(w);return g}
@@ -2771,19 +2792,35 @@ function buildWorld(){
     let pts=[];if(R){let dEnd=R.L;if(mode==='pt'){const s=STP['T-Centralen'];const dd=projOnto(R.pts,R.cum,s[0]-1.4,s[1]+1.6,1.5);if(dd!==null)dEnd=dd}for(let d=Math.max(0,dEnd-40);d<=dEnd;d+=0.05){const p=posOnR(R,d);pts.push(new THREE.Vector3(p.x,0.03,p.z))}}
     if(mode==='tx'||pts.length<5){const raw=driveRoute(dst.x-2,dst.z-30,dst.x,dst.z);pts=raw&&raw.length>2?laneOffset(raw,0.025):[new THREE.Vector3(dst.x,0.012,dst.z-8),new THREE.Vector3(dst.x,0.012,dst.z)]}
     const g=new THREE.Group();const cars=[];
-    if(mode==='ae'||mode==='pt'){const look=mode==='ae'?{body:0xffce1d,stripe:0x1b1b1b}:{body:0xeeeeea,stripe:0xf166a7};for(let i=0;i<4;i++){const c=railCar(look,0.36);g.add(c);cars.push(c)}}
+    if(mode==='ae'||mode==='pt'){const look=mode==='ae'?{body:0xffce1d,stripe:0x1b1b1b}:{body:0xeeeeea,stripe:0xf166a7};for(let i=0;i<4;i++){const c=railCar(look,0.36,i===0?1:i===3?2:0,true);g.add(c);cars.push(c)}}
     else if(mode==='fb'){const c=busPart({body:0x23305a,label:'#23305a'});g.add(c);cars.push(c)}else{const c=new THREE.Group();c.add(MODELS.cars&&MODELS.cars.length?MODELS.cars[0].clone(true):new THREE.Mesh(new THREE.BoxGeometry(0.04,0.026,0.09),plain(0x1b1b1b)));const sgn=new THREE.Mesh(new THREE.BoxGeometry(0.02,0.008,0.01),new THREE.MeshBasicMaterial({color:0xffd400}));sgn.position.y=0.045;c.add(sgn);g.add(c);cars.push(c)}
     scene.add(g);const cum=[0];for(let i=1;i<pts.length;i++)cum.push(cum[i-1]+pts[i].distanceTo(pts[i-1]));av.visible=false;avHidden=true;
     const chip=$('ride');chip.style.display='block';chip.innerHTML=`<b>${{ae:'Arlanda Express',pt:'Pendeltåg',fb:'Flygbussarna',tx:'Taxi'}[mode]}</b> → ${mode==='fb'?'Cityterminalen':mode==='tx'?'your destination':'Stockholm C'}`;
     rideState={v2:1,yy:(mode==='ae'||mode==='pt')?0.05:0.014,g,cars,pts,cum,len:cum[cum.length-1],t:0,T:clamp(cum[cum.length-1]/2.2,8,20),done:()=>{scene.remove(g);rideState=null;chip.style.display='none';avHidden=false;const f=freeSpot(dst.x,dst.z)||[dst.x,dst.z];placeAvatar(f[0],f[1],true);av.visible=true;done&&done()}};rideTick(0)}
-  function railCar(look,len){const g=new THREE.Group();const b=new THREE.Mesh(new THREE.BoxGeometry(0.062,0.058,len),plain(look.body));b.position.y=0.042;b.castShadow=true;g.add(b);
-    const s=new THREE.Mesh(new THREE.BoxGeometry(0.064,0.012,len*0.98),new THREE.MeshBasicMaterial({color:look.stripe}));s.position.y=0.03;g.add(s);
-    const w=new THREE.Mesh(new THREE.BoxGeometry(0.064,0.016,len*0.86),new THREE.MeshBasicMaterial({color:0x1a2530}));w.position.y=0.056;g.add(w);return g}
+  const RAILM=new Map(),railM=c=>{let m=RAILM.get(c);if(!m)RAILM.set(c,m=plain(c));return m};
+  const railWin=new THREE.MeshLambertMaterial({color:0x1a2530,emissive:0xfff0c8,emissiveIntensity:0});railWin.userData.scale=0.75;nightMats.push(railWin);
+  const headM=new THREE.MeshBasicMaterial({color:0xfff6dc}),tailM=new THREE.MeshBasicMaterial({color:0xff2a1a});
+  // pos: 0 middle car, 1 leading cab, 2 trailing cab, 3 single car with a cab at both ends
+  function railCar(look,len,pos,electric){const g=new THREE.Group(),W=0.062,H=0.058,body=railM(look.body),cabF=pos===1||pos===3,cabR=pos===2||pos===3,cab=0.03;
+    const bl=len-(cabF?cab:0)-(cabR?cab:0),bz=((cabF?-cab:0)+(cabR?cab:0))/2;
+    const b=new THREE.Mesh(new THREE.BoxGeometry(W,H,bl),body);b.position.set(0,0.042,bz);b.castShadow=true;g.add(b);
+    const roof=new THREE.Mesh(new THREE.BoxGeometry(W*0.84,0.007,len*0.94),railM(0x8e959b));roof.position.y=0.074;g.add(roof);
+    const st=new THREE.Mesh(new THREE.BoxGeometry(W+0.002,0.01,len*0.97),new THREE.MeshBasicMaterial({color:look.stripe}));st.position.y=0.026;g.add(st);
+    const win=new THREE.Mesh(new THREE.BoxGeometry(W+0.0015,0.017,len*0.84),railWin);win.position.y=0.056;g.add(win);
+    const nd=Math.max(2,Math.round(len/0.1)),dm=railM(0x3a434b);for(let i=0;i<nd;i++){const z=-len/2+(i+0.5)*len/nd;for(const sx of [-1,1]){const d=new THREE.Mesh(new THREE.BoxGeometry(0.0012,0.036,0.012),dm);d.position.set(sx*(W/2+0.0008),0.039,z);g.add(d)}}
+    const bog=railM(0x22272b);for(const z of [len/2-0.045,-len/2+0.045]){const q=new THREE.Mesh(new THREE.BoxGeometry(W*0.8,0.012,0.05),bog);q.position.set(0,0.009,z);g.add(q)}
+    const cabAt=sgn=>{const z=sgn*(len/2-cab/2);const n=new THREE.Mesh(new THREE.BoxGeometry(W*0.97,H*0.9,cab),body);n.position.set(0,0.04,z);g.add(n);
+      const ws=new THREE.Mesh(new THREE.PlaneGeometry(W*0.86,0.024),railM(0x10161c));ws.position.set(0,0.058,z+sgn*(cab/2+0.0006));ws.rotation.y=sgn>0?0:Math.PI;ws.rotation.x=-sgn*0.35*(sgn>0?1:-1);g.add(ws);
+      for(const sx of [-1,1]){const l=new THREE.Mesh(new THREE.CircleGeometry(0.0045,8),sgn>0?headM:tailM);l.position.set(sx*W*0.32,0.022,z+sgn*(cab/2+0.0008));l.rotation.y=sgn>0?0:Math.PI;g.add(l)}};
+    if(cabF)cabAt(1);if(cabR)cabAt(-1);
+    if(electric&&(pos===1||pos===3||pos===0&&len>0.3)){const pm=railM(0x2a2f33);const p1=new THREE.Mesh(new THREE.BoxGeometry(0.003,0.003,0.05),pm);p1.position.set(0,0.09,0);p1.rotation.x=0.5;g.add(p1);
+      const p2=new THREE.Mesh(new THREE.BoxGeometry(0.04,0.003,0.004),pm);p2.position.set(0,0.1,0.012);g.add(p2)}
+    return g}
   function makeTransit(R,d){const look=R.look,m=R.m;const v={R,m,d,v:0,dwell:0,parts:[],gapL:0.27,lastStop:-1};
     if(m==='bus'){v.parts.push(busPart(look));v.carL=[0.24];v.sp=SPEED.bus*(0.9+Math.random()*0.2)}
     else if(m==='ferry'){const tpl=MODELS.boats&&(look.big?MODELS.boats.CruiseShip:MODELS.boats[pickR(['Boat','BoatWSail','Lifeboat'])]);let g;if(tpl){g=new THREE.Group();g.add(tpl.clone(true))}else{g=new THREE.Group();const h=new THREE.Mesh(new THREE.BoxGeometry(look.big?0.9:0.45,0.08,look.big?0.2:0.13),plain(0xf7f7f2));h.position.y=0.03;g.add(h)}
       g.userData.boat=1;v.parts.push(g);v.carL=[look.big?0.9:0.45];v.sp=SPEED.ferry*(look.big?1.3:1);v.gapL=look.big?1:0.6}
-    else{const n=look.cars||3,cl=m==='tram'?0.17:m==='subway'?0.3:0.36;for(let i=0;i<n;i++)v.parts.push(railCar(look,cl*0.96));v.carL=new Array(n).fill(cl);v.sp=SPEED[m]*(look.kind==='Arlanda Express'?1.5:1);v.gapL=n*cl+0.1}
+    else{const n=look.cars||3,cl=m==='tram'?0.17:m==='subway'?0.3:0.36,el=m!=='subway';for(let i=0;i<n;i++)v.parts.push(railCar(look,cl*0.96,n===1?3:i===0?1:i===n-1?2:0,el));v.carL=new Array(n).fill(cl);v.sp=SPEED[m]*(look.kind==='Arlanda Express'?1.5:1);v.gapL=n*cl+0.1}
     v.parts.forEach(p=>scene.add(p));
     {const tr=m==='train'||m==='subway'||m==='tram'||m==='ferry';const txt=tr?`${look.kind}${R.r.ref&&!/[;X]/.test(R.r.ref)&&look.kind!=='Arlanda Express'?' '+R.r.ref:''} → ${R.dest||''}`:(R.r.ref?R.r.ref+' ':'')+(R.dest||look.kind);v.label=textSprite(txt,{fs:28,bg:look.label,fg:'#fff',scale:0.00034});v.label.visible=false;scene.add(v.label)}
     return v}
@@ -2807,7 +2844,7 @@ function buildWorld(){
         else v.v+=(target-v.v)*(1-Math.exp(-dt*1.2));
         v.d=Math.min(R.L,v.d+Math.min(v.v*dt,Math.max(0,stopAt)))}
       let back=0;const hid=inTunnel(R,v.d);
-      v.parts.forEach((p,i)=>{const dd=Math.max(0,v.d-back-v.carL[i]/2);back+=v.carL[i]+0.01;const q=posOnR(R,dd);p.visible=!inTunnel(R,dd);p.position.set(q.x,v.m==='ferry'?0.008:0.012+deckAt(q.x,q.z),q.z);
+      v.parts.forEach((p,i)=>{const dd=Math.max(0,v.d-back-v.carL[i]/2);back+=v.carL[i]+0.01;const q=posOnR(R,dd);p.visible=tunDepth(R,dd)<0.26;p.position.set(q.x,v.m==='ferry'?0.008:0.012+deckAt(q.x,q.z),q.z);
         p.rotation.y=Math.atan2(q.dx,q.dz)-(p.userData.boat?Math.PI/2:0)});
       if(v.label){const q=v.parts[0].position;v.label.position.set(q.x,v.m==='ferry'?0.22:0.15,q.z);v.label.visible=!hid&&Math.hypot(q.x-fx,q.z-fz)<4.5}}}
   // bus stops with shelters and an ad panel, at the real stop positions
@@ -3482,7 +3519,7 @@ function buildWorld(){
     const chip=$('ride');chip.style.display='block';chip.innerHTML=tr.legs.map(l=>`<b style="color:${l.line.col==='#0089CA'?'#6cc4ff':l.line.col}">${l.short}</b> ${l.stops[0]} → ${l.stops[l.stops.length-1]}`).join(' · ');
     const pts=tr.stations.map(s=>new THREE.Vector3(STP[s][0],0.06,STP[s][1]));
     walkPath(toStation.pts,()=>{av.visible=false;const curve=rideCurve(tr);const col=parseInt(tr.legs[0].line.col.slice(1),16);const look={body:0xbfc4c8,stripe:col};
-      const g=new THREE.Group();const cars=[];for(let i=0;i<4;i++){const c=railCar(look,0.34);g.add(c);cars.push(c)}scene.add(g);
+      const g=new THREE.Group();const cars=[];for(let i=0;i<4;i++){const c=railCar(look,0.34,i===0?1:i===3?2:0,false);g.add(c);cars.push(c)}scene.add(g);
       const T=clamp(6+curve.len/9,8,36);
       rideState={v2:1,g,cars,pts:curve.pts,cum:curve.cum,len:curve.len,t:0,T,done:()=>{scene.remove(g);rideState=null;const last=STP[tr.stations[tr.stations.length-1]];{const f=freeSpot(last[0],last[1])||last;placeAvatar(f[0],f[1],false)};av.visible=true;
         const r2=route(last[0],last[1],dest[0],dest[1]);walkPath(r2.pts,()=>{chip.style.display='none';done()})}};rideTick(0)});

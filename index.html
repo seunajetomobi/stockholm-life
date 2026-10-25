@@ -292,6 +292,10 @@ h2.hero{font-size:34px;background:linear-gradient(90deg,var(--sweblue),#3a86ff 4
 .aboutme{display:grid;gap:6px;font-size:13px}.aboutme .tags{display:flex;flex-wrap:wrap;gap:5px}.aboutme .tags i{font-style:normal;padding:3px 9px;border-radius:12px;background:color-mix(in srgb,var(--c5) 18%,transparent)}
 .aboutme .tags i.t{background:color-mix(in srgb,var(--c4) 20%,transparent)}
 .lbl{box-shadow:0 3px 10px rgba(10,20,40,.25)}
+.wxnow{display:flex;gap:12px;align-items:center;margin:6px 0 4px}.wxnow .wxbig{font-size:44px;line-height:1}.wxnow b{font-size:28px}.wxnow small{display:block;color:var(--muted);font-size:12px;margin-top:2px}
+.wxwear{margin:4px 0 8px;padding-left:18px;font-size:13px;line-height:1.5}
+.wxhours{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(46px,1fr);gap:4px;overflow-x:auto;padding-bottom:4px}.wxhours div{display:grid;justify-items:center;gap:1px;background:var(--surface2);border-radius:8px;padding:5px 2px;font-size:12px}.wxhours span{font-size:18px}.wxhours small{color:var(--muted);font-size:10.5px}
+.wxdays{width:100%;border-collapse:collapse;font-size:12.5px}.wxdays td{padding:4px 3px;border-top:1px solid var(--line)}.wxdays td:nth-child(2){font-size:16px}.wxdays td:last-child,.wxdays td:nth-child(5){color:var(--muted);text-align:right}
 </style>
 </head>
 <body>
@@ -1016,7 +1020,38 @@ const homeD=()=>(HOMES[S.home]||HOMES.none).d;
 const queueYears=()=>S.queue/365;
 const winter=()=>{const m=today().getMonth();return [11,0,1,2].includes(m)||(m===10&&S.flags.snow)};
 const TEMP=[-1,-1,2,7,12,17,20,19,14,8,4,0],WICON={clear:'☀',cloud:'☁',rain:'🌧',snow:'❄'};
-function rollWeather(){const m=today().getMonth(),r=Math.random();
+// ---------- live weather for Stockholm (Open-Meteo, no key): conditions now, the next 24 hours and 7 days ----------
+const LIVEWX={now:null,hours:[],days:[],at:0,err:''};
+const WMO={0:['Clear sky','clear'],1:['Mainly clear','clear'],2:['Partly cloudy','cloud'],3:['Overcast','cloud'],45:['Fog','cloud'],48:['Freezing fog','cloud'],51:['Light drizzle','rain'],53:['Drizzle','rain'],55:['Heavy drizzle','rain'],56:['Freezing drizzle','rain'],57:['Freezing drizzle','rain'],
+  61:['Light rain','rain'],63:['Rain','rain'],65:['Heavy rain','rain'],66:['Freezing rain','rain'],67:['Freezing rain','rain'],71:['Light snow','snow'],73:['Snow','snow'],75:['Heavy snow','snow'],77:['Snow grains','snow'],
+  80:['Rain showers','rain'],81:['Rain showers','rain'],82:['Violent rain showers','rain'],85:['Snow showers','snow'],86:['Heavy snow showers','snow'],95:['Thunderstorm','rain'],96:['Thunderstorm with hail','rain'],99:['Thunderstorm with hail','rain']};
+const wmo=c=>WMO[c]||['Unknown','cloud'];
+const WXICON=c=>c<=1?'☀':c===2?'⛅':c<=3?'☁':c<=48?'🌫':c>=95?'⛈':wmo(c)[1]==='snow'?'❄':'🌧';
+async function fetchLiveWeather(){
+  const u='https://api.open-meteo.com/v1/forecast?latitude=59.3293&longitude=18.0686&timezone=Europe%2FStockholm&wind_speed_unit=ms&forecast_days=7'+
+    '&current=temperature_2m,apparent_temperature,relative_humidity_2m,precipitation,snowfall,weather_code,cloud_cover,wind_speed_10m,wind_direction_10m,wind_gusts_10m,visibility,is_day'+
+    '&hourly=temperature_2m,apparent_temperature,precipitation_probability,precipitation,weather_code,wind_speed_10m'+
+    '&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max,wind_speed_10m_max,sunrise,sunset';
+  try{const r=await fetch(u);if(!r.ok)throw new Error('HTTP '+r.status);const j=await r.json(),c=j.current,H=j.hourly,D=j.daily;
+    LIVEWX.now={t:c.temperature_2m,feels:c.apparent_temperature,hum:c.relative_humidity_2m,pr:c.precipitation||0,snow:c.snowfall||0,code:c.weather_code,cloud:c.cloud_cover,wind:c.wind_speed_10m,dir:c.wind_direction_10m,gust:c.wind_gusts_10m,vis:c.visibility,day:c.is_day,time:c.time};
+    const i0=Math.max(0,H.time.findIndex(t=>t.slice(0,13)>=c.time.slice(0,13)));
+    LIVEWX.hours=H.time.slice(i0,i0+24).map((t,k)=>({t,temp:H.temperature_2m[i0+k],feels:H.apparent_temperature[i0+k],pp:H.precipitation_probability[i0+k]||0,pr:H.precipitation[i0+k]||0,code:H.weather_code[i0+k],wind:H.wind_speed_10m[i0+k]}));
+    LIVEWX.days=D.time.map((t,k)=>({t,code:D.weather_code[k],max:D.temperature_2m_max[k],min:D.temperature_2m_min[k],pr:D.precipitation_sum[k],pp:D.precipitation_probability_max[k],wind:D.wind_speed_10m_max[k],sr:D.sunrise[k],ss:D.sunset[k]}));
+    LIVEWX.at=Date.now();LIVEWX.err='';applyLiveWeather();return true}catch(e){LIVEWX.err=String(e.message||e);return false}}
+const liveFresh=()=>!!LIVEWX.now&&Date.now()-LIVEWX.at<3*3600e3;
+function applyLiveWeather(){if(typeof S==='undefined'||!S||!liveFresh())return;const n=LIVEWX.now;S.weather=wmo(n.code)[1];S.temp=Math.round(n.t);S.wx=n;try{render()}catch(e){}}
+// what to wear: from the real feels-like temperature for the next 12 hours, rain and snow chances, wind and sun
+function dressAdvice(){const n=LIVEWX.now;if(!n)return null;const hrs=LIVEWX.hours.slice(0,12);const lo=Math.min(n.feels,...hrs.map(h=>h.feels??h.temp));
+  const snowy=wmo(n.code)[1]==='snow'||hrs.some(h=>wmo(h.code)[1]==='snow'&&h.pp>=40),wet=n.pr>0.05||hrs.some(h=>h.pp>=50),windy=Math.max(n.gust||0,n.wind)>=10;const it=[];
+  it.push(lo<-8?'Down jacket, thermal underlayer, warm hat, scarf and mittens':lo<0?'Winter coat, hat, scarf and gloves':lo<6?'Warm jacket, a sweater and a hat':lo<12?'Jacket over a sweater':lo<18?'Light jacket or a hoodie':lo<23?'T-shirt with a thin layer for the evening':'Shorts, T-shirt or a summer dress, and water');
+  if(snowy)it.push('Waterproof winter boots with good grip');else if(wet)it.push(n.pr>0.5||hrs.slice(0,3).some(h=>h.pr>1)?'Raincoat and waterproof shoes':'An umbrella or a rain jacket');
+  if(windy)it.push(`Something windproof: gusts of ${Math.round(Math.max(n.gust||0,n.wind))} m/s`);
+  if(!snowy&&lo<1)it.push('Shoes with grip, pavements may be icy');
+  if(n.code<=1&&n.day&&n.t>10)it.push('Sunglasses, and sunscreen if you stay out');
+  return {lo:Math.round(lo),items:it}}
+function wearTip(force){const a=dressAdvice(),n=LIVEWX.now;if(!a||!S||(!force&&S.flags.wearDay===S.day))return;S.flags.wearDay=S.day;
+  notify('weather',`${Math.round(n.t)}° ${wmo(n.code)[0].toLowerCase()} in Stockholm`,'Wear: '+a.items.slice(0,2).join(' · '),()=>openWeather())}
+function rollWeather(){if(liveFresh()){applyLiveWeather();return}const m=today().getMonth(),r=Math.random();
   S.weather=winter()?(r<0.35?'snow':r<0.65?'cloud':'clear'):[9,10].includes(m)?(r<0.35?'rain':r<0.65?'cloud':'clear'):(r<0.2?'rain':r<0.45?'cloud':'clear');
   S.temp=Math.round(TEMP[m]+(Math.random()-0.5)*6+(S.weather==='clear'&&m>=4&&m<=8?2:0));if(S.weather==='snow'&&S.temp>1)S.temp=0}
 let lastFreeRender=0;
@@ -1304,7 +1339,7 @@ function glyphFor(p){const t=p.type,c=p.catName,n=(p.name||'').toLowerCase();
 /* =================== PHONE: notifications, Chatt, Mail, To-do, Bag =================== */
 const esc2=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 function inboxInit(s){if(!s.mail)s.mail=[];if(!s.chats)s.chats={};if(!s.todo)s.todo={day:s.day||1,items:[]};if(!s.bag)s.bag={};if(!s.fam)s.fam=null}
-const APPX={chat:['Chatt','chat','#1faa59'],mail:['Mail','mail','#2f6fd6'],todo:['To-do','check','#e07a1f'],bag:['Bag','bag','#8a5a2b'],bank:['Bank','wallet','#0f6b5c'],sl:['SL','train','#c8102e'],
+const APPX={weather:['Weather','sun','#f0a020'],chat:['Chatt','chat','#1faa59'],mail:['Mail','mail','#2f6fd6'],todo:['To-do','check','#e07a1f'],bag:['Bag','bag','#8a5a2b'],bank:['Bank','wallet','#0f6b5c'],sl:['SL','train','#c8102e'],
   people:['Contacts','people','#2a8a52'],dating:['Dating','heart','#d6336c'],jobs:['Jobs','brief','#0b5fa5'],courses:['Courses','cap','#6c3fb5'],housing:['Housing','house','#a84b32'],health:['1177','health','#0b7a75'],
   weather:['Weather','sun','#f0a020'],find:['Find','search','#3b4a57'],vote:['Election','ballot','#1f3f7a'],move:['Movement','fist','#c8342c'],rights:['Rights','scale','#566573'],wait:['Wait 1 h','clock','#23824f']};
 let notifBox=null;
@@ -1420,7 +1455,15 @@ function openBank(){const owed=(S.bills||[]).reduce((a,b)=>a+b.amt+(b.fees||0),0
   <dl class="kv"><dt>Balance</dt><dd><b>${kr(S.money)}</b></dd><dt>Unpaid bills</dt><dd>${kr(owed)} (${(S.bills||[]).length})</dd><dt>Salary</dt><dd>${S.job&&JOBS[S.job]?JOBS[S.job].name+' · paid on the 25th':'No job yet'}</dd><dt>Swish</dt><dd>${S.docs.bankid?'Active (needs BankID)':'Needs BankID'}</dd></dl>
   <div class="row2"><button class="btn" id="bl">Pay bills</button><button class="btn ghost" id="no">Close</button></div>`,m=>{m.querySelector('#no').onclick=closeModal;m.querySelector('#bl').onclick=()=>{closeModal();openBills()}})}
 // ---------- Weather ----------
-function openWeather(){const dl=daylight?daylight():8;modal(`<div class="phonehead" style="--c:#f0a020">${glyphSVG('sun')}<h2>Weather · Stockholm</h2></div><dl class="kv"><dt>Now</dt><dd>${S.temp!==undefined?S.temp+'°':''} ${esc2(S.weather||'')}</dd><dt>Daylight today</dt><dd>${dl.toFixed(1)} hours</dd><dt>Tip</dt><dd>${S.weather==='rain'?(S.bag&&S.bag.paraply?'You have your umbrella ☂':'Rain: an umbrella saves your mood'):S.weather==='snow'?'Snow: wear your winter jacket':'Get outside while it\'s light'}</dd></dl><div class="row2"><button class="btn ghost" id="no">Close</button></div>`,m=>m.querySelector('#no').onclick=closeModal)}
+function openWeather(){const dl=daylight?daylight():8,n=LIVEWX.now,adv=dressAdvice();const hhmm=t=>t.slice(11,16),wd=t=>WD[new Date(t+'T12:00').getDay()];
+  const dir=d=>['N','NE','E','SE','S','SW','W','NW'][Math.round(((d||0)%360)/45)%8];
+  const live=n?`<p class="note">Live weather in Stockholm right now · Open-Meteo · updated ${new Date(LIVEWX.at).toLocaleTimeString('sv-SE',{hour:'2-digit',minute:'2-digit'})}</p>
+    <div class="wxnow"><span class="wxbig">${WXICON(n.code)}</span><div><b>${Math.round(n.t)}°</b> ${esc2(wmo(n.code)[0])}<small>Feels like ${Math.round(n.feels)}° · wind ${Math.round(n.wind)} m/s ${dir(n.dir)}${n.gust?`, gusts ${Math.round(n.gust)}`:''} · humidity ${n.hum}%${n.vis<5000?` · visibility ${(n.vis/1000).toFixed(1)} km`:''}</small></div></div>
+    ${adv?`<h3>What to wear</h3><ul class="wxwear">${adv.items.map(x=>`<li>${esc2(x)}</li>`).join('')}</ul>`:''}
+    <h3>Next 12 hours</h3><div class="wxhours">${LIVEWX.hours.slice(0,12).map(h=>`<div><small>${hhmm(h.t)}</small><span>${WXICON(h.code)}</span><b>${Math.round(h.temp)}°</b><small>${h.pp?h.pp+'%':''}</small></div>`).join('')}</div>
+    <h3>7 days</h3><table class="wxdays">${LIVEWX.days.map((d,i)=>`<tr><td>${i===0?'Today':wd(d.t)}</td><td>${WXICON(d.code)}</td><td>${esc2(wmo(d.code)[0])}</td><td><b>${Math.round(d.max)}°</b> / ${Math.round(d.min)}°</td><td>${d.pp?d.pp+'%':''}</td><td>${hhmm(d.sr)}–${hhmm(d.ss)}</td></tr>`).join('')}</table>`
+    :`<p class="note">${LIVEWX.err?'Live weather is not available right now ('+esc2(LIVEWX.err)+'), so this is the game\'s own weather.':'Loading live weather…'}</p><dl class="kv"><dt>Now</dt><dd>${S.temp!==undefined?S.temp+'°':''} ${esc2(S.weather||'')}</dd><dt>Daylight today</dt><dd>${dl.toFixed(1)} hours</dd></dl>`;
+  modal(`<div class="phonehead" style="--c:#f0a020">${glyphSVG('sun')}<h2>Weather · Stockholm</h2></div>${live}<div class="row2"><button class="btn ghost" id="no">Close</button></div>`,m=>m.querySelector('#no').onclick=closeModal)}
 // ---------- mail and chats from what happens in your life ----------
 function lifeMailHooks(){
   const _log=log;log=function(t,cls){_log(t,cls);try{if(!S||!S.flags)return;const m=/^Brev från ([^:]+): (.*)$/.exec(t);if(m)sendMail(m[1],m[2].split('.')[0],m[2]);
@@ -1647,7 +1690,7 @@ function sleep(passedOut,mode){if(S.home==='none'&&!mode)mode='out';
     else if(S.docs.fk){S.pay+=Math.round(j.rate*8*0.8);log(`Sjukpenning from Försäkringskassan: ${kr(Math.round(j.rate*8*0.8))} added to lön.`,'plus')}
     else log('No sjukpenning: you never registered with Försäkringskassan.','minus')}
   if(S.weather==='rain'&&!S.coat&&!(S.bag&&S.bag.paraply)){apply({mood:-1})}
-  S.day++;if(S.docs.queue)S.queue+=QUEUE_SPEED*(policy('housing')?1.3:1);processBills();crimeDaily();S.sunToday=false;S.applied={};S.flags.sunMin=0;rollWeather();
+  S.day++;if(S.docs.queue)S.queue+=QUEUE_SPEED*(policy('housing')?1.3:1);processBills();crimeDaily();S.sunToday=false;S.applied={};S.flags.sunMin=0;rollWeather();setTimeout(()=>wearTip(),1500);
   if(!(S.sick>S.day))S.flags.karens=0;
   S.hunger=clamp(S.hunger-18,0,100);S.hygiene=clamp(S.hygiene-8,0,100);
   if(mode==='hospital'){S.energy=clamp(S.energy+40,0,100);S.hour=9;apply({hunger:30,hygiene:20})}
@@ -1792,7 +1835,7 @@ function render(){try{if(S){renderTodo();badges();renderAbout()}}catch(e){}
   if(!S)return;
   const dt=today(),dl=daylight();
   $('time').textContent=hhmm(S.hour);
-  $('date').textContent=`${WD[dt.getDay()]} ${dt.getDate()} ${MONTHS[dt.getMonth()]} · ${WICON[S.weather]||''} ${S.temp}° · dag ${S.day}`;
+  $('date').textContent=`${WD[dt.getDay()]} ${dt.getDate()} ${MONTHS[dt.getMonth()]} · ${S.wx&&liveFresh()?WXICON(S.wx.code):WICON[S.weather]||''} ${S.temp}° · dag ${S.day}`;
   $('money').textContent=kr(S.money);$('money').style.color=S.money<0?'#FF8A7A':'';
   $('jobline').textContent=(S.sick>S.day?'Sick · ':'')+(S.job?JOBS[S.job].name:'Unemployed')+(S.pay?' · lön '+kr(S.pay):'');
   $('who').textContent=`${S.name} · ${BG[S.bg].label} · ${HOMES[S.home].name} · ${addrText()}`;
@@ -3150,6 +3193,7 @@ function buildWorld(){
   snowG.setAttribute('position',new THREE.BufferAttribute(snowP,3));const snow=new THREE.Points(snowG,new THREE.PointsMaterial({color:0xffffff,size:0.012,transparent:true,opacity:0.9}));scene.add(snow);
   const rainN=1800,rainP=new Float32Array(rainN*6);for(let i=0;i<rainN;i++){const x=(Math.random()-0.5)*8,y=Math.random()*4,z=(Math.random()-0.5)*8;rainP.set([x,y,z,x+0.01,y-0.08,z],i*6)}
   const rainG=new THREE.BufferGeometry();rainG.setAttribute('position',new THREE.BufferAttribute(rainP,3));const rain=new THREE.LineSegments(rainG,new THREE.LineBasicMaterial({color:0xaac4d8,transparent:true,opacity:0.55}));rain.visible=false;scene.add(rain);
+  const flash=new THREE.AmbientLight(0xdfe8ff,0);scene.add(flash);let flashT=0;
   const auroraMat=new THREE.MeshBasicMaterial({color:0x5dffb0,transparent:true,opacity:0,side:THREE.DoubleSide,depthWrite:false,fog:false});
   const aurora=new THREE.Mesh(new THREE.PlaneGeometry(600,70,50,1),auroraMat);aurora.position.set(-40,90,-380);scene.add(aurora);let auroraT=0;
 
@@ -3236,12 +3280,12 @@ function buildWorld(){
     const sr=sunrise(),ss=sunset();let el,t=0.5;
     if(h>=sr&&h<=ss){t=(h-sr)/(ss-sr);el=Math.sin(Math.PI*t)*sunInfo().maxEl}else{const dd=h<sr?sr-h:h-ss;el=-Math.min(dd*6,18);t=h<sr?0:1}
     const dayF=clamp(el/14,0,1),twi=clamp(1-Math.abs(el)/7,0,1),nightF=1-clamp((el+5)/9,0,1);
-    const wet=S.weather==='rain'||S.weather==='snow',cloudy=wet||S.weather==='cloud';
-    const hor=cNight.clone().lerp(winter()?cWinterDay:cDay,dayF).lerp(cDusk,twi*0.55);if(cloudy)hor.lerp(C(0x9aa3ab).multiplyScalar(0.3+0.7*dayF),0.55);
-    const top=topNight.clone().lerp(topDay,dayF).lerp(topDusk,twi*0.4);if(cloudy)top.lerp(C(0x7d8890).multiplyScalar(0.3+0.7*dayF),0.65);
-    skyU.horizon.value.copy(hor);skyU.top.value.copy(top);skyU.glow.value=cloudy?0.2:1;skyU.stars.value=cloudy?0:nightF;skyU.sunCol.value.setHSL(0.1,0.9,0.5+0.4*dayF).multiplyScalar(el>-2&&!wet?1:0);
+    const wet=S.weather==='rain'||S.weather==='snow',cloudy=wet||S.weather==='cloud';const LW=S.wx&&liveFresh()?S.wx:null,cl=LW?clamp(LW.cloud/100,0,1):cloudy?0.85:0.15,ov=clamp((cl-0.2)/0.8,0,1);
+    const hor=cNight.clone().lerp(winter()?cWinterDay:cDay,dayF).lerp(cDusk,twi*0.55);if(ov>0)hor.lerp(C(0x9aa3ab).multiplyScalar(0.3+0.7*dayF),0.65*ov);
+    const top=topNight.clone().lerp(topDay,dayF).lerp(topDusk,twi*0.4);if(ov>0)top.lerp(C(0x7d8890).multiplyScalar(0.3+0.7*dayF),0.75*ov);
+    skyU.horizon.value.copy(hor);skyU.top.value.copy(top);skyU.glow.value=1-0.8*ov;skyU.stars.value=nightF*(1-ov);skyU.sunCol.value.setHSL(0.1,0.9,0.5+0.4*dayF).multiplyScalar(el>-2&&!wet?1:0);
     scene.fog.color.copy(hor);
-    sun.intensity=el>0?(0.3+0.9*dayF)*(wet?0.35:cloudy?0.6:1):0;sun.color.setHSL(0.09,0.7,0.55+0.4*dayF);
+    sun.intensity=el>0?(0.3+0.9*dayF)*(wet?0.35:1-0.45*ov):0;sun.color.setHSL(0.09,0.7,0.55+0.4*dayF);
     hemi.intensity=0.28+0.55*dayF;hemi.color.copy(top).lerp(C(0xffffff),0.6);hemi.groundColor.set(0x8a7a5a).multiplyScalar(0.4+0.6*dayF);moon.intensity=0.32*nightF;
     const az=Math.PI*t,elR=Math.max(el,3)*Math.PI/180;const dir=new THREE.Vector3(Math.cos(az),Math.sin(elR)*1.4+0.15,Math.sin(az)*0.9+0.2).normalize();
     skyU.sunDir.value.set(Math.cos(az),Math.sin(el*Math.PI/180),Math.sin(az)*0.9+0.2).normalize();
@@ -3250,7 +3294,7 @@ function buildWorld(){
     nightMats.forEach(mt=>mt.emissiveIntensity=mt.userData.shop?shopsOn:Math.max(mt.userData.min||0,nightF*0.95*(mt.userData.scale||1)));
     bulbMat.color.setRGB(0.33+0.67*nightF,0.31+0.6*nightF,0.27+0.35*nightF);headMat.color.setRGB(0.2+0.8*nightF,0.2+0.75*nightF,0.2+0.5*nightF);tailMat.color.setRGB(0.2+0.8*nightF,0,0);
     waterMat.color.setRGB(0.18+0.04*dayF-0.12*nightF,0.45-0.32*nightF,0.62-0.38*nightF);waterMat.specular.setRGB(0.5+0.3*dayF,0.6+0.3*dayF,0.7+0.3*dayF);
-    clouds.forEach(c=>{c.material.color.copy(hor).lerp(C(0xffffff),dayF*0.7);c.material.opacity=cloudy?0.95:0.75});
+    clouds.forEach((c,i)=>{c.material.color.copy(hor).lerp(C(0xffffff),dayF*0.7*(1-0.4*ov));c.material.opacity=0.35+0.6*cl;c.visible=i<clouds.length*(0.08+0.92*cl)});
     return nightF}
   let lastSeason='';
   function season(){const m=today().getMonth(),snowy=winter(),autumn=[9,10].includes(m)&&!snowy;
@@ -3272,7 +3316,9 @@ function buildWorld(){
   function emote(x){emoteT=x}
   function refresh(){for(const k in lbls){lbls[k].classList.toggle('here',k===S.loc);lbls[k].classList.toggle('home',k===homeD())}meLbl.textContent=S.name;setCoat(BG[S.bg].coat);
     const sk=today().getMonth()+'-'+winter();if(sk!==lastSeason){lastSeason=sk;season()}
-    snow.visible=S.weather==='snow';rain.visible=S.weather==='rain'}
+    snow.visible=S.weather==='snow';rain.visible=S.weather==='rain';
+    {const LW=S.wx&&liveFresh()?S.wx:null,i=LW?clamp((LW.snow>0?LW.snow*4:LW.pr)/3,0.12,1):0.6;snowG.setDrawRange(0,Math.round(snowN*i));rainG.setDrawRange(0,Math.round(rainN*i)*2);
+      const wv=LW?clamp(LW.wind,0,25):3,wd=LW?(LW.dir||0)*Math.PI/180:0;rain.rotation.set(0,-wd,0);rain.rotation.z=0;rain.userData.slant=clamp(wv*0.025,0,0.55);snow.userData.drift=wv*0.06;snow.userData.dir=wd}}
   function snapTime(){shownHour=S.hour}
   let streetCache={x:1e9,z:1e9,n:''};function streetName(){const x=av.position.x,z=av.position.z;if(Math.hypot(x-streetCache.x,z-streetCache.z)>0.2){streetCache={x,z,n:streetNameAt(x,z)}}return streetCache.n}
 
@@ -3384,7 +3430,7 @@ function buildWorld(){
     const fx=controls.target.x,fz=controls.target.z,camD=camera.position.distanceTo(controls.target);
     sky.position.copy(camera.position);
     updateTiles(fx,fz);pumpTiles();updatePois(fx,fz,camD);updateDetail();updateStreetLabels(fx,fz,camD);updateSignals(T);updateTransit(dt,fx,fz,T);updateAir(dt,T,fx,fz);updateCrowds(dt);
-    const qs=QS[Q];const fogFar=(qs.mid+0.5)*TS;const wetFog=S.weather==='rain'||S.weather==='snow'?0.7:1;scene.fog.near=Math.max(camD*1.2,fogFar*0.4*wetFog);scene.fog.far=Math.max(fogFar*wetFog,camD*2.2);
+    const qs=QS[Q];const fogFar=(qs.mid+0.5)*TS;const wetFog=(S.weather==='rain'||S.weather==='snow'?0.7:1)*(S.wx&&liveFresh()&&S.wx.vis?clamp(S.wx.vis/20000,0.3,1):1);scene.fog.near=Math.max(camD*1.2,fogFar*0.4*wetFog);scene.fog.far=Math.max(fogFar*wetFog,camD*2.2);
     const sc=Math.max(1.5,Math.min(camD,30));Object.assign(sun.shadow.camera,{left:-sc,right:sc,top:sc,bottom:-sc});sun.shadow.camera.updateProjectionMatrix();
     waterNormal.offset.x=T*0.02;waterNormal.offset.y=T*0.013;
     if(G){ensureAgents(av.position.x,av.position.z);
@@ -3400,9 +3446,11 @@ function buildWorld(){
     boats.forEach(b=>{const a=b.ph+T*b.sp,x=b.cx+Math.cos(a)*b.rx,z=b.cz+Math.sin(a)*b.rz,nx=b.cx+Math.cos(a+0.01)*b.rx,nz=b.cz+Math.sin(a+0.01)*b.rz;b.g.position.set(x,0.008+Math.sin(T*2+b.ph)*0.004,z);b.g.rotation.y=Math.atan2(nx-x,nz-z)-Math.PI/2;b.g.rotation.z=Math.sin(T*1.3+b.ph)*0.03});
     gulls.forEach(g=>{const a=g.ph+T*g.sp;g.g.position.set(fx+g.ox+Math.cos(a)*g.r,g.h+Math.sin(T*0.7+g.ph)*0.1,fz+g.oz+Math.sin(a)*g.r);g.g.rotation.y=-a;const f=Math.sin(T*9+g.ph)*0.5;g.g.userData.l.rotation.z=f;g.g.userData.r.rotation.z=-f;g.g.visible=!(S.weather==='rain'||S.weather==='snow')||Math.random()<0.98});
     flags.forEach(fl=>{const p=fl.f.geometry.attributes.position,b=fl.base;for(let i=0;i<p.count;i++){const x=b[i*3];p.setZ(i,Math.sin(x*40-T*5+fl.ph)*0.012*(x/0.12))}p.needsUpdate=true});
-    clouds.forEach((c,i)=>{const u=c.userData;u.ox+=dt*0.25;if(u.ox>80)u.ox-=160;c.position.set(fx+u.ox,u.y,fz+u.oz)});
-    if(snow.visible){const p=snowG.attributes.position;for(let i=0;i<snowN;i++){let y=p.getY(i)-dt*(0.4+(i%5)*0.1);if(y<0)y=4;p.setY(i,y)}p.needsUpdate=true;snow.position.set(fx,0,fz)}
-    if(rain.visible){const p=rainG.attributes.position;for(let i=0;i<rainN;i++){let y=p.getY(i*2)-dt*4;if(y<0)y+=4;p.setY(i*2,y);p.setY(i*2+1,y-0.08)}p.needsUpdate=true;rain.position.set(fx,0,fz)}
+    clouds.forEach((c,i)=>{const u=c.userData;u.ox+=dt*(0.1+(S.wx&&liveFresh()?S.wx.wind:3)*0.05);if(u.ox>80)u.ox-=160;c.position.set(fx+u.ox,u.y,fz+u.oz)});
+    if(snow.visible){const p=snowG.attributes.position,dr=snow.userData.drift||0,ux=Math.sin(snow.userData.dir||0),uz=Math.cos(snow.userData.dir||0);for(let i=0;i<snowN;i++){let y=p.getY(i)-dt*(0.4+(i%5)*0.1),x=p.getX(i)-ux*dr*dt,z=p.getZ(i)-uz*dr*dt;if(y<0)y=4;if(x<-4)x+=8;if(x>4)x-=8;if(z<-4)z+=8;if(z>4)z-=8;p.setXYZ(i,x,y,z)}p.needsUpdate=true;snow.position.set(fx,0,fz)}
+    if(rain.visible){const p=rainG.attributes.position,sl=rain.userData.slant||0;for(let i=0;i<rainN;i++){let y=p.getY(i*2)-dt*4,x=p.getX(i*2)+dt*4*sl;if(y<0)y+=4;if(x>4)x-=8;p.setXYZ(i*2,x,y,p.getZ(i*2));p.setXYZ(i*2+1,x+0.004+sl*0.08,y-0.08,p.getZ(i*2))}p.needsUpdate=true;rain.position.set(fx,0,fz)}
+    // thunderstorms: lightning flashes
+    if(S.wx&&liveFresh()&&S.wx.code>=95&&!IN.on&&Math.random()<dt*0.12)flashT=0.3;flashT=Math.max(0,flashT-dt);flash.intensity=flashT>0?(Math.random()<0.6?2.2:0.4)*flashT/0.3:0;
     if(walk)shownHour=walk.startHour+(walk.dist/walk.L)*Math.min(3,walk.L*50/80/60);else if(!rideState)shownHour+=(S.hour-shownHour)*Math.min(1,dt*1.5);
     const nightF=lightAt(shownHour);
     if(auroraT>0){auroraT-=dt*0.05;auroraMat.opacity=Math.max(0,Math.min(0.35,auroraT))*nightF;const pa=aurora.geometry.attributes.position;for(let i=0;i<pa.count;i++)pa.setY(i,(i<51?35:-35)+Math.sin(pa.getX(i)*0.02+T)*10);pa.needsUpdate=true}
@@ -3444,6 +3492,7 @@ async function start(data){uiInit();
   if(!W){const n=document.createElement('div');n.className='nogl';n.style.cssText='inset:auto;top:160px;left:50%;transform:translateX(-50%);width:min(440px,calc(100% - 32px));background:var(--glass);border-radius:12px;z-index:5;line-height:1.45';n.textContent='Your browser could not start 3D graphics (WebGL), so the city cannot be drawn. The game still works from the panels. Fix: quit the browser completely and reopen it (after a graphics crash Chrome blocks 3D until restart), and check that "Use graphics acceleration" is on in its settings.';$('stage').appendChild(n)}
   else{W.placeAvatar(S.pos.x,S.pos.z,true);if(!S.addr&&S.home!=='none'){assignAddress();save()}W.setHome();W.syncCar();if(!S.wants.length)rollWants();if(S.flags&&S.flags.arlanda&&W.enterAirport)setTimeout(()=>W.enterAirport(),600)}
   render();if(fresh)intro();
+  fetchLiveWeather().then(ok=>{if(ok)setTimeout(()=>wearTip(true),fresh?20000:2500)});setInterval(fetchLiveWeather,10*60e3);
 }
 window.claude?.hot?.snapshot?.(()=>({S}));
 window.claude?.hot?.ready?window.claude.hot.ready(start):start(window.claude?.hot?.data??{});

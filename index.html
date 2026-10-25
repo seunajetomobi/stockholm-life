@@ -332,6 +332,7 @@ h2.hero{font-size:34px;background:linear-gradient(90deg,var(--sweblue),#3a86ff 4
 .keys{display:grid;grid-template-columns:repeat(3,58px);gap:8px}.keys button{height:52px;border-radius:50%;border:0;background:var(--surface2);font:600 22px inherit;color:var(--fg);cursor:pointer}.keys button:active{filter:brightness(.9)}
 .drow{display:flex;gap:16px;align-items:center}.dcall{width:60px;height:60px;border-radius:50%;border:0;background:#23a55a;color:#fff;font-size:24px;cursor:pointer}.ddel{border:0;background:none;font-size:22px;color:var(--muted);cursor:pointer}
 .quick{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}.quick button{border:1px solid var(--line);background:var(--surface);border-radius:14px;padding:5px 11px;font:600 12px inherit;color:var(--fg);cursor:pointer}.quick .q112{background:#c8102e;color:#fff;border-color:#c8102e}
+.walkfade{position:fixed;inset:0;z-index:40;background:#0b1118;opacity:0;pointer-events:none;transition:opacity .35s}.walkfade.on{opacity:.92}
 .deptabs{display:flex;gap:6px;flex-wrap:wrap;margin:4px 0 8px}.deptabs button{border:1px solid var(--line);background:var(--surface2);border-radius:14px;padding:4px 10px;font:600 12px inherit;color:var(--fg);cursor:pointer}.deptabs button.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
 .deps{display:grid;gap:4px}.dep{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;padding:6px 8px;background:var(--board);color:var(--board-ink);border-radius:8px}.dep .ln{min-width:30px;text-align:center;padding:3px 6px;border-radius:6px;color:#fff;font:700 13px "IBM Plex Mono",monospace}
 .dep.fl{border:0;width:100%;text-align:left;cursor:pointer;font:inherit}.dep .dst{font-size:13.5px;line-height:1.25}.dep .dst small{display:block;color:#9fb0bd;font-size:11px}.dep .tm{font:600 14px "IBM Plex Mono",monospace;color:var(--amber);text-align:right}.dep .tm small{display:block}.dep .late{color:#ff8a80;font-size:11px}.dep.can .dst,.dep.can .tm{text-decoration:line-through;opacity:.6}
@@ -2817,20 +2818,30 @@ const POSTERS_CITY=[['#f2b705','#1b1b1b','KANELBULLE','Färskt varje morgon','Ba
   const NAMEDCOL={blue:0x0089ca,red:0xd71d24,green:0x179d4d,yellow:0xf5c700,orange:0xd77d00,purple:0xa05ea6,pink:0xf166a7,grey:0x878a83,gray:0x878a83,black:0x222222,white:0xf2f2f2};
   function hexOf(c){const v=String(c||'').trim().toLowerCase();if(NAMEDCOL[v]!==undefined)return NAMEDCOL[v];const h=v.replace('#','');return /^[0-9a-f]{6}$/.test(h)?parseInt(h,16):null}
   function lineDest(r){const n=(r.name||'').replace(/^[^:]*:\s*/,'');const m=n.split(/\s*(?:=>|→|->|–>|↔)\s*|\s+[-–]\s+/);if(m.length>1)return m[m.length-1].trim();if(r.to)return r.to;const st=r.stops||[];return st.length?st[st.length-1][2]:''}
+  // Stockholm's trains as they look today: Tunnelbana C20 (white, blue doors) and C30 (stainless with SL-blue ends), pendeltåg X60 (silver, blue band, black nose),
+  // Arlanda Express X3 (white and yellow), Roslagsbanan X15p (SL blue, dark window band), the A32/A35/A36 trams (SL blue), SJ X2000, Mälartåg ER1
+  const FLEET={C20:{body:0xe9edf0,doors:0x3f74b5,cab:0xe9edf0,nose:0x22282e,skirt:0x9aaab8,roof:0xd5dadf,stripe:null},
+    C30:{body:0xaeb5bb,doors:0x1e9be0,cab:0x1e9be0,nose:0x15191d,roof:0xc8ced3,skirt:0x6d757c,stripe:null},
+    X60:{body:0xd9dde1,doors:0x2f6db5,cab:0xd9dde1,nose:0x15191d,stripe:0x2f6db5,roof:0xc2c7cc,skirt:0x2a2e33},
+    X3:{body:0xf4f4f2,doors:0xf5c400,cab:0xf5c400,roof:0xf5c400,nose:0x1b1e22,stripe:null,skirt:0x8c8c88},
+    X15p:{body:0x1e8fd6,band:0x34393e,doors:0x1e8fd6,cab:0x1e8fd6,nose:0x23272b,skirt:0xd7262e,roof:0x8e959b,stripe:null},
+    TRAM:{body:0x1e8fd6,band:0x23272b,doors:0x2b2f33,cab:0x1e8fd6,nose:0x23272b,skirt:0xd7262e,roof:0xb7bcc1,stripe:null},
+    X2000:{body:0x7c8187,band:0x2c3035,doors:0x2c3035,cab:0x7c8187,nose:0x2c3035,stripe:0xc9ccd0,roof:0x9aa0a6},
+    ER1:{body:0xeef0f2,band:0x22262b,doors:0xe24b46,cab:0xeef0f2,nose:0x22262b,stripe:0xe24b46,roof:0xb8bec4}};
   function transitLook(r){const op=((r.op||'')+' '+(r.net||'')+' '+(r.name||'')).toLowerCase(),c=hexOf(r.col),m=modeKey(r.m);
     if(m==='bus'){if(/flixbus/.test(op))return {body:0x73d700,label:'#4a8c00',kind:'Flixbus'};if(/flygbuss/.test(op))return {body:c||0x23305a,label:'#23305a',kind:'Flygbussarna'};
       const blue=BLUE_BUS.has(r.ref)||(c!==null&&(c&255)>((c>>16)&255)+40&&(c&255)>((c>>8)&255));return blue?{body:0x0057a8,label:'#0057a8',kind:'SL blue bus'}:{body:0xc8102e,label:'#c8102e',kind:'SL bus'}}
-    if(m==='train'){const ref=String(r.ref||'');if(/arlanda express/.test(op)||ref==='46')return {body:0xffce1d,stripe:0x1b1b1b,cars:4,label:'#b38f00',kind:'Arlanda Express'};
-      if(/^4[0-9]/.test(ref)&&!/sundsvall|umeå/i.test(r.name||''))return {body:0xeeeeea,stripe:0xf166a7,cars:5,label:'#d7468a',kind:'Pendeltåg · SJ for SL'};
+    if(m==='train'){const ref=String(r.ref||'');if(/arlanda express/.test(op)||ref==='46')return {...FLEET.X3,cars:4,label:'#b38f00',kind:'Arlanda Express'};
+      if(/^4[0-9]/.test(ref)&&!/sundsvall|umeå/i.test(r.name||''))return {...FLEET.X60,cars:6,label:'#d7468a',kind:'Pendeltåg · SJ for SL'};
       if(/vr snabbtåg|\bvr\b/.test(op))return {body:0xf4f4f0,stripe:0x2a8a3a,cars:6,label:'#2a8a3a',kind:'VR Snabbtåg'};if(/snälltåget/.test(op))return {body:0x1b1b1b,stripe:0xe05a1b,cars:7,label:'#e05a1b',kind:'Snälltåget'};if(/euronight/.test(op))return {body:0x1f2f5a,stripe:0xd8c690,cars:8,label:'#1f2f5a',kind:'EuroNight sleeper'};
       if(/tågåkeriet|bergslagen/.test(op))return {body:0x2a4d7a,stripe:0xf0c419,cars:3,label:'#2a4d7a',kind:'Tågab'};
-      if(/^2[789]$/.test(ref))return {body:0xe9e4da,stripe:0xa05ea6,cars:3,label:'#8a4a90',kind:'Roslagsbanan · Transdev'};
+      if(/^2[789]$/.test(ref))return {...FLEET.X15p,cars:3,label:'#8a4a90',kind:'Roslagsbanan · Transdev'};
       if(/^2[56]$/.test(ref))return {body:0xe9e4da,stripe:0x00aaad,cars:3,label:'#008a8c',kind:'Saltsjöbanan · Arriva'};
-      if(/\bsj\b|sj ab|x2000/.test(op))return {body:0x2b2f33,stripe:0xe8e2d0,cars:6,label:'#2b2f33',kind:/nattåg/.test(op)?'SJ night train':'SJ'};if(/transdev|mälartåg/.test(op))return {body:0xe4e4e4,stripe:0xe24b46,cars:4,label:'#b83a36',kind:'Mälartåg · Transdev'};
-      if(/roslagsbanan|saltsjöbanan/.test(op))return {body:0xe9e4da,stripe:c||0x7a2a8a,cars:3,label:'#6a2a7a',kind:/roslags/.test(op)?'Roslagsbanan':'Saltsjöbanan'};
-      return {body:0xeeeeea,stripe:c||0xd71d85,cars:5,label:'#d71d85',kind:'Pendeltåg'}}
-    if(m==='subway')return {body:0x2b5fa6,stripe:c||0x179d4d,cars:6,label:c?'#'+c.toString(16).padStart(6,'0'):'#3a9a4a',kind:'Tunnelbana'+(r.op?' · '+r.op:'')};
-    if(m==='tram')return {body:0xeeeeea,stripe:c||0x6a7b86,cars:3,label:c?'#'+c.toString(16).padStart(6,'0'):'#6a7b86',kind:(/^3[01]$/.test(String(r.ref))?'Tvärbanan':/^21$/.test(String(r.ref))?'Lidingöbanan':/^12$/.test(String(r.ref))?'Nockebybanan':/^7N$/.test(String(r.ref))?'Djurgårdslinjen museum tram':/^7$/.test(String(r.ref))?'Spårväg City':'Spårvagn')+(r.op&&r.op!=='SL'?' · '+r.op:'')};
+      if(/\bsj\b|sj ab|x2000/.test(op))return {...FLEET.X2000,cars:6,label:'#2b2f33',kind:/nattåg/.test(op)?'SJ night train':'SJ'};if(/transdev|mälartåg/.test(op))return {...FLEET.ER1,cars:4,label:'#b83a36',kind:'Mälartåg · Transdev'};
+      if(/roslagsbanan|saltsjöbanan/.test(op))return /roslags/.test(op)?{...FLEET.X15p,cars:3,label:'#8a4a90',kind:'Roslagsbanan'}:{body:0xe9e4da,stripe:c||0x7a2a8a,cars:3,label:'#6a2a7a',kind:/roslags/.test(op)?'Roslagsbanan':'Saltsjöbanan'};
+      return {...FLEET.X60,cars:6,label:'#d71d85',kind:'Pendeltåg'}}
+    if(m==='subway')return {...FLEET.C20,metro:1,cars:6,label:c?'#'+c.toString(16).padStart(6,'0'):'#3a9a4a',kind:'Tunnelbana'+(r.op?' · '+r.op:'')};
+    if(m==='tram')return {...FLEET.TRAM,cars:3,label:c?'#'+c.toString(16).padStart(6,'0'):'#6a7b86',kind:(/^3[01]$/.test(String(r.ref))?'Tvärbanan':/^21$/.test(String(r.ref))?'Lidingöbanan':/^12$/.test(String(r.ref))?'Nockebybanan':/^7N$/.test(String(r.ref))?'Djurgårdslinjen museum tram':/^7$/.test(String(r.ref))?'Spårväg City':'Spårvagn')+(r.op&&r.op!=='SL'?' · '+r.op:'')};
     if(m==='ferry'){const big=/viking|tallink|silja|birka|finnlines|destination gotland|cinderella/.test(op);return {big,label:'#1d5ea8',kind:big?(r.op||'Ferry'):/^8[0-9]$/.test(String(r.ref||''))?'SL boat':'Boat'}}
     return {body:0xdddddd,label:'#555',kind:''}}
   const SPEED={bus:0.28,tram:0.3,train:0.95,subway:0.85,ferry:0.13};
@@ -3050,9 +3061,10 @@ const POSTERS_CITY=[['#f2b705','#1b1b1b','KANELBULLE','Färskt varje morgon','Ba
       return `<b>${esc(sn)}</b><span>${kindTxt}${D0?' · '+esc(D0.name):''}</span><span>${onCarriageway(pt.x,pt.z)>0?'Carriageway: cross at zebras or lights':'Pavement: walk here'}</span>`}}
     return null}
   function buildingAt(x,z){const k=Math.floor(x/TS)+','+Math.floor(z/TS);const grid=colByTile.get(k);if(!grid)return null;const L=grid.get?grid.get(Math.floor(x/CG)+','+Math.floor(z/CG)):null;if(!L)return null;let best=null;for(const p of L)if(hitPoly(p,x,z,0)&&(!best||p.h>best.h))best=p;return best}
-  renderer.domElement.addEventListener('pointermove',e=>{if(e.pointerType&&e.pointerType!=='mouse'){tipEl.hidden=true;return}tipXY=[e.clientX,e.clientY]});
+  renderer.domElement.addEventListener('pointerdown',()=>{tipEl.hidden=true;tipUntil=0});let tipUntil=0;
+  function showTipAt(cx,cy,html){if($('modalRoot').innerHTML)return;tipEl.innerHTML=html;tipEl.hidden=false;const w=tipEl.offsetWidth,h=tipEl.offsetHeight;let x=cx+14,y=cy+16;if(x+w>innerWidth-8)x=cx-w-14;if(y+h>innerHeight-8)y=cy-h-14;tipEl.style.transform=`translate(${x}px,${y}px)`;tipUntil=performance.now()+6000}
   renderer.domElement.addEventListener('pointerleave',()=>{tipXY=null;tipEl.hidden=true});
-  function hoverTick(dt){tipT-=dt;if(tipT>0||!tipXY)return;tipT=0.12;const r=renderer.domElement.getBoundingClientRect();let html=null;try{html=hoverInfo(tipXY[0]-r.left,tipXY[1]-r.top,r)}catch(e){html=null;console.warn('hover',e&&e.message)}
+  function hoverTick(dt){if(tipUntil&&(performance.now()>tipUntil||$('modalRoot').innerHTML)){tipEl.hidden=true;tipUntil=0}return;tipT=0.12;const r=renderer.domElement.getBoundingClientRect();let html=null;try{html=hoverInfo(tipXY[0]-r.left,tipXY[1]-r.top,r)}catch(e){html=null;console.warn('hover',e&&e.message)}
     if(!html||$('modalRoot').innerHTML){tipEl.hidden=true;return}tipEl.innerHTML=html;tipEl.hidden=false;const w=tipEl.offsetWidth,h=tipEl.offsetHeight;let x=tipXY[0]+14,y=tipXY[1]+16;if(x+w>innerWidth-8)x=tipXY[0]-w-14;if(y+h>innerHeight-8)y=tipXY[1]-h-14;tipEl.style.transform=`translate(${x}px,${y}px)`}
   // ======== Arlanda: your plane lands, taxis to Terminal 5, and you walk off ========
   const CUT={on:false};
@@ -3131,7 +3143,7 @@ const POSTERS_CITY=[['#f2b705','#1b1b1b','KANELBULLE','Färskt varje morgon','Ba
     let pts=[];if(R){let dEnd=R.L;if(mode==='pt'){const s=STP['T-Centralen'];const dd=projOnto(R.pts,R.cum,s[0]-1.4,s[1]+1.6,1.5);if(dd!==null)dEnd=dd}for(let d=Math.max(0,dEnd-40);d<=dEnd;d+=0.05){const p=posOnR(R,d);pts.push(new THREE.Vector3(p.x,0.03,p.z))}}
     if(mode==='tx'||pts.length<5){const raw=driveRoute(dst.x-2,dst.z-30,dst.x,dst.z);pts=raw&&raw.length>2?laneOffset(raw,0.025):[new THREE.Vector3(dst.x,0.012,dst.z-8),new THREE.Vector3(dst.x,0.012,dst.z)]}
     const g=new THREE.Group();const cars=[];
-    if(mode==='ae'||mode==='pt'){const look=mode==='ae'?{body:0xffce1d,stripe:0x1b1b1b}:{body:0xeeeeea,stripe:0xf166a7};for(let i=0;i<4;i++){const c=railCar(look,0.36,i===0?1:i===3?2:0,true);g.add(c);cars.push(c)}}
+    if(mode==='ae'||mode==='pt'){const look=mode==='ae'?FLEET.X3:FLEET.X60;for(let i=0;i<4;i++){const c=railCar(look,0.36,i===0?1:i===3?2:0,true);g.add(c);cars.push(c)}}
     else if(mode==='fb'){const c=busPart({body:0x23305a,label:'#23305a'});g.add(c);cars.push(c)}else{const c=new THREE.Group();c.add(MODELS.cars&&MODELS.cars.length?MODELS.cars[0].clone(true):new THREE.Mesh(new THREE.BoxGeometry(0.04,0.026,0.09),plain(0x1b1b1b)));const sgn=new THREE.Mesh(new THREE.BoxGeometry(0.02,0.008,0.01),new THREE.MeshBasicMaterial({color:0xffd400}));sgn.position.y=0.045;c.add(sgn);g.add(c);cars.push(c)}
     scene.add(g);const cum=[0];for(let i=1;i<pts.length;i++)cum.push(cum[i-1]+pts[i].distanceTo(pts[i-1]));av.visible=false;avHidden=true;
     const chip=$('ride');chip.style.display='block';chip.innerHTML=`<b>${{ae:'Arlanda Express',pt:'Pendeltåg',fb:'Flygbussarna',tx:'Taxi'}[mode]}</b> → ${mode==='fb'?'Cityterminalen':mode==='tx'?'your destination':'Stockholm C'}`;
@@ -3143,14 +3155,18 @@ const POSTERS_CITY=[['#f2b705','#1b1b1b','KANELBULLE','Färskt varje morgon','Ba
   function railCar(look,len,pos,electric){const g=new THREE.Group(),W=0.062,H=0.058,body=railM(look.body),cabF=pos===1||pos===3,cabR=pos===2||pos===3,cab=0.03;
     const bl=len-(cabF?cab:0)-(cabR?cab:0),bz=((cabF?-cab:0)+(cabR?cab:0))/2;
     const b=new THREE.Mesh(new THREE.BoxGeometry(W,H,bl),body);b.position.set(0,0.042,bz);b.castShadow=true;g.add(b);
-    const roof=new THREE.Mesh(new THREE.BoxGeometry(W*0.84,0.007,len*0.94),railM(0x8e959b));roof.position.y=0.074;g.add(roof);
-    const st=new THREE.Mesh(new THREE.BoxGeometry(W+0.002,0.01,len*0.97),new THREE.MeshBasicMaterial({color:look.stripe}));st.position.y=0.026;g.add(st);
+    const roof=new THREE.Mesh(new THREE.BoxGeometry(W*0.84,0.007,len*0.94),railM(look.roof||0x8e959b));roof.position.y=0.074;g.add(roof);
+    if(look.skirt){const sk=new THREE.Mesh(new THREE.BoxGeometry(W+0.001,0.007,len*0.98),railM(look.skirt));sk.position.y=0.0165;g.add(sk)}
+    if(look.stripe!=null){const st=new THREE.Mesh(new THREE.BoxGeometry(W+0.002,0.008,len*0.97),new THREE.MeshBasicMaterial({color:look.stripe}));st.position.y=look.band?0.03:0.045;g.add(st)}
+    if(look.band){const bd=new THREE.Mesh(new THREE.BoxGeometry(W+0.0012,0.025,len*0.97),railM(look.band));bd.position.y=0.056;g.add(bd)}
     const win=new THREE.Mesh(new THREE.BoxGeometry(W+0.0015,0.017,len*0.84),railWin);win.position.y=0.056;g.add(win);
-    const nd=Math.max(2,Math.round(len/0.1)),dm=railM(0x3a434b);for(let i=0;i<nd;i++){const z=-len/2+(i+0.5)*len/nd;for(const sx of [-1,1]){const d=new THREE.Mesh(new THREE.BoxGeometry(0.0012,0.036,0.012),dm);d.position.set(sx*(W/2+0.0008),0.039,z);g.add(d)}}
+    const nd=Math.max(2,Math.round(len/0.1)),dm=railM(look.doors||0x3a434b),dw=look.doors?0.016:0.012;for(let i=0;i<nd;i++){const z=-len/2+(i+0.5)*len/nd;for(const sx of [-1,1]){const d=new THREE.Mesh(new THREE.BoxGeometry(0.0014,0.042,dw),dm);d.position.set(sx*(W/2+0.0009),0.041,z);g.add(d)}}
     const bog=railM(0x22272b);for(const z of [len/2-0.045,-len/2+0.045]){const q=new THREE.Mesh(new THREE.BoxGeometry(W*0.8,0.012,0.05),bog);q.position.set(0,0.009,z);g.add(q)}
-    const cabAt=sgn=>{const z=sgn*(len/2-cab/2);const n=new THREE.Mesh(new THREE.BoxGeometry(W*0.97,H*0.9,cab),body);n.position.set(0,0.04,z);g.add(n);
-      const ws=new THREE.Mesh(new THREE.PlaneGeometry(W*0.86,0.024),railM(0x10161c));ws.position.set(0,0.058,z+sgn*(cab/2+0.0006));ws.rotation.y=sgn>0?0:Math.PI;ws.rotation.x=-sgn*0.35*(sgn>0?1:-1);g.add(ws);
-      for(const sx of [-1,1]){const l=new THREE.Mesh(new THREE.CircleGeometry(0.0045,8),sgn>0?headM:tailM);l.position.set(sx*W*0.32,0.022,z+sgn*(cab/2+0.0008));l.rotation.y=sgn>0?0:Math.PI;g.add(l)}};
+    const cabM=railM(look.cab||look.body),noseM=railM(look.nose||0x10161c);
+    const cabAt=sgn=>{const z=sgn*(len/2-cab/2);const n=new THREE.Mesh(new THREE.BoxGeometry(W*0.97,H*0.9,cab),cabM);n.position.set(0,0.04,z);g.add(n);
+      const ws=new THREE.Mesh(new THREE.PlaneGeometry(W*0.86,0.026),railM(0x10161c));ws.position.set(0,0.058,z+sgn*(cab/2+0.0006));ws.rotation.y=sgn>0?0:Math.PI;g.add(ws);
+      const lo=new THREE.Mesh(new THREE.PlaneGeometry(W*0.9,0.014),noseM);lo.position.set(0,0.024,z+sgn*(cab/2+0.0007));lo.rotation.y=sgn>0?0:Math.PI;g.add(lo);
+      for(const sx of [-1,1]){const l=new THREE.Mesh(new THREE.CircleGeometry(0.0045,8),sgn>0?headM:tailM);l.position.set(sx*W*0.32,0.026,z+sgn*(cab/2+0.0009));l.rotation.y=sgn>0?0:Math.PI;g.add(l)}};
     if(cabF)cabAt(1);if(cabR)cabAt(-1);
     if(electric&&(pos===1||pos===3||pos===0&&len>0.3)){const pm=railM(0x2a2f33);const p1=new THREE.Mesh(new THREE.BoxGeometry(0.003,0.003,0.05),pm);p1.position.set(0,0.09,0);p1.rotation.x=0.5;g.add(p1);
       const p2=new THREE.Mesh(new THREE.BoxGeometry(0.04,0.003,0.004),pm);p2.position.set(0,0.1,0.012);g.add(p2)}
@@ -3159,7 +3175,7 @@ const POSTERS_CITY=[['#f2b705','#1b1b1b','KANELBULLE','Färskt varje morgon','Ba
     if(m==='bus'){v.parts.push(busPart(look));v.carL=[0.24];v.sp=SPEED.bus*(0.9+Math.random()*0.2)}
     else if(m==='ferry'){const tpl=MODELS.boats&&(look.big?MODELS.boats.CruiseShip:MODELS.boats[pickR(['Boat','BoatWSail','Lifeboat'])]);let g;if(tpl){g=new THREE.Group();g.add(tpl.clone(true))}else{g=new THREE.Group();const h=new THREE.Mesh(new THREE.BoxGeometry(look.big?0.9:0.45,0.08,look.big?0.2:0.13),plain(0xf7f7f2));h.position.y=0.03;g.add(h)}
       g.userData.boat=1;v.parts.push(g);v.carL=[look.big?0.9:0.45];v.sp=SPEED.ferry*(look.big?1.3:1);v.gapL=look.big?1:0.6}
-    else{const n=look.cars||3,cl=m==='tram'?0.17:m==='subway'?0.3:0.36,el=m!=='subway';for(let i=0;i<n;i++)v.parts.push(railCar(look,cl*0.96,n===1?3:i===0?1:i===n-1?2:0,el));v.carL=new Array(n).fill(cl);v.sp=SPEED[m]*(look.kind==='Arlanda Express'?1.5:1);v.gapL=n*cl+0.1}
+    else{const n=look.cars||3,cl=m==='tram'?0.17:m==='subway'?0.3:0.36,el=m!=='subway';const lk=look.metro?{...look,...(Math.random()<(/^1[34]$/.test(String(R.r.ref))?0.6:0.25)?FLEET.C30:FLEET.C20)}:look;for(let i=0;i<n;i++)v.parts.push(railCar(lk,cl*0.96,n===1?3:i===0?1:i===n-1?2:0,el));v.carL=new Array(n).fill(cl);v.sp=SPEED[m]*(look.kind==='Arlanda Express'?1.5:1);v.gapL=n*cl+0.1}
     v.parts.forEach(p=>scene.add(p));
     {const tr=m==='train'||m==='subway'||m==='tram'||m==='ferry';const txt=tr?`${look.kind}${R.r.ref&&!/[;X]/.test(R.r.ref)&&look.kind!=='Arlanda Express'?' '+R.r.ref:''} → ${R.dest||''}`:(R.r.ref?R.r.ref+' ':'')+(R.dest||look.kind);v.label=textSprite(txt,{fs:28,bg:look.label,fg:'#fff',scale:0.00034});v.label.visible=false;scene.add(v.label)}
     return v}
@@ -3741,14 +3757,47 @@ const POSTERS_CITY=[['#f2b705','#1b1b1b','KANELBULLE','Färskt varje morgon','Ba
     const rail=CITY.m.rail.filter(r=>!r[1]&&r[0]===0).map(r=>{const pts=pairs(r[2]);return {t:'rail',pts,L:lenOf(pts)}}).filter(r=>r.L>5).sort((a,b)=>b.L-a.L).slice(0,6);
     (transitOn?[]:[...cands,...rail]).forEach(r=>{const cum=[0];for(let i=1;i<r.pts.length;i++)cum.push(cum[i-1]+Math.hypot(r.pts[i][0]-r.pts[i-1][0],r.pts[i][1]-r.pts[i-1][1]));
       trains.push({g:trainMesh(r.t==='subway'?'#3A9A4A':r.t==='rail'?'#e8e2d0':r.t==='tram'?'#B97A1F':'#d9d2c2',r.t==='tram'?2:r.t==='rail'?5:4),pts:r.pts,cum,len:r.L,t:Math.random()*r.L,dir:1,sp:r.t==='tram'?0.35:0.9,wait:0})});
-    const tp=[],tc=[],ti=[];let tv=0;const tcol=C(0x5a5048);
-    CITY.m.rail.forEach(r=>{if(r[1])return;const pts=pairs(r[2]);const w=0.022;for(let i=0;i<pts.length;i++){const p=pts[i],a=pts[Math.max(0,i-1)],b=pts[Math.min(pts.length-1,i+1)];let dx=b[0]-a[0],dz=b[1]-a[1];const L=Math.hypot(dx,dz)||1;dx/=L;dz/=L;
-      tp.push(p[0]-dz*w,0.012,p[1]+dx*w,p[0]+dz*w,0.012,p[1]-dx*w);tc.push(tcol.r,tcol.g,tcol.b,tcol.r,tcol.g,tcol.b);if(i>0)ti.push(tv-2,tv,tv-1,tv-1,tv,tv+1);tv+=2}});
-    if(tv){const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(tp,3));const nn=new Float32Array(tp.length);for(let i=1;i<nn.length;i+=3)nn[i]=1;g.setAttribute('normal',new THREE.BufferAttribute(nn,3));g.setAttribute('color',new THREE.Float32BufferAttribute(tc,3));g.setIndex(ti);scene.add(new THREE.Mesh(g,roadMat))}
+    // tracks: ballast with sleepers and two steel rails for trains, metro and light rail; trams in the street get just their rails
+    const trackTex=(()=>{const c=document.createElement('canvas');c.width=64;c.height=256;const g=c.getContext('2d');g.fillStyle='#6e675e';g.fillRect(0,0,64,256);
+      for(let i=0;i<900;i++){const v=80+Math.random()*60|0;g.fillStyle=`rgb(${v+10},${v+4},${v-6})`;g.fillRect(Math.random()*64,Math.random()*256,2,2)}
+      for(let y=4;y<256;y+=16){g.fillStyle='#8b8f92';g.fillRect(7,y,50,7);g.fillStyle='rgba(0,0,0,.25)';g.fillRect(7,y+7,50,1.5)}
+      for(const x of [18,44]){g.fillStyle='#3b3d40';g.fillRect(x-2,0,4,256);g.fillStyle='#c9ccd0';g.fillRect(x-1,0,2,256)}
+      const t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.anisotropy=8;return t})();
+    const railsTex=(()=>{const c=document.createElement('canvas');c.width=64;c.height=16;const g=c.getContext('2d');g.clearRect(0,0,64,16);for(const x of [18,44]){g.fillStyle='#2f3134';g.fillRect(x-3,0,6,16);g.fillStyle='#b9bdc1';g.fillRect(x-1,0,2,16)}
+      const t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;return t})();
+    const trackStrip=(list,w,y,mat)=>{const P=[],U=[],I=[];let v=0;for(const pts of list){let acc=0;for(let i=0;i<pts.length;i++){const p=pts[i],a=pts[Math.max(0,i-1)],b=pts[Math.min(pts.length-1,i+1)];let dx=b[0]-a[0],dz=b[1]-a[1];const L=Math.hypot(dx,dz)||1;dx/=L;dz/=L;
+        if(i>0)acc+=Math.hypot(p[0]-pts[i-1][0],p[1]-pts[i-1][1]);P.push(p[0]-dz*w,y,p[1]+dx*w,p[0]+dz*w,y,p[1]-dx*w);U.push(0,acc/0.12,1,acc/0.12);if(i>0)I.push(v-2,v,v-1,v-1,v,v+1);v+=2}}
+      if(!v)return;const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(P,3));const nn=new Float32Array(P.length);for(let i=1;i<nn.length;i+=3)nn[i]=1;g.setAttribute('normal',new THREE.BufferAttribute(nn,3));
+      g.setAttribute('uv',new THREE.Float32BufferAttribute(U,2));g.setIndex(I);const m=new THREE.Mesh(g,mat);m.receiveShadow=true;scene.add(m)};
+    const heavy=[],street=[];CITY.m.rail.forEach(r=>{if(r[1])return;(r[0]===3?street:heavy).push(pairs(r[2]))});
+    trackStrip(heavy,0.03,0.012,new THREE.MeshLambertMaterial({map:trackTex}));trackStrip(street,0.02,0.0162,new THREE.MeshLambertMaterial({map:railsTex,transparent:true,alphaTest:0.3,depthWrite:false}));
     const rwMat=plain(0x3d3f43),apMat=plain(0x8a8c8f),twMat=plain(0x6f7175);
     CITY.m.aero.forEach(([kind,name,closed,flat])=>{const pts=pairs(flat);if(closed&&pts.length>=3&&kind!=='aerodrome'){try{polyMesh([pts],0.0075,kind==='runway'?rwMat:apMat)}catch(e){}}
       else if(!closed&&(kind==='runway'||kind==='taxiway'))for(let i=1;i<pts.length;i++)scene.add(strip(pts[i-1],pts[i],kind==='runway'?0.9:0.35,0.0075,kind==='runway'?rwMat:twMat))});
   }
+  // ---------- surface stations: platform, canopy and the station sign, wherever a line stops above ground ----------
+  function buildPlatforms(){if(!transitOn)return 0;const seen=[],con=[],roofs=[],M=new THREE.Matrix4(),Q=new THREE.Quaternion(),UP=new THREE.Vector3(0,1,0),ONE=new THREE.Vector3(1,1,1),V=new THREE.Vector3();
+    // every surface track as points in a 0.1-unit grid, to find whether another track runs where a platform would go
+    const RG2=new Map();for(const r of CITY.m.rail){if(r[1])continue;const pts=pairs(r[2]);for(let i=1;i<pts.length;i++){const a=pts[i-1],b=pts[i],L=Math.hypot(b[0]-a[0],b[1]-a[1]),n=Math.ceil(L/0.02);
+      for(let k=0;k<=n;k++){const x=a[0]+(b[0]-a[0])*k/n,z=a[1]+(b[1]-a[1])*k/n,key=Math.floor(x/0.1)+','+Math.floor(z/0.1);let c=RG2.get(key);if(!c)RG2.set(key,c=[]);c.push(x,z)}}}
+    const railNear=(x,z)=>{const c=RG2.get(Math.floor(x/0.1)+','+Math.floor(z/0.1));if(!c)return 0;for(let i=0;i<c.length;i+=2)if(Math.hypot(c[i]-x,c[i+1]-z)<0.032)return 1;return 0};let made=0;
+    for(const R of TRANSIT){if(!['train','subway','tram'].includes(R.m))continue;const tram=R.m==='tram'&&!/^(21|25|26|27|28|29|30|31)$/.test(String(R.r.ref));
+      for(const st of R.r.stops||[]){const d=projOnto(R.pts,R.cum,st[0]/100,st[1]/100,0.25);if(d===null||tunDepth(R,d)>0||inTunnel(R,d))continue;const q=posOnR(R,d),L=Math.hypot(q.dx,q.dz)||1,ux=q.dx/L,uz=q.dz/L;
+        if(seen.some(o=>Math.hypot(o[0]-q.x,o[1]-q.z)<0.5&&Math.abs(o[2]*ux+o[3]*uz)>0.7))continue;seen.push([q.x,q.z,ux,uz]);
+        const len=R.m==='tram'?0.5:R.m==='subway'?1.9:2.1,wid=tram?0.04:0.055,off=0.03+wid/2+0.004;
+        // the side with no other track and no building
+        let side=0,best=-1e9;for(const sd of [1,-1]){const px=q.x-uz*off*sd,pz=q.z+ux*off*sd;let sc=0;if(railNear(px,pz))sc-=5;if(colliding(px,pz,0.02))sc-=3;if(nearRoad(px,pz,0)&&!tram)sc-=2;if(sc>best){best=sc;side=sd}}
+        const px=q.x-uz*off*side,pz=q.z+ux*off*side;const yaw=Math.atan2(ux,uz);Q.setFromAxisAngle(UP,yaw);const h=tram?0.006:0.016;
+        const pl=new THREE.BoxGeometry(wid,h,len);M.compose(V.set(px,h/2+0.004,pz),Q,ONE);pl.applyMatrix4(M);con.push(pl);
+        const edge=new THREE.BoxGeometry(0.004,0.0012,len);M.compose(V.set(px+uz*(wid/2-0.003)*side,h+0.0046,pz-ux*(wid/2-0.003)*side),Q,ONE);edge.applyMatrix4(M);roofs.push([edge,0xf2c14e]);
+        const cl=Math.min(len*0.55,0.5);const rf=new THREE.BoxGeometry(wid*0.9,0.004,cl);M.compose(V.set(px,h+0.07,pz),Q,ONE);rf.applyMatrix4(M);roofs.push([rf,0x3c4248]);
+        for(const t of [-cl/2+0.03,cl/2-0.03]){const post=new THREE.BoxGeometry(0.003,0.068,0.003);M.compose(V.set(px+ux*t,h+0.036,pz+uz*t),Q,ONE);post.applyMatrix4(M);roofs.push([post,0x5f666d])}
+        const kind=R.m==='subway'?'T':R.m==='tram'?'S':R.look&&/Roslag|Saltsj|Tvär|Lidingö|Nockeby/.test(R.look.kind)?'L':'J';
+        const sp=textSprite(st[2]||'',{fs:30,icon:kind,iconBg:kind==='T'?'#0089CA':kind==='J'?'#EC619F':kind==='S'?'#878787':(R.r.col||'#A05EA6'),bg:'rgba(255,255,255,.96)',fg:'#18212B',scale:0.00034});sp.position.set(px,h+0.1,pz);scene.add(sp);made++}}
+    const U=THREE.BufferGeometryUtils;if(con.length){const m=new THREE.Mesh(U.mergeBufferGeometries(con),plain(0xb9b6ae));m.receiveShadow=m.castShadow=true;scene.add(m)}
+    const byCol=new Map();for(const [g,c] of roofs){let a=byCol.get(c);if(!a)byCol.set(c,a=[]);a.push(g)}for(const [c,list] of byCol){const m=new THREE.Mesh(U.mergeBufferGeometries(list),plain(c));m.castShadow=true;scene.add(m)}
+    return made}
+  try{buildPlatforms()}catch(e){console.warn('platforms',e)}
   function posOn(tr,d){let i=1;while(i<tr.cum.length-1&&tr.cum[i]<d)i++;const a=tr.pts[i-1],b=tr.pts[i],u=clamp((d-tr.cum[i-1])/((tr.cum[i]-tr.cum[i-1])||1),0,1);return {x:a[0]+(b[0]-a[0])*u,z:a[1]+(b[1]-a[1])*u,dx:b[0]-a[0],dz:b[1]-a[1]}}
   const boats=[];function boat(lat,lon,rx,rz,sp,col,big){const [cx,cz]=P(lat,lon);const g=new THREE.Group();const s=big?1.6:1;const hull=new THREE.Mesh(new THREE.BoxGeometry(0.6*s,0.08,0.16*s),plain(0xf7f7f2));hull.position.y=0.03;g.add(hull);
     const band=new THREE.Mesh(new THREE.BoxGeometry(0.605*s,0.02,0.165*s),plain(col));band.position.y=0.05;g.add(band);
@@ -3845,6 +3894,7 @@ const POSTERS_CITY=[['#f2b705','#1b1b1b','KANELBULLE','Färskt varje morgon','Ba
   const av=person(0x2f6fa8,AV_S);const ring=new THREE.Mesh(new THREE.RingGeometry(1.1,1.5,28),new THREE.MeshBasicMaterial({color:0xff6b5b,transparent:true,opacity:0.85,depthWrite:false}));ring.rotation.x=-Math.PI/2;ring.position.y=0.4;av.add(ring);
   const meLbl=document.createElement('div');meLbl.className='me';$('labels').appendChild(meLbl);
   let camWant=0.7,camAuto=-1;
+  let avSpd=0;
   let walk=null,emoteT=0,rideState=null,avHidden=false;const lastAv=new THREE.Vector3();
 
   // ---------- weather particles + aurora ----------
@@ -3871,6 +3921,7 @@ const POSTERS_CITY=[['#f2b705','#1b1b1b','KANELBULLE','Färskt varje morgon','Ba
       if(px>sx-w&&px<sx+w&&py<sy&&py>sy-h){const d=Math.abs(px-sx);if(d<hd){hd=d;hit=sp}}}
     if(!hit&&entSigns.length){const sh=ray.intersectObjects(entSigns,false)[0];if(sh)hit=sh.object}
     if(hit){showPoi(hit.userData.poi);return}
+    {let html=null;try{html=hoverInfo(px,py,r)}catch(e){}if(html)showTipAt(e.clientX,e.clientY,html)}
     {const gp=tapPoint();const d=gp&&demoAt(gp.x,gp.z);if(d){modal(`<h2>Demonstration · ${esc2(d.place)}</h2><p>"${esc2(d.cause)}". A permitted demonstration (allmän sammankomst): Polisen has given permission, and anyone may join or just listen.</p><div class="row2"><button class="btn" id="j">Join for an hour</button><button class="btn ghost" id="no">Walk on</button></div>`,m=>{m.querySelector('#no').onclick=closeModal;m.querySelector('#j').onclick=()=>{closeModal();walkTo(d.x+0.3,d.z+0.1,'to the demonstration');setTimeout(()=>{apply({social:6,mood:3,fun:4,energy:-4});spendTime(1);log(`Joined the demonstration "${d.cause}" at ${d.place}.`,'plus');after()},400)}});return}}
     {const pd=pedAt(px,py,r);if(pd){pd.hold=3;meetStranger({g:Math.random()<0.5?'f':'m'});return}}
     const p=tapPoint();if(!p)return;
@@ -3970,11 +4021,16 @@ const POSTERS_CITY=[['#f2b705','#1b1b1b','KANELBULLE','Färskt varje morgon','Ba
     return best||new THREE.Vector3(x+0.32,0.5,z+0.62)}
   let avMat=null;function setCoat(col){if(!avMat){avMat=new THREE.MeshLambertMaterial({color:col});const u=av.userData;u.torso.material=avMat;u.lArm.userData.mesh.material=avMat;u.rArm.userData.mesh.material=avMat}avMat.color.set(col)}
   function walkPath(pts,done){const path=pts.map(p=>new THREE.Vector3(p[0],0.01,p[1]));path[0]=av.position.clone();
-    let L=0;for(let i=1;i<path.length;i++)L+=path[i].distanceTo(path[i-1]);walk={path,i:1,speed:clamp(L/9,0.12,14),done,startHour:S.hour,L:Math.max(L,1e-6),dist:0}}
+    let L=0;for(let i=1;i<path.length;i++)L+=path[i].distanceTo(path[i-1]);walk={path,i:1,speed:runToggle?0.42:0.2,done,startHour:S.hour,L:Math.max(L,1e-6),dist:0,skipAt:L>4.5?1.1:Infinity,skipTo:L-1.1}}
+  // long walks: walk the first and the last stretch, and fade over the middle (the time it takes is still counted)
+  const fadeEl=document.createElement('div');fadeEl.className='walkfade';document.body.appendChild(fadeEl);
+  function walkSkip(w){w.pause=true;fadeEl.classList.add('on');setTimeout(()=>{if(walk!==w)return fadeEl.classList.remove('on');let acc=0,i=1;for(;i<w.path.length;i++){const L=w.path[i].distanceTo(w.path[i-1]);if(acc+L>=w.skipTo)break;acc+=L}
+    i=Math.min(i,w.path.length-1);av.position.copy(w.path[i-1]);w.i=i;w.dist=acc;w.skipAt=Infinity;controls.target.copy(av.position);camera.position.copy(av.position).add(camera.position.clone().sub(controls.target).setLength(0.8)).setY(Math.max(0.35,camera.position.y));
+    w.pause=false;setTimeout(()=>fadeEl.classList.remove('on'),120)},380)}
   function ride(toStation,tr,dest,done){
     const chip=$('ride');chip.style.display='block';chip.innerHTML=tr.legs.map(l=>`<b style="color:${l.line.col==='#0089CA'?'#6cc4ff':l.line.col}">${l.short}</b> ${l.stops[0]} → ${l.stops[l.stops.length-1]}`).join(' · ');
     const pts=tr.stations.map(s=>new THREE.Vector3(STP[s][0],0.06,STP[s][1]));
-    walkPath(toStation.pts,()=>{av.visible=false;const curve=rideCurve(tr);const col=parseInt(tr.legs[0].line.col.slice(1),16);const look={body:0xbfc4c8,stripe:col};
+    walkPath(toStation.pts,()=>{av.visible=false;const curve=rideCurve(tr);const look=tr.legs[0].line.tram?FLEET.TRAM:Math.random()<0.35?FLEET.C30:FLEET.C20;
       const g=new THREE.Group();const cars=[];for(let i=0;i<4;i++){const c=railCar(look,0.34,i===0?1:i===3?2:0,false);g.add(c);cars.push(c)}scene.add(g);
       const T=clamp(6+curve.len/9,8,36);
       rideState={v2:1,g,cars,pts:curve.pts,cum:curve.cum,len:curve.len,t:0,T,done:()=>{scene.remove(g);rideState=null;const last=STP[tr.stations[tr.stations.length-1]];{const f=freeSpot(last[0],last[1])||last;placeAvatar(f[0],f[1],false)};av.visible=true;
@@ -4091,13 +4147,13 @@ const POSTERS_CITY=[['#f2b705','#1b1b1b','KANELBULLE','Färskt varje morgon','Ba
     if(iv.mag>0.08&&canMove){
       const fwd=controls.target.clone().sub(camera.position);fwd.y=0;fwd.normalize();const right=new THREE.Vector3(-fwd.z,0,fwd.x);
       const dir=right.multiplyScalar(iv.x).add(fwd.multiplyScalar(-iv.y));if(dir.lengthSq()>1e-6){dir.normalize();const m=Math.min(1,(iv.mag-0.08)/0.84);
-        const sp=(iv.run?0.6:0.26)*(0.3+0.7*m*m*(3-2*m));tvx=dir.x*sp;tvz=dir.z*sp;wantRun=iv.run}}
+        const sp=(iv.run?0.48:0.21)*(0.3+0.7*m*m*(3-2*m));tvx=dir.x*sp;tvz=dir.z*sp;wantRun=iv.run}}
     if(!canMove)vel.set(0,0);
-    else{const k=1-Math.exp(-dt*((tvx||tvz)?7:10));vel.x+=(tvx-vel.x)*k;vel.y+=(tvz-vel.y)*k;const spd=vel.length();
+    else{const k=1-Math.exp(-dt*((tvx||tvz)?5:8));vel.x+=(tvx-vel.x)*k;vel.y+=(tvz-vel.y)*k;const spd=vel.length();
       if(spd>0.006){const res=slideMove(av.position.x,av.position.z,vel.x*dt,vel.y*dt);const moved=Math.hypot(res[0]-av.position.x,res[1]-av.position.z);
         if(moved>0){av.position.x=res[0];av.position.z=res[1];freeDist+=moved;if(wantRun)freeRun+=moved}
         if(moved<spd*dt*0.35)vel.multiplyScalar(0.6);
-        if(tvx||tvz){const tr=Math.atan2(tvx,tvz);let dr=tr-av.rotation.y;dr=Math.atan2(Math.sin(dr),Math.cos(dr));av.rotation.y+=dr*(1-Math.exp(-dt*11))}
+        if(tvx||tvz){const tr=Math.atan2(tvx,tvz);let dr=tr-av.rotation.y;dr=Math.atan2(Math.sin(dr),Math.cos(dr));av.rotation.y+=dr*(1-Math.exp(-dt*8));if(Math.abs(dr)>1.6)vel.multiplyScalar(1-Math.min(1,dt*6))}
         moving=moved>spd*dt*0.3&&spd>0.05;running=moving&&spd>0.45;stuckCheck(dt,!!(tvx||tvz),moved>spd*dt*0.25)}else{vel.set(0,0);stuckCheck(dt,!!(tvx||tvz),false)}}
     freeT+=dt;if(freeT>0.4){freeT=0;if(IN.on||DR.on){freeDist=0;freeRun=0}else if(freeDist>0||S.pos.x!==av.position.x){window.__slCommit&&window.__slCommit(freeDist,freeRun,av.position.x,av.position.z);freeDist=0;freeRun=0}}
     if(walk){const onNow=onCarriageway(av.position.x,av.position.z)>0;if(onNow)walk.wasOn=true;else if(walk.wasOn){walk.wasOn=false;walk.onRoad=false}
@@ -4107,14 +4163,17 @@ const POSTERS_CITY=[['#f2b705','#1b1b1b','KANELBULLE','Färskt varje morgon','Ba
     }
     if(walk&&!walk.blocked){const tgt=walk.path[walk.i];const d=tgt.clone().sub(av.position);d.y=0;walk.t=(walk.t||0)+dt;
       // ease in when setting off and out when arriving, instead of starting and stopping at full speed
-      const ease=Math.min(1,0.3+walk.t*1.6,0.18+(walk.L-walk.dist)/(walk.speed*0.45+1e-6));const step=walk.speed*dt*ease;
+      if(walk.dist>=walk.skipAt&&!walk.pause)walkSkip(walk);
+      const ease=Math.min(1,0.35+walk.t*1.4,0.25+(walk.L-walk.dist)/(walk.speed*0.6+1e-6));
+      const car=aheadOnPath(walk,0.045),cd=car.clone().sub(av.position);cd.y=0;let turn=0;if(cd.lengthSq()>1e-8){const tr=Math.atan2(cd.x,cd.z);let dr=tr-av.rotation.y;dr=Math.atan2(Math.sin(dr),Math.cos(dr));turn=Math.abs(dr);av.rotation.y+=dr*(1-Math.exp(-dt*7))}
+      const step=walk.pause?0:walk.speed*dt*ease*(turn>1.2?0.45:turn>0.6?0.75:1);
       if(d.length()<=step){av.position.copy(tgt);walk.dist+=d.length();walk.i++;if(walk.i>=walk.path.length){const cb=walk.done;walk=null;cb()}}
-      else{d.normalize();av.position.addScaledVector(d,step);const tr=Math.atan2(d.x,d.z);let dr=tr-av.rotation.y;dr=Math.atan2(Math.sin(dr),Math.cos(dr));av.rotation.y+=dr*(1-Math.exp(-dt*12));walk.dist+=step}moving=true}
+      else{d.normalize();av.position.addScaledVector(d,step);walk.dist+=step}moving=step>0}
     if(rideState&&rideState.bus){follow=busTick(dt)}else if(rideState&&rideState.v2){follow=rideTick(dt)}else if(rideState){const R=rideState;R.d=Math.min(R.len,R.d+R.sp*dt);let i=1;while(i<R.cum.length-1&&R.cum[i]<R.d)i++;const a=R.pts[i-1],b=R.pts[i],u=clamp((R.d-R.cum[i-1])/((R.cum[i]-R.cum[i-1])||1),0,1);
       R.g.position.copy(a.clone().lerp(b,u));const dir=b.clone().sub(a);R.g.rotation.y=Math.atan2(dir.x,dir.z);follow=R.g.position;if(R.d>=R.len)R.done()}
     if(DR.on){driveTick(dt,T);follow=DR.g.position;moving=true}
     if(!IN.on&&!DR.on&&!rideState){if(av.parent!==scene)scene.add(av);if(!av.visible&&!avHidden)av.visible=true;if(avHidden)av.visible=false;if(av.rotation.z===0)av.position.y=0.01+deckAt(av.position.x,av.position.z);unstick()}accidentCheck(dt);emergTick(dt,T);cityCalls(dt,T,av.position.x,av.position.z);try{demoTick(dt,av.position.x,av.position.z)}catch(e){}hoverTick(dt);
-    if(avMixer){const fast=running||(walk&&walk.speed>1.2);setAvState(moving?(fast?'Run':'Walk'):'Idle');if(avActs.Walk)avActs.Walk.timeScale=walk?Math.min(2.2,0.8+walk.speed*0.4):1;avMixer.update(dt);avModel.position.y=emoteT>0?Math.abs(Math.sin(T*10))*0.4*emoteT/AV_S*0.05:0}
+    avSpd+=((dt>0?av.position.distanceTo(lastAv)/dt:0)-avSpd)*Math.min(1,dt*8);if(avMixer){const fast=avSpd>0.36;setAvState(moving&&avSpd>0.02?(fast?'Run':'Walk'):'Idle');if(avActs.Walk)avActs.Walk.timeScale=clamp(avSpd/0.2,0.55,1.6);if(avActs.Run)avActs.Run.timeScale=clamp(avSpd/0.48,0.7,1.4);avMixer.update(dt);avModel.position.y=emoteT>0?Math.abs(Math.sin(T*10))*0.4*emoteT/AV_S*0.05:0}
     else{animPerson(av,av.position.distanceTo(lastAv),dt,moving,AV_S,running);if(emoteT>0){av.userData.body.position.y+=Math.abs(Math.sin(T*10))*0.6*emoteT;av.userData.lArm.rotation.x=-2.6*emoteT;av.userData.rArm.rotation.x=-2.6*emoteT}}
     lastAv.copy(av.position);emoteT=Math.max(0,emoteT-dt*0.8);if((T*4|0)%4===0)syncLuggage();
     ring.material.opacity=0.55+0.3*Math.sin(T*3);

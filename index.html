@@ -297,7 +297,7 @@ h2.hero{font-size:34px;background:linear-gradient(90deg,var(--sweblue),#3a86ff 4
 .wxhours{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(46px,1fr);gap:4px;overflow-x:auto;padding-bottom:4px}.wxhours div{display:grid;justify-items:center;gap:1px;background:var(--surface2);border-radius:8px;padding:5px 2px;font-size:12px}.wxhours span{font-size:18px}.wxhours small{color:var(--muted);font-size:10.5px}
 .deptabs{display:flex;gap:6px;flex-wrap:wrap;margin:4px 0 8px}.deptabs button{border:1px solid var(--line);background:var(--surface2);border-radius:14px;padding:4px 10px;font:600 12px inherit;color:var(--fg);cursor:pointer}.deptabs button.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
 .deps{display:grid;gap:4px}.dep{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;padding:6px 8px;background:var(--board);color:var(--board-ink);border-radius:8px}.dep .ln{min-width:30px;text-align:center;padding:3px 6px;border-radius:6px;color:#fff;font:700 13px "IBM Plex Mono",monospace}
-.dep .dst{font-size:13.5px;line-height:1.25}.dep .dst small{display:block;color:#9fb0bd;font-size:11px}.dep .tm{font:600 14px "IBM Plex Mono",monospace;color:var(--amber);text-align:right}.dep .tm small{display:block}.dep .late{color:#ff8a80;font-size:11px}.dep.can .dst,.dep.can .tm{text-decoration:line-through;opacity:.6}
+.dep.fl{border:0;width:100%;text-align:left;cursor:pointer;font:inherit}.dep .dst{font-size:13.5px;line-height:1.25}.dep .dst small{display:block;color:#9fb0bd;font-size:11px}.dep .tm{font:600 14px "IBM Plex Mono",monospace;color:var(--amber);text-align:right}.dep .tm small{display:block}.dep .late{color:#ff8a80;font-size:11px}.dep.can .dst,.dep.can .tm{text-decoration:line-through;opacity:.6}
 .devs p{margin:6px 0 0;font-size:12px;color:var(--warn)}
 .wxdays{width:100%;border-collapse:collapse;font-size:12.5px}.wxdays td{padding:4px 3px;border-top:1px solid var(--line)}.wxdays td:nth-child(2){font-size:16px}.wxdays td:last-child,.wxdays td:nth-child(5){color:var(--muted);text-align:right}
 </style>
@@ -931,7 +931,7 @@ function uiInit(){document.querySelectorAll('#dock button').forEach(b=>b.onclick
   $('apps').innerHTML=PHONE_APPS.map((a,i)=>`<button class="app" data-i="${i}" data-k="${a[4]||''}"><span class="ic" style="background:${a[2]}">${glyphSVG(a[1])}</span><span>${a[0]}</span></button>`).join('');
   $('apps').querySelectorAll('.app').forEach(b=>b.onclick=()=>PHONE_APPS[+b.dataset.i][3]())}
 const PHONE_APPS=[['Chatt','chat','#1faa59',()=>openChats(),'chat'],['Mail','mail','#2f6fd6',()=>openMailbox(),'mail'],['To-do','check','#e07a1f',()=>openTodo(),'todo'],['Bag','bag','#8a5a2b',()=>openBag(),'bag'],
-  ['Bank','wallet','#0f6b5c',()=>openBank()],['SL','train','#c8102e',()=>openTravelPicker()],['Find','search','#3b4a57',()=>{const b=$('zfind');b&&b.click()}],['Weather','sun','#f0a020',()=>openWeather()],['Departures','train','#c8102e',()=>openDeparturesApp()],['Ferries','ferry','#00698F',()=>openFerries()],
+  ['Bank','wallet','#0f6b5c',()=>openBank()],['SL','train','#c8102e',()=>openTravelPicker()],['Find','search','#3b4a57',()=>{const b=$('zfind');b&&b.click()}],['Weather','sun','#f0a020',()=>openWeather()],['Departures','train','#c8102e',()=>openDeparturesApp()],['Flights','plane','#2f6fd6',()=>openFlights()],['Ferries','ferry','#00698F',()=>openFerries()],
   ['Contacts','people','#2a8a52',()=>openPeople()],['Dating','heart','#d6336c',()=>openDating()],['Jobs','brief','#0b5fa5',()=>openJobs()],['Courses','cap','#6c3fb5',()=>openCourses()],
   ['Housing','house','#a84b32',()=>S.docs.bankid?openHousing():toast('Bostadsförmedlingen needs BankID')],['Bills','card','#a86400',()=>openBills()],['1177','health','#0b7a75',()=>modal(`<div class="phonehead" style="--c:#0b7a75">${glyphSVG('health')}<h2>1177 Vårdguiden</h2></div><p>Medical advice by phone: call 1177, day and night. In an emergency: 112.</p><p class="note">Your vårdcentral: ${S.docs.vc?'registered':'not chosen yet'}. Patient fees in Region Stockholm: akutmottagning 400 kr, ambulance free.</p><div class="row2"><button class="btn ghost" id="no">Close</button></div>`,m=>m.querySelector('#no').onclick=closeModal)],
   ['Election','ballot','#1f3f7a',()=>setTab('civic')],['Movement','fist','#c8342c',()=>{if(S.civ.move)setTab('civic');else startMovement()}],['Rights','scale','#566573',()=>setTab('civic')],['Wait 1 h','clock','#23824f',()=>{if(busy)return;spendTime(1);apply({energy:2});log('You took an hour off.');after()}]];
@@ -1403,6 +1403,48 @@ async function openFerries(){modal(`<div class="phonehead" style="--c:#00698F">$
     el.innerHTML=trips.length?`<div class="deps">${trips.map(a=>{const f=a[0],l=f.line,late=f.expected&&f.scheduled?Math.round((new Date(f.expected)-new Date(f.scheduled))/60000):0;
       return `<div class="dep"><span class="ln" style="background:${slLineCol(l)}">${esc2(l.designation||'')}</span><span class="dst">${esc2(f.pier)} → ${esc2(f.destination||'')}<small>${a.length>1?'Then '+a.slice(1).map(y=>esc2(y.pier)+' '+slTime(y.expected||y.scheduled)).join(' · '):esc2(l.group_of_lines||'SL ferry')}</small></span><span class="tm">${slTime(f.expected||f.scheduled)}${late>1?`<small class="late">+${late} min</small>`:''}</span></div>`}).join('')}</div><p class="note">Live from SL. Times at later piers are SL's expected departures from those piers, so they show when the boat is there.</p>`
       :'<p class="note">No ferries from the central piers in the next two hours.</p>'}catch(e){el.innerHTML=`<p class="note">Couldn't reach SL right now (${esc2(e.message||String(e))}).</p>`}})}
+
+/* =================== LIVE FLIGHTS: real aircraft around Stockholm (ADS-B through the flights relay in tools/flights-worker.js) =================== */
+// The relay is a tiny Cloudflare Worker: browsers may not read ADS-B feeds from another site, the relay adds the permission header.
+// Set FLIGHT_RELAY to its URL (or open the game with ?flights=<url> once; it is remembered).
+const FLIGHT_RELAY_DEFAULT='';
+const FLIGHT_RELAY=(()=>{try{const q=new URLSearchParams(location.search).get('flights');if(q)localStorage.setItem('flights-relay',q);return q||localStorage.getItem('flights-relay')||FLIGHT_RELAY_DEFAULT}catch(e){return FLIGHT_RELAY_DEFAULT}})();
+const LIVEFL={ac:[],t:0,ver:0,err:'',src:''},ROUTES=new Map();
+const AIRPORTS={ARN:[59.6519,17.9186,'Arlanda'],BMA:[59.3544,17.9417,'Bromma']};
+async function fetchFlights(){if(!FLIGHT_RELAY||document.hidden)return;
+  try{const r=await fetch(FLIGHT_RELAY.replace(/\/$/,'')+'/flights');if(!r.ok)throw new Error('HTTP '+r.status);const j=await r.json();if(!j.ac)throw new Error(j.error||'no data');
+    LIVEFL.ac=j.ac;LIVEFL.t=Date.now();LIVEFL.ver++;LIVEFL.src=j.src||'';LIVEFL.err=''}catch(e){LIVEFL.err=String(e.message||e)}}
+const kmBetween=(a,b,c,d)=>{const R=6371,dl=(c-a)*Math.PI/180,dn=(d-b)*Math.PI/180,x=Math.sin(dl/2)**2+Math.cos(a*Math.PI/180)*Math.cos(c*Math.PI/180)*Math.sin(dn/2)**2;return 2*R*Math.asin(Math.sqrt(x))};
+// what a plane is doing, from where it is, how high and whether it climbs or sinks
+function flightPhase(a){for(const k in AIRPORTS){const [la,lo,n]=AIRPORTS[k],d=kmBetween(a.lat,a.lon,la,lo);
+    if(a.gnd&&d<5)return {k,txt:'On the ground at '+n,ord:2,d};
+    if(d<35&&a.alt<9000){if(a.vr<-200)return {k,txt:`Landing at ${n} · ${Math.round(d)} km out`,ord:0,d};if(a.vr>200)return {k,txt:`Departed ${n} · ${Math.round(d)} km`,ord:1,d}}}
+  return {k:'',txt:a.alt>20000?'Overflying at cruise height':'Flying over the Stockholm area',ord:3,d:99}}
+async function routeOf(cs){cs=(cs||'').trim();if(!cs)return null;if(ROUTES.has(cs))return ROUTES.get(cs);
+  try{const r=await fetch('https://api.adsbdb.com/v0/callsign/'+encodeURIComponent(cs));const j=r.ok?await r.json():null;const fr=j&&j.response&&j.response.flightroute;ROUTES.set(cs,fr||null);return fr||null}catch(e){return null}}
+function openFlights(){if(!FLIGHT_RELAY){modal(`<div class="phonehead" style="--c:#2f6fd6">${glyphSVG('plane')}<h2>Flights</h2></div><p>Live flights need the small flights relay (a free Cloudflare Worker). It is in <code>tools/flights-worker.js</code>, with the steps to set it up at the top of the file.</p><p class="note">Until then, the planes at Bromma are simulated.</p><div class="row2"><button class="btn ghost" id="no">Close</button></div>`,m=>m.querySelector('#no').onclick=closeModal);return}
+  let alive=true,timer=0;
+  modal(`<div class="phonehead" style="--c:#2f6fd6">${glyphSVG('plane')}<h2>Flights · live</h2></div><div id="flBody"><p class="note">Loading live flights…</p></div><div class="row2"><button class="btn ghost" id="no">Close</button></div>`,m=>{
+    const el=m.querySelector('#flBody');m.querySelector('#no').onclick=()=>{alive=false;clearInterval(timer);closeModal()};
+    const draw=()=>{if(!alive||!document.body.contains(el)){clearInterval(timer);return}
+      if(!LIVEFL.t){el.innerHTML=`<p class="note">${LIVEFL.err?'The flights relay did not answer ('+esc2(LIVEFL.err)+').':'Loading live flights…'}</p>`;return}
+      const list=LIVEFL.ac.filter(a=>a.cs).map(a=>({a,ph:flightPhase(a)})).sort((x,y)=>x.ph.ord-y.ph.ord||x.ph.d-y.ph.d||x.a.alt-y.a.alt).slice(0,30);
+      const grp=[['Arriving',0],['Departing',1],['On the ground',2],['Overhead',3]];
+      el.innerHTML=grp.map(([h,o])=>{const g=list.filter(x=>x.ph.ord===o);return g.length?`<h3>${h}</h3><div class="deps">${g.map(({a,ph})=>`<button class="dep fl" data-hex="${a.hex}"><span class="ln" style="background:#${(liveTail(a.cs)).toString(16).padStart(6,'0')}">${esc2(a.cs)}</span><span class="dst">${esc2(ROUTES.get(a.cs)?routeTxt(ROUTES.get(a.cs)):a.desc||a.type||'')}<small>${esc2(ph.txt)}</small></span><span class="tm">${a.gnd?'GND':Math.round(a.alt*0.3048).toLocaleString('sv-SE')+' m'}<small>${Math.round(a.gs*1.852)} km/h</small></span></button>`).join('')}</div>`:''}).join('')+
+        `<p class="note">Live ADS-B positions${LIVEFL.src?' from '+esc2(LIVEFL.src):''} · ${LIVEFL.ac.length} aircraft within about 80 km · updated ${new Date(LIVEFL.t).toLocaleTimeString('sv-SE')}. Routes from adsbdb.com.</p>`;
+      el.querySelectorAll('[data-hex]').forEach(b=>b.onclick=()=>flightDetail(b.dataset.hex));
+      list.slice(0,12).forEach(({a})=>{if(!ROUTES.has(a.cs))routeOf(a.cs).then(()=>{})})};
+    draw();timer=setInterval(()=>{fetchFlights().then(draw)},10000);setTimeout(draw,2500)})}
+const routeTxt=fr=>fr?`${fr.origin.municipality||fr.origin.name} → ${fr.destination.municipality||fr.destination.name}`:'';
+function liveTail(cs){const L={SAS:0x0b1f4b,NOZ:0xd81939,NSZ:0xd81939,NAX:0xd81939,RYR:0x073590,KLM:0x00a1de,DLH:0x05164d,FIN:0x0b1560,BRX:0x3f9b46,WZZ:0xc6007e,THY:0xe30a17,AFR:0x002157,BAW:0x075aaa,EZY:0xff6600,LOT:0x11397e};return L[(cs||'').slice(0,3)]||0x4b5a69}
+async function flightDetail(hex){const a=LIVEFL.ac.find(x=>x.hex===hex);if(!a)return;const fr=await routeOf(a.cs),ph=flightPhase(a);
+  modal(`<div class="phonehead" style="--c:#2f6fd6">${glyphSVG('plane')}<h2>${esc2(a.cs)}</h2></div><dl class="kv">
+    ${fr?`<dt>Airline</dt><dd>${esc2(fr.airline?fr.airline.name:'')}</dd><dt>Route</dt><dd>${esc2(fr.origin.name)} (${esc2(fr.origin.iata_code||'')}) → ${esc2(fr.destination.name)} (${esc2(fr.destination.iata_code||'')})</dd>`:''}
+    <dt>Now</dt><dd>${esc2(ph.txt)}</dd><dt>Aircraft</dt><dd>${esc2(a.desc||a.type||'—')}${a.reg?' · '+esc2(a.reg):''}</dd>
+    <dt>Height</dt><dd>${a.gnd?'On the ground':Math.round(a.alt*0.3048).toLocaleString('sv-SE')+' m ('+Math.round(a.alt).toLocaleString('sv-SE')+' ft)'}${a.vr?` · ${a.vr>0?'climbing':'descending'} ${Math.abs(Math.round(a.vr*0.00508))} m/s`:''}</dd>
+    <dt>Speed</dt><dd>${Math.round(a.gs*1.852)} km/h · heading ${Math.round(a.trk)}°</dd></dl>
+    <p class="note">Live ADS-B position; the route is the airline's usual route for this flight number (adsbdb.com).</p><div class="row2"><button class="btn" id="look">Look at it</button><button class="btn ghost" id="no">Back</button></div>`,m=>{
+    m.querySelector('#no').onclick=()=>openFlights();m.querySelector('#look').onclick=()=>{closeModal();W&&W.lookAtFlight&&W.lookAtFlight(hex)}})}
 
 /* =================== PHONE: notifications, Chatt, Mail, To-do, Bag =================== */
 const esc2=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -2660,21 +2702,38 @@ function buildWorld(){
     if(!html||$('modalRoot').innerHTML){tipEl.hidden=true;return}tipEl.innerHTML=html;tipEl.hidden=false;const w=tipEl.offsetWidth,h=tipEl.offsetHeight;let x=tipXY[0]+14,y=tipXY[1]+16;if(x+w>innerWidth-8)x=tipXY[0]-w-14;if(y+h>innerHeight-8)y=tipXY[1]-h-14;tipEl.style.transform=`translate(${x}px,${y}px)`}
   // ======== Arlanda: your plane lands, taxis to Terminal 5, and you walk off ========
   const CUT={on:false};
-  function planeMesh(tail){const g=new THREE.Group();const white=new THREE.MeshLambertMaterial({color:0xf4f6f8}),grey=plain(0x9aa3ab),dark=plain(0x26303a),tc=plain(tail||0x1d4f91);
+  function planeMesh(liv){if(typeof liv!=='object'||!liv)liv={tail:liv||0x1d4f91};const L=Object.assign({body:0xf4f6f8,belly:null,tail:0x1d4f91,nose:null,engine:0x9aa3ab,logo:null},liv);
+    const g=new THREE.Group();g.rotation.order='YXZ';const white=new THREE.MeshLambertMaterial({color:L.body}),grey=plain(0x9aa3ab),dark=plain(0x26303a),tc=plain(L.tail),eng=plain(L.engine);
     const fus=new THREE.Mesh(new THREE.CylinderGeometry(0.042,0.042,0.62,16),white);fus.rotation.x=Math.PI/2;fus.castShadow=true;g.add(fus);
-    const nose=new THREE.Mesh(new THREE.SphereGeometry(0.042,16,10,0,Math.PI*2,0,Math.PI/2),white);nose.rotation.x=Math.PI/2;nose.position.z=0.31;nose.scale.set(1,1.5,1);g.add(nose);
+    if(L.belly!==null){const bel=new THREE.Mesh(new THREE.CylinderGeometry(0.0425,0.0425,0.62,16,1,true,Math.PI*0.62,Math.PI*0.76),plain(L.belly));bel.rotation.x=Math.PI/2;g.add(bel)}
+    const nose=new THREE.Mesh(new THREE.SphereGeometry(0.042,16,10,0,Math.PI*2,0,Math.PI/2),L.nose!==null?plain(L.nose):white);nose.rotation.x=Math.PI/2;nose.position.z=0.31;nose.scale.set(1,1.5,1);g.add(nose);
     const tailc=new THREE.Mesh(new THREE.ConeGeometry(0.042,0.14,16),white);tailc.rotation.x=-Math.PI/2;tailc.position.z=-0.38;g.add(tailc);
     const ck=new THREE.Mesh(new THREE.BoxGeometry(0.05,0.012,0.03),dark);ck.position.set(0,0.026,0.34);g.add(ck);
     const win=new THREE.Mesh(new THREE.BoxGeometry(0.0855,0.008,0.5),dark);win.position.set(0,0.012,0.02);g.add(win);
     const stripe=new THREE.Mesh(new THREE.BoxGeometry(0.0858,0.006,0.6),tc);stripe.position.set(0,-0.006,0);g.add(stripe);
     const wingS=new THREE.Shape();wingS.moveTo(0,0.09);wingS.lineTo(0.36,-0.06);wingS.lineTo(0.36,-0.1);wingS.lineTo(0,-0.04);wingS.lineTo(-0.36,-0.1);wingS.lineTo(-0.36,-0.06);wingS.closePath();
     const wing=new THREE.Mesh(new THREE.ExtrudeGeometry(wingS,{depth:0.008,bevelEnabled:false}),grey);wing.rotation.x=-Math.PI/2;wing.position.set(0,-0.022,0.0);wing.castShadow=true;g.add(wing);
+    [-1,1].forEach(s=>{const wl=new THREE.Mesh(new THREE.BoxGeometry(0.004,0.045,0.035),tc);wl.position.set(s*0.362,-0.0,-0.085);wl.rotation.z=-s*0.15;g.add(wl)});
     const stS=new THREE.Shape();stS.moveTo(0,0.03);stS.lineTo(0.12,-0.03);stS.lineTo(0.12,-0.05);stS.lineTo(0,-0.01);stS.lineTo(-0.12,-0.05);stS.lineTo(-0.12,-0.03);stS.closePath();
     const st=new THREE.Mesh(new THREE.ExtrudeGeometry(stS,{depth:0.006,bevelEnabled:false}),grey);st.rotation.x=-Math.PI/2;st.position.set(0,0.01,-0.36);g.add(st);
     const finS=new THREE.Shape();finS.moveTo(0,0);finS.lineTo(0.12,0);finS.lineTo(0.17,0.14);finS.lineTo(0.12,0.14);finS.closePath();const fin=new THREE.Mesh(new THREE.ExtrudeGeometry(finS,{depth:0.006,bevelEnabled:false}),tc);fin.rotation.y=Math.PI/2;fin.position.set(0.003,0.03,-0.28);g.add(fin);
-    [-1,1].forEach(s=>{const e=new THREE.Mesh(new THREE.CylinderGeometry(0.018,0.016,0.08,12),grey);e.rotation.x=Math.PI/2;e.position.set(s*0.13,-0.045,0.06);g.add(e);const ei=new THREE.Mesh(new THREE.CircleGeometry(0.016,12),dark);ei.position.set(s*0.13,-0.045,0.101);g.add(ei)});
+    if(L.logo!==null)[-1,1].forEach(s=>{const lg=new THREE.Mesh(new THREE.CircleGeometry(0.022,14),plain(L.logo));lg.position.set(s*0.0035,0.1,-0.33);lg.rotation.y=s*Math.PI/2;g.add(lg)});
+    [-1,1].forEach(s=>{const e=new THREE.Mesh(new THREE.CylinderGeometry(0.018,0.016,0.08,12),eng);e.rotation.x=Math.PI/2;e.position.set(s*0.13,-0.045,0.06);g.add(e);const ei=new THREE.Mesh(new THREE.CircleGeometry(0.016,12),dark);ei.position.set(s*0.13,-0.045,0.101);g.add(ei)});
     const gear=[];[[0,0.24],[-0.045,-0.01],[0.045,-0.01]].forEach(([x,z])=>{const w=new THREE.Mesh(new THREE.CylinderGeometry(0.012,0.012,0.012,10),dark);w.rotation.z=Math.PI/2;w.position.set(x,-0.07,z);g.add(w);const l=new THREE.Mesh(new THREE.CylinderGeometry(0.003,0.003,0.03,5),grey);l.position.set(x,-0.055,z);g.add(l);gear.push(w,l)});
-    g.userData.gear=gear;[-1,1].forEach(s=>{const L=new THREE.Mesh(new THREE.SphereGeometry(0.006,6,4),new THREE.MeshBasicMaterial({color:s<0?0xff2a2a:0x2aff5a}));L.position.set(s*0.36,-0.02,-0.08);g.add(L)});return g}
+    // lights: red left / green right wingtips, white strobes and a red beacon that blink, landing lights for night approaches
+    const lamp=(c,sz,x,y,z)=>{const m=new THREE.Mesh(new THREE.SphereGeometry(sz,6,4),new THREE.MeshBasicMaterial({color:c,fog:false}));m.position.set(x,y,z);g.add(m);return m};
+    lamp(0xff2a2a,0.007,-0.36,-0.02,-0.08);lamp(0x2aff5a,0.007,0.36,-0.02,-0.08);
+    const strobes=[lamp(0xffffff,0.008,-0.365,-0.02,-0.1),lamp(0xffffff,0.008,0.365,-0.02,-0.1),lamp(0xffffff,0.007,0,0.0,-0.45)],beacon=[lamp(0xff3020,0.007,0,0.046,0),lamp(0xff3020,0.007,0,-0.046,0)];
+    const land=lamp(0xfff6d8,0.012,0,-0.03,0.3);land.visible=false;
+    g.userData={gear,strobes,beacon,land,lit:true};return g}
+  // ADS-B category and airline (first three letters of the callsign) -> look
+  const LIVERY={SAS:{tail:0x0b1f4b,belly:0x2f4a7a,engine:0x0b1f4b},SZS:{tail:0x0b1f4b,belly:0x2f4a7a,engine:0x0b1f4b},NOZ:{tail:0xd81939,nose:0xd81939},NAX:{tail:0xd81939,nose:0xd81939},NSZ:{tail:0xd81939,nose:0xd81939},IBK:{tail:0xd81939,nose:0xd81939},
+    RYR:{tail:0x073590,belly:0x073590,engine:0x073590,logo:0xf1c933},RUK:{tail:0x073590,belly:0x073590,logo:0xf1c933},KLM:{body:0x00a1de,belly:0xf4f6f8,tail:0x00a1de},KLC:{body:0x00a1de,belly:0xf4f6f8,tail:0x00a1de},
+    DLH:{tail:0x05164d,engine:0x05164d,logo:0xf9ba00},CLH:{tail:0x05164d,logo:0xf9ba00},EWG:{tail:0x8a1e5a,engine:0x8a1e5a},FIN:{tail:0x0b1560,engine:0xf4f6f8},BRX:{tail:0x3f9b46},WZZ:{tail:0xc6007e,belly:0x3b1a5a},
+    THY:{tail:0xe30a17,logo:0xf4f6f8},AFR:{tail:0x002157},BAW:{tail:0x075aaa,belly:0x16316b},UAE:{tail:0xd71a21},QTR:{tail:0x5c0632,body:0xe4e4e8},EZY:{tail:0xff6600,engine:0xff6600},EJU:{tail:0xff6600},
+    LOT:{tail:0x11397e},AUA:{tail:0xe2001a},SWR:{tail:0xe2001a},ICE:{tail:0x003a7d},TAP:{tail:0x00843d},AEE:{tail:0x0a2a6a},BEL:{tail:0x00205b},VLG:{tail:0xffcc00,belly:0x7f7f7f},DHK:{body:0xffcc00,tail:0xd40511},BCS:{body:0xffcc00,tail:0xd40511},
+    UPS:{body:0x4b3324,tail:0xffb500},FDX:{tail:0x4d148c,belly:0xf4f6f8},NJE:{tail:0x7a7a7a},SVA:{tail:0x005b3a},ETD:{tail:0x8a6a2d,body:0xe8e2d6},CPA:{tail:0x006564}};
+  function liveryFor(cs){return LIVERY[(cs||'').slice(0,3).toUpperCase()]||{tail:0x6b7a89}}
   function arlandaScene(){const sc=new THREE.Scene();const night=lightAt(S.hour)>0.5;sc.background=new THREE.Color(night?0x0d1a2e:0xa8c8e4);sc.fog=new THREE.Fog(night?0x0d1a2e:0xc3d6e6,25,140);
     sc.add(new THREE.HemisphereLight(night?0x6677aa:0xffffff,0x4a5a3a,night?0.5:0.95));const sun=new THREE.DirectionalLight(0xfff2dd,night?0.25:0.8);sun.position.set(30,40,20);sc.add(sun);
     const box=(w,h,d,c,x,y,z,mat)=>{const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat||plain(c));m.position.set(x,y,z);sc.add(m);return m};
@@ -2780,6 +2839,7 @@ function buildWorld(){
   const PADS=[[59.3488,18.0307,'Karolinska Solna'],[59.3106,18.0521,'Södersjukhuset'],[59.3919,18.0412,'Danderyds sjukhus']].map(([a,b,n])=>{const [x,z]=P(a,b);return {x,z,n}});
   const helis=[{g:heliMesh(0xf2c300,0x2e8b3d),kind:'amb',leg:0,t:0,wait:20,from:PADS[0],to:PADS[1]},{g:heliMesh(0x1d3d8f,0xf2c300),kind:'pol',a:0,cx:0,cz:0,t:0}];
   function updateAir(dt,T,fx,fz){
+    try{updateLiveAir(dt,T,fx,fz)}catch(e){console.warn('live flights',e)}
     for(const h of helis){h.g.userData.rotor.rotation.y+=dt*40;
       if(h.kind==='amb'){if(h.wait>0){h.wait-=dt;h.g.position.set(h.from.x,0.04,h.from.z);if(h.wait<=0){h.t=0}continue}
         const L=Math.hypot(h.to.x-h.from.x,h.to.z-h.from.z);h.t+=dt*1.0;const u=Math.min(1,h.t/(L+3));const alt=Math.min(1,h.t/3,(L+3-h.t)/3)*1.3;
@@ -2792,15 +2852,36 @@ function buildWorld(){
       else if(pl.phase==='wait'){vis=false;if(pl.t>40){pl.phase='take';pl.t=0;pl.s=0.3;pl.v=0}}
       else if(pl.phase==='take'){pl.v=Math.min(2.2,pl.v+0.45*dt);pl.s+=pl.v*dt;y=0.05+Math.max(0,pl.s-L*0.5)*0.09;if(pl.s>L+25){pl.phase='gap';pl.t=0}}
       else{vis=false;if(pl.t>50){pl.phase='land';pl.t=0;pl.s=undefined}}
-      pl.g.visible=vis&&pl.s!==undefined;if(pl.g.visible){pl.g.position.set(A[0]+ux*pl.s,y,A[1]+uz*pl.s);pl.g.rotation.y=Math.atan2(ux,uz);pl.g.rotation.x=pl.phase==='take'&&y>0.06?-0.12:pl.phase==='land'&&y>0.06?0.05:0}}}
+      pl.g.visible=vis&&pl.s!==undefined&&!(LIVEFL.ac.length&&Date.now()-LIVEFL.t<60000);if(pl.g.visible){pl.g.position.set(A[0]+ux*pl.s,y,A[1]+uz*pl.s);pl.g.rotation.y=Math.atan2(ux,uz);pl.g.rotation.x=pl.phase==='take'&&y>0.06?-0.12:pl.phase==='land'&&y>0.06?0.05:0}}}
   let plane=null;
+  // ---------- live flights: every aircraft the relay reports, at its real position, height and heading, dead-reckoned between updates ----------
+  const liveAir=new Map();let liveVer=-1;const AIR_S=2.2; // drawn larger than life so they read against the sky
+  function updateLiveAir(dt,T,fx,fz){const now=Date.now(),night=lightAt(shownHour)>0.4;
+    if(LIVEFL.ver!==liveVer&&now-LIVEFL.t<60000){liveVer=LIVEFL.ver;const seen=new Set();
+      for(const a of LIVEFL.ac){if(a.lat==null||a.lon==null)continue;seen.add(a.hex);let o=liveAir.get(a.hex);
+        if(!o){const heli=a.cat==='A7';const g=heli?heliMesh(0xeeeeee,0x2a5db0):planeMesh(liveryFor(a.cs));if(!heli)scene.add(g);
+          g.scale.setScalar(heli?2.2:AIR_S*(a.cat==='A1'?0.35:a.cat==='A2'?0.6:a.cat==='A5'?1.45:1));o={g,heli,lbl:null};liveAir.set(a.hex,o)}
+        const [x,z]=P(a.lat,a.lon);Object.assign(o,{x,z,y:a.gnd?0.03:Math.max(0.06,a.alt*0.3048/50),trk:(a.trk||0)*Math.PI/180,gs:(a.gs||0)*0.5144/50,vr:(a.vr||0)*0.00508/50,t:LIVEFL.t,a})}
+      for(const [k,o] of liveAir)if(!seen.has(k)){scene.remove(o.g);if(o.lbl)scene.remove(o.lbl);liveAir.delete(k)}}
+    if(now-LIVEFL.t>90000&&liveAir.size){for(const o of liveAir.values()){scene.remove(o.g);if(o.lbl)scene.remove(o.lbl)}liveAir.clear()}
+    for(const o of liveAir.values()){const age=Math.min(30,(now-o.t)/1000),sx=Math.sin(o.trk),sz=-Math.cos(o.trk);
+      const tx=o.x+sx*o.gs*age,tz=o.z+sz*o.gs*age,ty=o.a.gnd?o.y:Math.max(0.06,o.y+o.vr*age);const g=o.g;
+      if(!o.placed){g.position.set(tx,ty,tz);o.placed=true}else{const k=1-Math.exp(-dt*2.5);g.position.x+=(tx-g.position.x)*k;g.position.y+=(ty-g.position.y)*k;g.position.z+=(tz-g.position.z)*k}
+      g.rotation.y=Math.atan2(sx,sz);if(!o.heli){g.rotation.x=o.gs>1e-6?-Math.atan2(o.vr,o.gs)*0.8:0;const u=g.userData;
+        u.gear.forEach(m=>m.visible=o.a.gnd||o.a.alt<2500);const blink=(T*1.1)%1<0.06,bc=(T*0.9)%1<0.12;u.strobes.forEach(m=>m.visible=blink);u.beacon.forEach(m=>m.visible=bc);u.land.visible=night&&(o.a.gnd||o.a.alt<4000)}
+      else g.userData.rotor.rotation.y+=dt*40;
+      // a callsign label on planes close to you
+      const d=Math.hypot(g.position.x-fx,g.position.z-fz);if(d<140&&o.a.cs){if(!o.lbl){o.lbl=textSprite(o.a.cs,{fs:28,icon:'g:plane',iconBg:'#2f6fd6',bg:'rgba(255,255,255,.92)',fg:'#18212B',scale:0.00032});scene.add(o.lbl)}o.lbl.position.set(g.position.x,g.position.y+0.25,g.position.z);o.lbl.visible=true}
+      else if(o.lbl)o.lbl.visible=false}}
+  // "Look at it": an 8-second chase camera behind the plane (only for planes within 15 km; farther ones are specks on the horizon)
+  function lookAtFlight(hex){const o=liveAir.get(hex);if(!o)return toast('That plane is out of range now');const p=o.g.position,km=Math.hypot(p.x-av.position.x,p.z-av.position.z)*0.05;
+    if(km>15)return toast(`${o.a.cs} is ${Math.round(km)} km away, too far to see from here`);flightLook={hex,t:8,saved:camera.position.clone().sub(controls.target)};controls.enabled=false}
+  let flightLook=null;
+  function flightLookTick(dt){if(!flightLook)return;flightLook.t-=dt;const o=liveAir.get(flightLook.hex);
+    if(!o||flightLook.t<=0){camera.position.copy(controls.target).add(flightLook.saved);controls.enabled=true;flightLook=null;return}
+    const p=o.g.position,sx=Math.sin(o.trk),sz=-Math.cos(o.trk),k=o.g.scale.x;camera.position.set(p.x-sx*1.3*k+sz*0.35*k,p.y+0.28*k,p.z-sz*1.3*k-sx*0.35*k);camera.lookAt(p)}
   if(CITY){let best=null,bl=0;for(const [kind,name,closed,flat] of CITY.m.aero){if(kind!=='runway')continue;const pts=pairs(flat);let a=pts[0],b=pts[0],d=0;for(const p of pts)for(const q of pts){const dd=Math.hypot(p[0]-q[0],p[1]-q[1]);if(dd>d){d=dd;a=p;b=q}}if(d>bl){bl=d;best=[a,b]}}
-    if(best&&bl>3){const g=new THREE.Group();const fus=new THREE.Mesh(new THREE.CylinderGeometry(0.035,0.035,0.62,10),plain(0xf4f4f4));fus.rotation.x=Math.PI/2;fus.castShadow=true;g.add(fus);
-      const nose=new THREE.Mesh(new THREE.ConeGeometry(0.035,0.08,10),plain(0xf4f4f4));nose.rotation.x=Math.PI/2;nose.position.z=0.35;g.add(nose);
-      const wing=new THREE.Mesh(new THREE.BoxGeometry(0.62,0.008,0.1),plain(0xdfe3e6));wing.position.set(0,-0.008,0.02);wing.castShadow=true;g.add(wing);
-      const tw=new THREE.Mesh(new THREE.BoxGeometry(0.2,0.006,0.05),plain(0xdfe3e6));tw.position.set(0,0.01,-0.28);g.add(tw);
-      const fin=new THREE.Mesh(new THREE.BoxGeometry(0.008,0.1,0.07),plain(0x1d5ea8));fin.position.set(0,0.06,-0.28);g.add(fin);
-      const wins=new THREE.Mesh(new THREE.BoxGeometry(0.071,0.008,0.46),new THREE.MeshBasicMaterial({color:0x1a2530}));wins.position.y=0.012;g.add(wins);scene.add(g);
+    if(best&&bl>3){const g=planeMesh(liveryFor('BRX'));g.scale.setScalar(0.9);scene.add(g);
       const [A,B]=best;const L=Math.hypot(B[0]-A[0],B[1]-A[1]);plane={g,A,B,ux:(B[0]-A[0])/L,uz:(B[1]-A[1])/L,L,t:0,phase:'land'}}}
   function decorFor(key,greens,roadIds){const grp=new THREE.Group();seed=hashStr(key);const spots=[],lamps=[],flowers=[];const tc=treeColors();const m=today().getMonth(),summer=m>=3&&m<=8,snowy=snowyNow();const bushes=[];
     const real=CITY.m.trees[key]||[];for(let i=0;i+1<real.length;i+=2)if(roadDepth(real[i]/100,real[i+1]/100)[0]<-0.005)spots.push([real[i]/100,real[i+1]/100,0.8+rnd()*0.5,rnd()<0.15]);
@@ -3491,8 +3572,8 @@ function buildWorld(){
     else{animPerson(av,av.position.distanceTo(lastAv),dt,moving,AV_S,running);if(emoteT>0){av.userData.body.position.y+=Math.abs(Math.sin(T*10))*0.6*emoteT;av.userData.lArm.rotation.x=-2.6*emoteT;av.userData.rArm.rotation.x=-2.6*emoteT}}
     lastAv.copy(av.position);emoteT=Math.max(0,emoteT-dt*0.8);
     ring.material.opacity=0.55+0.3*Math.sin(T*3);
-    const before=controls.target.clone();controls.target.lerp(new THREE.Vector3(follow.x,0.02,follow.z),1-Math.exp(-dt*((moving||rideState||walk)?9:5)));camera.position.add(controls.target.clone().sub(before));controls.update();
-    if(!IN.on){const off=camera.position.clone().sub(controls.target);const sp=new THREE.Spherical().setFromVector3(off);
+    const before=controls.target.clone();controls.target.lerp(new THREE.Vector3(follow.x,0.02,follow.z),1-Math.exp(-dt*((moving||rideState||walk)?9:5)));camera.position.add(controls.target.clone().sub(before));controls.update();flightLookTick(dt);
+    if(!IN.on&&!flightLook){const off=camera.position.clone().sub(controls.target);const sp=new THREE.Spherical().setFromVector3(off);
       if(viewBlocked(camera.position,controls.target)&&sp.phi>0.1){sp.phi=Math.max(0.1,sp.phi-Math.min(0.12,dt*2.2));camera.position.copy(controls.target).add(new THREE.Vector3().setFromSpherical(sp));controls.update()}}
     if(CUT.on){CUT.update(dt,T);renderer.render(CUT.sc,camera);return}
     if(IN.on){interiorTick(dt,T);$('labels').style.display='none';renderer.render(inScene,camera);return}else $('labels').style.display='';
@@ -3534,7 +3615,7 @@ function buildWorld(){
     whereT-=dt;if(whereT<0){whereT=0.6;const sn=streetName();const nh=S.loc?D[S.loc].name:(S.nearHub?'near '+D[S.nearHub].name:'');$('where').textContent=S.flags&&S.flags.arlanda?'Arlanda Airport · Terminal 5':[sn,nh,rushNow()?'🚦 Rush hour':''].filter(Boolean).join(' · ')||'Stockholm'}
   }
   tick();
-  return {placeAvatar,landAt:info=>{if(IN.on)exitInterior(true);playLanding(info,()=>enterInterior('arlanda',{name:'Stockholm Arlanda Airport · Terminal 5 · Arrivals'},{}))},openGate:k=>{const gt=IN.gates&&IN.gates[k];if(!gt)return;IN.col=IN.col.filter(c=>!gt.c.includes(c));gt.m.forEach(m=>m.visible=false)},leaveAirportBy:(mode,dst,cb)=>{exitInterior(true);arriveBy(mode,dst,cb)},enterAirport:()=>{if(IN.on)exitInterior(true);enterInterior('arlanda',{name:'Stockholm Arlanda Airport · Terminal 5 · Arrivals'},{})},leaveAirport:(x,z)=>{exitInterior(true);const f=freeSpot(x,z)||[x,z];placeAvatar(f[0],f[1],true)},stationPos:k=>{const ll=k==='cityterminal'?[59.3318,18.0560]:[59.3303,18.0581];const [x,z]=P(ll[0],ll[1]);const f=freeSpot(x,z)||[x,z];return {x:f[0],z:f[1]}},avPos:()=>({x:av.position.x,z:av.position.z}),lieDown,hideAv:h=>{avHidden=h;av.visible=!h},emergency,leaveScene,isDriving:()=>DR.on,busLinesAt,busRide,hospitalNear:(x,z)=>{const L=[['Karolinska Universitetssjukhuset Solna',59.3488,18.0307],['Södersjukhuset',59.3106,18.0521],['S:t Görans sjukhus',59.3376,18.0221],['Danderyds sjukhus',59.3919,18.0412]].map(([n,a,b])=>{const [hx,hz]=P(a,b);const f=freeSpot(hx,hz)||[hx,hz];return {name:n,x:f[0],z:f[1]}});return L.sort((a,b)=>Math.hypot(a.x-x,a.z-z)-Math.hypot(b.x-x,b.z-z))[0]},setCoat,walkPath,ride,emote,refresh,season:()=>{lastSeason=''},snapTime,aurora:()=>{auroraT=1.2},route,streetName,isMoving:()=>inputVec().mag>0.08,setLook:n=>setLook(n),applyOutfit,setHome,syncCar,startDrive,stopDrive,nearPlaces,kindFor,poi:i=>POIS[i],
+  return {lookAtFlight,placeAvatar,landAt:info=>{if(IN.on)exitInterior(true);playLanding(info,()=>enterInterior('arlanda',{name:'Stockholm Arlanda Airport · Terminal 5 · Arrivals'},{}))},openGate:k=>{const gt=IN.gates&&IN.gates[k];if(!gt)return;IN.col=IN.col.filter(c=>!gt.c.includes(c));gt.m.forEach(m=>m.visible=false)},leaveAirportBy:(mode,dst,cb)=>{exitInterior(true);arriveBy(mode,dst,cb)},enterAirport:()=>{if(IN.on)exitInterior(true);enterInterior('arlanda',{name:'Stockholm Arlanda Airport · Terminal 5 · Arrivals'},{})},leaveAirport:(x,z)=>{exitInterior(true);const f=freeSpot(x,z)||[x,z];placeAvatar(f[0],f[1],true)},stationPos:k=>{const ll=k==='cityterminal'?[59.3318,18.0560]:[59.3303,18.0581];const [x,z]=P(ll[0],ll[1]);const f=freeSpot(x,z)||[x,z];return {x:f[0],z:f[1]}},avPos:()=>({x:av.position.x,z:av.position.z}),lieDown,hideAv:h=>{avHidden=h;av.visible=!h},emergency,leaveScene,isDriving:()=>DR.on,busLinesAt,busRide,hospitalNear:(x,z)=>{const L=[['Karolinska Universitetssjukhuset Solna',59.3488,18.0307],['Södersjukhuset',59.3106,18.0521],['S:t Görans sjukhus',59.3376,18.0221],['Danderyds sjukhus',59.3919,18.0412]].map(([n,a,b])=>{const [hx,hz]=P(a,b);const f=freeSpot(hx,hz)||[hx,hz];return {name:n,x:f[0],z:f[1]}});return L.sort((a,b)=>Math.hypot(a.x-x,a.z-z)-Math.hypot(b.x-x,b.z-z))[0]},setCoat,walkPath,ride,emote,refresh,season:()=>{lastSeason=''},snapTime,aurora:()=>{auroraT=1.2},route,streetName,isMoving:()=>inputVec().mag>0.08,setLook:n=>setLook(n),applyOutfit,setHome,syncCar,startDrive,stopDrive,nearPlaces,kindFor,poi:i=>POIS[i],
     enterPlace:(p,o)=>{const k=kindFor(p);if(!k){showPoi(p);return}if(k==='club'&&!(S.hour>=21.5||S.hour<2)){toast('The club opens late in the evening');return}if(k==='club'&&!S.flags['club'+S.day]){if(S.money<200){toast('Entry is 200 kr');return}S.money-=200;S.flags['club'+S.day]=1;log('Paid 200 kr entry at '+p.name+'.');render()}enterInterior(k,p,o)},
     enterHome:()=>enterInterior('home',null,{}),showCrowd,exitInterior,setQueue:n=>{IN.queue=n},inside:()=>IN.on,driving:()=>DR.on};
 }
@@ -3561,7 +3642,7 @@ async function start(data){uiInit();
   if(!W){const n=document.createElement('div');n.className='nogl';n.style.cssText='inset:auto;top:160px;left:50%;transform:translateX(-50%);width:min(440px,calc(100% - 32px));background:var(--glass);border-radius:12px;z-index:5;line-height:1.45';n.textContent='Your browser could not start 3D graphics (WebGL), so the city cannot be drawn. The game still works from the panels. Fix: quit the browser completely and reopen it (after a graphics crash Chrome blocks 3D until restart), and check that "Use graphics acceleration" is on in its settings.';$('stage').appendChild(n)}
   else{W.placeAvatar(S.pos.x,S.pos.z,true);if(!S.addr&&S.home!=='none'){assignAddress();save()}W.setHome();W.syncCar();if(!S.wants.length)rollWants();if(S.flags&&S.flags.arlanda&&W.enterAirport)setTimeout(()=>W.enterAirport(),600)}
   render();if(fresh)intro();
-  fetchLiveWeather().then(ok=>{if(ok)setTimeout(()=>wearTip(true),fresh?20000:2500)});setInterval(fetchLiveWeather,10*60e3);
+  fetchLiveWeather().then(ok=>{if(ok)setTimeout(()=>wearTip(true),fresh?20000:2500)});setInterval(fetchLiveWeather,10*60e3);if(FLIGHT_RELAY){fetchFlights();setInterval(fetchFlights,10000)}
 }
 window.claude?.hot?.snapshot?.(()=>({S}));
 window.claude?.hot?.ready?window.claude.hot.ready(start):start(window.claude?.hot?.data??{});

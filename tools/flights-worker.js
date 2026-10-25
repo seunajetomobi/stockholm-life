@@ -16,7 +16,12 @@
 
 const CENTER = { lat: 59.47, lon: 17.95, nm: 45 };   // covers Arlanda, Bromma and the city, ~80 km across
 const ALLOW = ['https://seunajetomobi.github.io', 'http://localhost:8000', 'http://127.0.0.1:8000'];
-const UA = { 'User-Agent': 'stockholm-life-flights-relay (github.com/seunajetomobi/stockholm-life)' };
+const UA = { 'User-Agent': 'Mozilla/5.0 (compatible; stockholm-life-flights-relay; +https://github.com/seunajetomobi/stockholm-life)', 'Accept': 'application/json' };
+const LOG = [];   // what each source answered, shown with /flights?debug=1
+async function get(url) {
+  try { const r = await fetch(url, { headers: UA, cf: { cacheTtl: 5 } }); LOG.push(`${url.split('/')[2]} ${r.status}`); return r.ok ? await r.json() : null; }
+  catch (e) { LOG.push(`${url.split('/')[2]} ${e.message}`); return null; }
+}
 
 const num = v => (typeof v === 'number' && isFinite(v) ? v : null);
 const trimReadsb = (list, now, src) => ({
@@ -32,19 +37,19 @@ const trimReadsb = (list, now, src) => ({
 
 const SOURCES = [
   async () => {
-    const r = await fetch(`https://api.adsb.lol/v2/point/${CENTER.lat}/${CENTER.lon}/${CENTER.nm}`, { headers: UA });
-    if (!r.ok) return null; const j = await r.json();
+    const j = await get(`https://api.adsb.lol/v2/point/${CENTER.lat}/${CENTER.lon}/${CENTER.nm}`) || await get(`https://api.adsb.lol/v2/lat/${CENTER.lat}/lon/${CENTER.lon}/dist/${CENTER.nm}`);
+    if (!j) return null;
     return trimReadsb(j.ac, j.now > 1e11 ? j.now : (j.now || Date.now() / 1000) * 1000, 'adsb.lol');
   },
   async () => {
-    const r = await fetch(`https://opendata.adsb.fi/api/v2/lat/${CENTER.lat}/lon/${CENTER.lon}/dist/${CENTER.nm}`, { headers: UA });
-    if (!r.ok) return null; const j = await r.json();
+    const j = await get(`https://opendata.adsb.fi/api/v2/lat/${CENTER.lat}/lon/${CENTER.lon}/dist/${CENTER.nm}`) || await get(`https://opendata.adsb.fi/api/v3/lat/${CENTER.lat}/lon/${CENTER.lon}/dist/${CENTER.nm}`);
+    if (!j) return null;
     return trimReadsb(j.aircraft || j.ac, (j.now || Date.now() / 1000) * 1000, 'adsb.fi');
   },
   async () => {
     const d = CENTER.nm / 60, e = d / Math.cos(CENTER.lat * Math.PI / 180);
-    const r = await fetch(`https://opensky-network.org/api/states/all?lamin=${CENTER.lat - d}&lomin=${CENTER.lon - e}&lamax=${CENTER.lat + d}&lomax=${CENTER.lon + e}`, { headers: UA });
-    if (!r.ok) return null; const j = await r.json();
+    const j = await get(`https://opensky-network.org/api/states/all?lamin=${CENTER.lat - d}&lomin=${CENTER.lon - e}&lamax=${CENTER.lat + d}&lomax=${CENTER.lon + e}`);
+    if (!j) return null;
     // state vector: [icao24, callsign, country, t_pos, t_contact, lon, lat, baro_alt m, on_ground, velocity m/s, track, vrate m/s, sensors, geo_alt m, squawk, spi, source, category]
     return { now: (j.time || Date.now() / 1000) * 1000, src: 'OpenSky Network', ac: (j.states || []).filter(s => s[5] !== null && s[6] !== null).map(s => ({
       hex: s[0], cs: (s[1] || '').trim(), reg: '', type: '', desc: '', lat: s[6], lon: s[5], gnd: !!s[8],
@@ -59,13 +64,15 @@ export default {
     const origin = req.headers.get('Origin') || '';
     const cors = { 'Access-Control-Allow-Origin': ALLOW.includes(origin) ? origin : ALLOW[0], 'Access-Control-Allow-Methods': 'GET', 'Vary': 'Origin' };
     if (req.method === 'OPTIONS') return new Response(null, { headers: cors });
-    if (new URL(req.url).pathname !== '/flights') return new Response('Stockholm Life flights relay. GET /flights', { headers: cors });
+    const url = new URL(req.url), debug = url.searchParams.has('debug');
+    if (url.pathname !== '/flights') return new Response('Stockholm Life flights relay. GET /flights', { headers: cors });
+    LOG.length = 0;
     const cache = typeof caches !== 'undefined' ? caches.default : null, key = new Request('https://relay.cache/flights');
-    let res = cache && await cache.match(key);
+    let res = !debug && cache && await cache.match(key);
     if (!res) {
       let data = null;
       for (const src of SOURCES) { try { data = await src(); if (data && data.ac) break; } catch (e) { data = null; } }
-      if (!data) return new Response(JSON.stringify({ error: 'no ADS-B source answered' }), { status: 502, headers: { ...cors, 'Content-Type': 'application/json' } });
+      if (!data || debug) return new Response(JSON.stringify({ error: data ? undefined : 'no ADS-B source answered', tried: LOG, aircraft: data ? data.ac.length : 0, src: data && data.src }), { status: data ? 200 : 502, headers: { ...cors, 'Content-Type': 'application/json' } });
       res = new Response(JSON.stringify(data), { headers: { 'Content-Type': 'application/json', 'Cache-Control': 'public, max-age=8' } });
       if (cache && ctx) ctx.waitUntil(cache.put(key, res.clone()));
     }

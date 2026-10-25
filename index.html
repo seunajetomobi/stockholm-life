@@ -1417,7 +1417,7 @@ async function openFerries(){modal(`<div class="phonehead" style="--c:#00698F">$
 /* =================== LIVE FLIGHTS: real aircraft around Stockholm (ADS-B through the flights relay in tools/flights-worker.js) =================== */
 // The relay is a tiny Cloudflare Worker: browsers may not read ADS-B feeds from another site, the relay adds the permission header.
 // Set FLIGHT_RELAY to its URL (or open the game with ?flights=<url> once; it is remembered).
-const FLIGHT_RELAY_DEFAULT='';
+const FLIGHT_RELAY_DEFAULT='https://stockholm-flights.seunjetomobi.workers.dev';
 const FLIGHT_RELAY=(()=>{try{const q=new URLSearchParams(location.search).get('flights');if(q)localStorage.setItem('flights-relay',q);return q||localStorage.getItem('flights-relay')||FLIGHT_RELAY_DEFAULT}catch(e){return FLIGHT_RELAY_DEFAULT}})();
 const LIVEFL={ac:[],t:0,ver:0,err:'',src:''},ROUTES=new Map();
 const AIRPORTS={ARN:[59.6519,17.9186,'Arlanda'],BMA:[59.3544,17.9417,'Bromma']};

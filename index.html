@@ -314,6 +314,7 @@ h2.hero{font-size:34px;background:linear-gradient(90deg,var(--sweblue),#3a86ff 4
 .callscr .hang,.callscr .no,.ringing .no{background:#c8102e;color:#fff}.callscr .ok,.ringing .ok{background:#23a55a;color:#fff}.ringing>div{animation:ring 1s ease-in-out infinite}@keyframes ring{50%{transform:scale(1.03)}}
 .apguide{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(150px + env(safe-area-inset-bottom,0px));z-index:7;display:flex;gap:10px;align-items:center;padding:8px 8px 8px 14px;border-radius:22px;background:#0b3a6e;color:#fff;font:600 13px "Familjen Grotesk",sans-serif;box-shadow:0 6px 18px rgba(0,0,0,.35);max-width:calc(100% - 32px)}
 .apguide button{border:0;border-radius:16px;padding:7px 12px;background:#ffc21a;color:#1b1b1b;font:700 12px inherit;cursor:pointer;white-space:nowrap}
+.drivehud .limit{display:grid;place-items:center;width:34px;height:34px;border-radius:50%;border:4px solid #d71d24;background:#fff;color:#111;font:800 13px Arial}#coach{font-size:11.5px;color:#ffd27a;max-width:180px}
 .deptabs{display:flex;gap:6px;flex-wrap:wrap;margin:4px 0 8px}.deptabs button{border:1px solid var(--line);background:var(--surface2);border-radius:14px;padding:4px 10px;font:600 12px inherit;color:var(--fg);cursor:pointer}.deptabs button.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
 .deps{display:grid;gap:4px}.dep{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;padding:6px 8px;background:var(--board);color:var(--board-ink);border-radius:8px}.dep .ln{min-width:30px;text-align:center;padding:3px 6px;border-radius:6px;color:#fff;font:700 13px "IBM Plex Mono",monospace}
 .dep.fl{border:0;width:100%;text-align:left;cursor:pointer;font:inherit}.dep .dst{font-size:13.5px;line-height:1.25}.dep .dst small{display:block;color:#9fb0bd;font-size:11px}.dep .tm{font:600 14px "IBM Plex Mono",monospace;color:var(--amber);text-align:right}.dep .tm small{display:block}.dep .late{color:#ff8a80;font-size:11px}.dep.can .dst,.dep.can .tm{text-decoration:line-through;opacity:.6}
@@ -340,7 +341,7 @@ h2.hero{font-size:34px;background:linear-gradient(90deg,var(--sweblue),#3a86ff 4
   <div class="hint" id="hint">Joystick or WASD to walk · tap a street to auto-walk · tap a shop to look · drag to turn</div>
   <div class="ctrls"><button id="zfind" aria-label="Find shops and places">⌕</button><button id="zin" aria-label="Zoom in">+</button><button id="zout" aria-label="Zoom out">−</button><button id="zme" aria-label="Center on you" style="font-size:16px">◎</button></div>
   <div class="inhud" id="inhud"><b id="inTitle"></b><button id="inLeave">Leave</button></div><button class="inact" id="inAct"></button>
-  <div class="drivehud" id="drivehud"><span id="spd">0 km/h</span><button id="park">Park</button></div>
+  <div class="drivehud" id="drivehud"><span class="limit" id="lim">50</span><span id="spd">0 km/h</span><span id="coach"></span><button id="park">Park</button></div>
   <div class="joy" id="joy" aria-label="Move joystick"><div class="knob" id="knob"></div></div>
   <button class="runbtn" id="runbtn" aria-pressed="false">Run</button>
   <div class="attrib">© OpenStreetMap contributors</div>
@@ -716,13 +717,13 @@ const licText=()=>{const l=S.lic;if(l.state==='B')return 'Swedish körkort (B)';
 const canDrive=()=>S.lic.state==='B'||(S.lic.state==='foreign'&&S.day<=S.lic.until);
 function licenceActs(type,name){const l=S.lic,out=[];if(S.lic.state==='B')return out;
   if(type==='optician'&&!l.eye)out.push({l:'Eye test for a driving licence (syntest)',s:'Needed for the learner permit · about 250 kr',cost:250,h:0.5,e:{},fn:()=>{l.eye=1;log('Syntest done. Now apply for a körkortstillstånd from Transportstyrelsen online.','plus')}});
-  if(type==='driving_school'){out.push({l:'Driving lesson (40 min)',s:`Lessons so far: ${l.lessons||0} · typical price 750 kr`,cost:750,h:1,e:{fun:4},need:()=>l.permit?null:'Needs a körkortstillstånd first',fn:()=>{l.lessons=(l.lessons||0)+1;log(`Driving lesson ${l.lessons} done.`,'plus')}});
+  if(type==='driving_school'){out.push({l:'Driving lesson (40 min)',s:`Lessons so far: ${l.lessons||0} · typical price 750 kr`,cost:750,h:1,e:{fun:4},need:()=>l.permit?null:'Needs a körkortstillstånd first',fn:()=>{if(W&&W.startLesson)W.startLesson('lesson');else{l.lessons=(l.lessons||0)+1;log(`Driving lesson ${l.lessons} done.`,'plus')}}});
     if(!l.risk1)out.push({l:'Riskettan course',s:'Alcohol, drugs, fatigue and risky behaviour · about 900 kr',cost:900,h:3.5,e:{energy:-6},fn:()=>{l.risk1=1;log('Riskettan done.','plus')}});
     if(!l.risk2)out.push({l:'Risktvåan (halkbana)',s:'Driving on slippery roads · about 2 600 kr',cost:2600,h:4,e:{energy:-8,fun:10},need:()=>l.permit?null:'Needs a körkortstillstånd first',fn:()=>{l.risk2=1;log('Risktvåan done on the halkbana. Slippery but fun.','plus')}})}
   if(/trafikverket/.test(name)){out.push({l:'Kunskapsprov (theory test)',s:`Fee 325 kr · you have studied ${l.study||0} times`,cost:325,h:1.5,need:()=>l.permit&&l.risk1?null:'Needs a körkortstillstånd and Riskettan',noLic:1,
       fn:()=>{if(Math.random()<0.25+(l.study||0)*0.12){l.theory=S.day;log('Passed the theory test! Book your driving test.','plus');apply({mood:8})}else{log('Failed the theory test. Study more and rebook.','minus');apply({mood:-6})}}});
     out.push({l:'Körprov (driving test)',s:`Fee 800 kr · ${l.lessons||0} lessons so far`,cost:800,h:1.5,need:()=>l.theory&&l.risk2?null:'Needs a passed theory test and Risktvåan',
-      fn:()=>{if(Math.random()<0.15+(l.lessons||0)*0.07){S.lic={state:'B'};log('PASSED the driving test! Your körkort is made by Transportstyrelsen and arrives by post.','plus');apply({mood:20});W&&W.emote(1)}else{log('Failed the driving test. More lessons will help.','minus');apply({mood:-8})}}})}
+      fn:()=>{if(W&&W.startLesson)W.startLesson('test');else if(Math.random()<0.15+(l.lessons||0)*0.07){S.lic={state:'B'};log('PASSED the driving test!','plus')}else log('Failed the driving test.','minus')}})}
   return out}
 // ---------- courses (Komvux / Arbetsförmedlingen / YH) and careers
 const COURSES={
@@ -3603,11 +3604,45 @@ function buildWorld(){
     DR.h-=st*1.8*clamp(DR.v/0.22,-1,1)*dt;const x=DR.g.position.x,z=DR.g.position.z;const nx=x+Math.sin(DR.h)*DR.v*dt,nz=z+Math.cos(DR.h)*DR.v*dt;
     const ok=(!colliding(nx,nz,0.026)||onBridge(nx,nz))&&(nearRoad(nx,nz,0.035)||onBridge(nx,nz));
     if(ok){DR.g.position.set(nx,0.01,nz);DR.dist+=Math.hypot(nx-x,nz-z)}else{if(Math.abs(DR.v)>0.12)toast('Bump! Stay on the road');DR.v*=-0.25}
-    DR.g.rotation.y=DR.h;$('spd').textContent=Math.round(Math.abs(DR.v)*180)+' km/h';
+    DR.g.rotation.y=DR.h;$('spd').textContent=Math.round(Math.abs(DR.v)*180)+' km/h';try{coachTick(dt,T)}catch(e){}
     if(T>DR.fineT&&Math.abs(DR.v)>0.06)for(const [n,s] of SIG){const d=Math.hypot(G.nx(n)-nx,G.nz(n)-nz);if(d>0.05)continue;const ax=Math.abs(Math.sin(DR.h)*s.c.ref[0]+Math.cos(DR.h)*s.c.ref[1])>0.707?0:1;
-      if(sigState(s.c,ax,T)==='r'){DR.fineT=T+20;addBill('fine: driving through a red light (Polisen)',REDLIGHT_FINE);toast('📸 Red-light camera: '+kr(REDLIGHT_FINE)+' fine');log(`Caught by a red-light camera. Fine ${kr(REDLIGHT_FINE)} – it comes as a bill.`,'minus')}break}
+      if(sigState(s.c,ax,T)==='r'){DR.fineT=T+20;fault('red','Drove through a red light','serious');if(COACH.mode)break;addBill('fine: driving through a red light (Polisen)',REDLIGHT_FINE);toast('📸 Red-light camera: '+kr(REDLIGHT_FINE)+' fine');log(`Caught by a red-light camera. Fine ${kr(REDLIGHT_FINE)} – it comes as a bill.`,'minus')}break}
     DR.t+=dt;if(DR.t>0.6){DR.t=0;if(DR.dist>0){window.__slDrive&&window.__slDrive(DR.dist,DR.g.position.x,DR.g.position.z);DR.dist=0}}}
-  $('park').onclick=()=>stopDrive();$('inLeave').onclick=()=>exitInterior();$('inAct').onclick=()=>{if(IN.near)IN.near.fn()};
+  // ---------- driving the Swedish way: a coach checks speed limits, keeping right, one-way streets, red lights and pedestrians ----------
+  // typical Stockholm limits by road class: motorway 80, trunk 70, main streets 50/40, residential 30, gångfartsområde 7 km/h
+  const LIMIT=[80,60,70,50,50,50,40,40,40,30,7,0,20,0,0];
+  const COACH={mode:null,minor:0,serious:0,faults:[],last:{},route:null,wp:0,mark:null,car:null,left:0,t:0};
+  function fault(k,msg,sev){const now=performance.now();if(COACH.last[k]&&now-COACH.last[k]<7000)return;COACH.last[k]=now;if(sev==='serious')COACH.serious++;else COACH.minor++;COACH.faults.push((sev==='serious'?'⛔ ':'⚠ ')+msg);toast((sev==='serious'?'⛔ ':'⚠ ')+msg)}
+  function coachTick(dt,T){const x=DR.g.position.x,z=DR.g.position.z,kmh=Math.abs(DR.v)*180,seg=roadDepth(x,z)[1];const limEl=$('lim');if(!seg){limEl.style.visibility='hidden';return}
+    const cls=seg[5],lim=LIMIT[cls]||40;limEl.style.visibility='visible';limEl.textContent=lim;
+    if(kmh>lim+5)fault('speed',`Too fast: ${Math.round(kmh)} km/h where the limit is ${lim}`,kmh>lim+15?'serious':'minor');
+    const sx=seg[2]-seg[0],sz=seg[3]-seg[1],sl=Math.hypot(sx,sz)||1,ux=sx/sl,uz=sz/sl,hx=Math.sin(DR.h),hz=Math.cos(DR.h),along=hx*ux+hz*uz;
+    if(DR.v>0.03){if(G.ow[seg[6]]){const fw=G.ow[seg[6]]===1?1:-1;if(along*fw<-0.6)fault('wrong','Wrong way on a one-way street','serious')}
+      else if(Math.abs(along)>0.6){const t=Math.sign(along),off=(x-seg[0])*(-uz*t)+(z-seg[1])*(ux*t);COACH.left=off<-0.012?COACH.left+dt:0;if(COACH.left>1.5){COACH.left=0;fault('right','Keep to the right (högertrafik)','minor')}}}
+    // a person in the road just ahead and you don't slow down
+    if(kmh>12){const near=[];if(!av.visible){}for(const o of agents)if(o.kind==='ped'&&o.g.visible&&onCarriageway(o.g.position.x,o.g.position.z)>0)near.push(o.g.position);
+      for(const q of near){const dx=q.x-x,dz=q.z-z,f=dx*hx+dz*hz,l=Math.abs(dx*hz-dz*hx);if(f>0&&f<0.18&&l<0.06){fault('ped','Stop for pedestrians in the road','serious');break}}}
+    $('coach').textContent=COACH.mode?`${COACH.mode==='test'?'Körprov':'Lesson'} · ${COACH.serious} serious, ${COACH.minor} minor`:'';
+    if(COACH.route){const w=COACH.route[COACH.wp];if(COACH.mark){COACH.mark.position.set(w.x,0.02,w.z);COACH.mark.material.opacity=0.45+Math.sin(T*5)*0.2}
+      if(Math.hypot(w.x-x,w.z-z)<0.12){COACH.wp++;if(COACH.wp>=COACH.route.length){finishLesson();return}}}}
+  function startLesson(mode){if(DR.on||IN.on)return;const n=nearestNode(av.position.x,av.position.z,carOK);if(n<0){toast('No road nearby for a lesson');return}
+    const sx=G.nx(n),sz=G.nz(n);let raw=null;for(let t=0;t<12&&!(raw&&raw.length>6);t++){const a=Math.random()*6.283,r=14+Math.random()*10;raw=driveRoute(sx,sz,sx+Math.cos(a)*r,sz+Math.sin(a)*r)}
+    if(!raw||raw.length<6){toast('Could not plan a route here, try another street');return}
+    // waypoints every ~30 m along the route, on the right-hand side
+    const pts=laneOffset(raw,0.03),route=[];let acc=0;for(let i=1;i<pts.length;i++){acc+=pts[i].distanceTo(pts[i-1]);if(acc>0.6||i===pts.length-1){route.push(pts[i]);acc=0}}
+    const car=carMesh();const p0=pts[0],p1=pts[1];car.position.set(p0.x,0.01,p0.z);const h=Math.atan2(p1.x-p0.x,p1.z-p0.z);car.rotation.y=h;
+    const L=new THREE.Mesh(new THREE.BoxGeometry(0.012,0.012,0.002),new THREE.MeshBasicMaterial({color:0xffffff}));L.position.set(0,0.045,-0.046);car.add(L);
+    const mk=new THREE.Mesh(new THREE.CylinderGeometry(0.05,0.05,0.25,20,1,true),new THREE.MeshBasicMaterial({color:0x2bff6a,transparent:true,opacity:0.5,depthWrite:false,side:THREE.DoubleSide}));scene.add(mk);
+    Object.assign(COACH,{mode,minor:0,serious:0,faults:[],last:{},route,wp:0,mark:mk,car,left:0});DR.on=true;DR.g=car;DR.v=0;DR.h=h;DR.dist=0;av.visible=false;vel.set(0,0);$('drivehud').style.display='flex';hideHint();
+    toast(mode==='test'?'Körprov: follow the green markers. The examiner is watching.':'Lesson: follow the green markers, keep right, watch the limit sign.')}
+  function finishLesson(){const C=COACH,mode=C.mode,l=S.lic;if(C.mark)scene.remove(C.mark);const pass=C.serious===0&&C.minor<=3;
+    DR.on=false;{const f=freeSpot(C.car.position.x,C.car.position.z)||[C.car.position.x,C.car.position.z];av.position.set(f[0],0.01,f[1])}av.visible=true;scene.remove(C.car);$('drivehud').style.display='none';$('coach').textContent='';
+    Object.assign(COACH,{mode:null,route:null,mark:null,car:null});S.pos={x:av.position.x,z:av.position.z};updateLoc();
+    const list=C.faults.slice(0,6).map(f=>`<li>${esc2(f)}</li>`).join('')||'<li>✓ No faults: well driven!</li>';
+    if(mode==='lesson'){l.lessons=(l.lessons||0)+1;l.skill=Math.min(100,(l.skill||0)+Math.max(2,10-C.serious*4-C.minor));log(`Driving lesson ${l.lessons}: ${C.serious} serious and ${C.minor} minor faults.`,'plus')}
+    else if(pass){S.lic={state:'B'};log('PASSED the driving test! Your körkort is made by Transportstyrelsen and arrives by post.','plus');apply({mood:20})}else{log(`Failed the driving test: ${C.serious} serious and ${C.minor} minor faults.`,'minus');apply({mood:-8})}
+    modal(`<h2>${mode==='test'?(pass?'Körprov: godkänd ✓':'Körprov: underkänd'):'Lesson done'}</h2><p>${C.serious} serious and ${C.minor} minor faults.${mode==='test'?' To pass: no serious faults and at most 3 minor.':''}</p><ul class="news">${list}</ul><div class="row2"><button class="btn ghost" id="no">OK</button></div>`,m=>m.querySelector('#no').onclick=()=>{closeModal();after()})}
+  $('park').onclick=()=>{if(COACH.mode){COACH.serious+=COACH.mode==='test'?1:0;if(COACH.mode==='test')COACH.faults.push('⛔ Test stopped before the end');finishLesson()}else stopDrive()};$('inLeave').onclick=()=>exitInterior();$('inAct').onclick=()=>{if(IN.near)IN.near.fn()};
   // ---------- protests and valstugor in the 3D city ----------
   const crowds=[];
   function placard(text,col){const c=document.createElement('canvas');c.width=256;c.height=128;const g=c.getContext('2d');g.fillStyle='#fff';g.fillRect(0,0,256,128);g.fillStyle=col||'#c8342c';g.fillRect(0,0,256,14);
@@ -4060,7 +4095,7 @@ function buildWorld(){
     whereT-=dt;if(whereT<0){whereT=0.6;const sn=streetName();const nh=S.loc?D[S.loc].name:(S.nearHub?'near '+D[S.nearHub].name:'');$('where').textContent=S.flags&&S.flags.arlanda?'Arlanda Airport · Terminal 5':[sn,nh,rushNow()?'🚦 Rush hour':''].filter(Boolean).join(' · ')||'Stockholm'}
   }
   tick();
-  return {lookAtFlight,placeAvatar,landAt:info=>{if(IN.on)exitInterior(true);playLanding(info,()=>enterInterior('arlanda',{name:'Stockholm Arlanda Airport · Terminal 5 · Arrivals'},{}))},openGate:k=>{const gt=IN.gates&&IN.gates[k];if(!gt)return;IN.col=IN.col.filter(c=>!gt.c.includes(c));gt.m.forEach(m=>m.visible=false)},leaveAirportBy:(mode,dst,cb)=>{exitInterior(true);arriveBy(mode,dst,cb)},enterAirport:()=>{if(IN.on)exitInterior(true);enterInterior('arlanda',{name:'Stockholm Arlanda Airport · Terminal 5 · Arrivals'},{})},leaveAirport:(x,z)=>{exitInterior(true);const f=freeSpot(x,z)||[x,z];placeAvatar(f[0],f[1],true)},stationPos:k=>{const ll=k==='cityterminal'?[59.3318,18.0560]:[59.3303,18.0581];const [x,z]=P(ll[0],ll[1]);const f=freeSpot(x,z)||[x,z];return {x:f[0],z:f[1]}},avPos:()=>({x:av.position.x,z:av.position.z}),lieDown,hideAv:h=>{avHidden=h;av.visible=!h},emergency,leaveScene,isDriving:()=>DR.on,busLinesAt,busRide,hospitalNear:(x,z)=>{const L=[['Karolinska Universitetssjukhuset Solna',59.3488,18.0307],['Södersjukhuset',59.3106,18.0521],['S:t Görans sjukhus',59.3376,18.0221],['Danderyds sjukhus',59.3919,18.0412]].map(([n,a,b])=>{const [hx,hz]=P(a,b);const f=freeSpot(hx,hz)||[hx,hz];return {name:n,x:f[0],z:f[1]}});return L.sort((a,b)=>Math.hypot(a.x-x,a.z-z)-Math.hypot(b.x-x,b.z-z))[0]},setCoat,walkPath,ride,emote,refresh,season:()=>{lastSeason=''},snapTime,aurora:()=>{auroraT=1.2},route,streetName,isMoving:()=>inputVec().mag>0.08,setLook:n=>setLook(n),applyOutfit,setHome,syncCar,startDrive,stopDrive,nearPlaces,kindFor,poi:i=>POIS[i],
+  return {startLesson,lookAtFlight,placeAvatar,landAt:info=>{if(IN.on)exitInterior(true);playLanding(info,()=>enterInterior('arlanda',{name:'Stockholm Arlanda Airport · Terminal 5 · Arrivals'},{}))},openGate:k=>{const gt=IN.gates&&IN.gates[k];if(!gt)return;IN.col=IN.col.filter(c=>!gt.c.includes(c));gt.m.forEach(m=>m.visible=false)},leaveAirportBy:(mode,dst,cb)=>{exitInterior(true);arriveBy(mode,dst,cb)},enterAirport:()=>{if(IN.on)exitInterior(true);enterInterior('arlanda',{name:'Stockholm Arlanda Airport · Terminal 5 · Arrivals'},{})},leaveAirport:(x,z)=>{exitInterior(true);const f=freeSpot(x,z)||[x,z];placeAvatar(f[0],f[1],true)},stationPos:k=>{const ll=k==='cityterminal'?[59.3318,18.0560]:[59.3303,18.0581];const [x,z]=P(ll[0],ll[1]);const f=freeSpot(x,z)||[x,z];return {x:f[0],z:f[1]}},avPos:()=>({x:av.position.x,z:av.position.z}),lieDown,hideAv:h=>{avHidden=h;av.visible=!h},emergency,leaveScene,isDriving:()=>DR.on,busLinesAt,busRide,hospitalNear:(x,z)=>{const L=[['Karolinska Universitetssjukhuset Solna',59.3488,18.0307],['Södersjukhuset',59.3106,18.0521],['S:t Görans sjukhus',59.3376,18.0221],['Danderyds sjukhus',59.3919,18.0412]].map(([n,a,b])=>{const [hx,hz]=P(a,b);const f=freeSpot(hx,hz)||[hx,hz];return {name:n,x:f[0],z:f[1]}});return L.sort((a,b)=>Math.hypot(a.x-x,a.z-z)-Math.hypot(b.x-x,b.z-z))[0]},setCoat,walkPath,ride,emote,refresh,season:()=>{lastSeason=''},snapTime,aurora:()=>{auroraT=1.2},route,streetName,isMoving:()=>inputVec().mag>0.08,setLook:n=>setLook(n),applyOutfit,setHome,syncCar,startDrive,stopDrive,nearPlaces,kindFor,poi:i=>POIS[i],
     enterPlace:(p,o)=>{const k=kindFor(p);if(!k){showPoi(p);return}if(k==='club'&&!(S.hour>=21.5||S.hour<2)){toast('The club opens late in the evening');return}if(k==='club'&&!S.flags['club'+S.day]){if(S.money<200){toast('Entry is 200 kr');return}S.money-=200;S.flags['club'+S.day]=1;log('Paid 200 kr entry at '+p.name+'.');render()}enterInterior(k,p,o)},
     enterHome:()=>enterInterior('home',null,{}),showCrowd,exitInterior,setQueue:n=>{IN.queue=n},inside:()=>IN.on,driving:()=>DR.on};
 }

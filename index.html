@@ -2067,10 +2067,10 @@ function buildWorld(){
   // retry without antialiasing: some GPUs/drivers refuse the heavier context
   let renderer;try{renderer=new THREE.WebGLRenderer({antialias:true,logarithmicDepthBuffer:true})}catch(e){try{renderer=new THREE.WebGLRenderer({antialias:false,logarithmicDepthBuffer:true,powerPreference:'low-power'})}catch(e2){return null}}
   renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
-  renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+  renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.25;
   stage.prepend(renderer.domElement);
   const scene=new THREE.Scene();scene.fog=new THREE.Fog(0xbfe3ff,30,90);
-  const camera=new THREE.PerspectiveCamera(45,1,0.02,2000);
+  const camera=new THREE.PerspectiveCamera(50,1,0.02,2000);
   const controls=new THREE.OrbitControls(camera,renderer.domElement);
   controls.enablePan=false;controls.enableDamping=true;controls.dampingFactor=0.08;controls.rotateSpeed=0.7;
   controls.minDistance=0.25;controls.maxDistance=90;controls.minPolarAngle=0.15;controls.maxPolarAngle=1.45;
@@ -3549,6 +3549,7 @@ function buildWorld(){
   // ---------- avatar ----------
   const av=person(0x2f6fa8,AV_S);const ring=new THREE.Mesh(new THREE.RingGeometry(1.1,1.5,28),new THREE.MeshBasicMaterial({color:0xff6b5b,transparent:true,opacity:0.85,depthWrite:false}));ring.rotation.x=-Math.PI/2;ring.position.y=0.4;av.add(ring);
   const meLbl=document.createElement('div');meLbl.className='me';$('labels').appendChild(meLbl);
+  let camWant=0.7,camAuto=-1;
   let walk=null,emoteT=0,rideState=null,avHidden=false;const lastAv=new THREE.Vector3();
 
   // ---------- weather particles + aurora ----------
@@ -3665,7 +3666,12 @@ function buildWorld(){
   function season(){const m=today().getMonth(),snowy=winter(),autumn=[9,10].includes(m)&&!snowy;
     landMat.color.set(snowy?0xeef2f4:autumn?0xb3ad8a:m===3?0xb7b996:0xb5b49a);
     agents.forEach(a=>{if(a.kind==='ped'&&a.g.userData.hat)a.g.userData.hat.visible=snowy||m===10});av.userData.hat.visible=snowy||m===10;clearTiles()}
-  function placeAvatar(x,z,snap){av.position.set(x,0.01,z);av.visible=true;if(snap){controls.target.copy(av.position);camera.position.set(x+0.32,0.5,z+0.62)}}
+  function placeAvatar(x,z,snap){av.position.set(x,0.01,z);av.visible=true;if(snap){controls.target.copy(av.position);camera.position.copy(goodCamera(x,z));camAuto=-1}}
+  // a camera spot behind you with nothing in the way, preferring to look along the street you stand on
+  function goodCamera(x,z){const D=0.7,H=0.42,seg=roadDepth(x,z)[1];const base=seg?Math.atan2(seg[2]-seg[0],seg[3]-seg[1]):Math.atan2(0.32,0.62);const t=new THREE.Vector3(x,0.01,z);
+    let best=null,bs=-1;for(const da of [0,Math.PI,Math.PI/2,-Math.PI/2,Math.PI/4,-Math.PI/4,3*Math.PI/4,-3*Math.PI/4]){const a=base+da,c=new THREE.Vector3(x+Math.sin(a)*D,H,z+Math.cos(a)*D);
+      let free=0;for(let i=1;i<=16;i++){const u=i/16;if(roofAt(x+(c.x-x)*u,z+(c.z-z)*u)>0.04+(H-0.04)*u)break;free=u}if(free>bs){bs=free;best=c}if(free>=1)break}
+    return best||new THREE.Vector3(x+0.32,0.5,z+0.62)}
   let avMat=null;function setCoat(col){if(!avMat){avMat=new THREE.MeshLambertMaterial({color:col});const u=av.userData;u.torso.material=avMat;u.lArm.userData.mesh.material=avMat;u.rArm.userData.mesh.material=avMat}avMat.color.set(col)}
   function walkPath(pts,done){const path=pts.map(p=>new THREE.Vector3(p[0],0.01,p[1]));path[0]=av.position.clone();
     let L=0;for(let i=1;i<path.length;i++)L+=path[i].distanceTo(path[i-1]);walk={path,i:1,speed:clamp(L/9,0.12,14),done,startHour:S.hour,L:Math.max(L,1e-6),dist:0}}
@@ -3790,8 +3796,13 @@ function buildWorld(){
     lastAv.copy(av.position);emoteT=Math.max(0,emoteT-dt*0.8);
     ring.material.opacity=0.55+0.3*Math.sin(T*3);
     const before=controls.target.clone();controls.target.lerp(new THREE.Vector3(follow.x,0.02,follow.z),1-Math.exp(-dt*((moving||rideState||walk)?9:5)));camera.position.add(controls.target.clone().sub(before));controls.update();flightLookTick(dt);
-    if(!IN.on&&!flightLook){const off=camera.position.clone().sub(controls.target);const sp=new THREE.Spherical().setFromVector3(off);
-      if(viewBlocked(camera.position,controls.target)&&sp.phi>0.1){sp.phi=Math.max(0.1,sp.phi-Math.min(0.12,dt*2.2));camera.position.copy(controls.target).add(new THREE.Vector3().setFromSpherical(sp));controls.update()}}
+    // third-person camera: when a building is between you and the camera, move in closer (quickly) and back out to your own zoom (slowly);
+    // only if even a close camera is blocked, tilt up over the roofs
+    if(!IN.on&&!flightLook){const off=camera.position.clone().sub(controls.target);const L=off.length()||1e-6;if(camAuto<0||Math.abs(L-camAuto)>0.003)camWant=L;
+      const dir=off.divideScalar(L);let clear=camWant;for(let i=1;i<=24;i++){const u=i/24*camWant;if(roofAt(controls.target.x+dir.x*u,controls.target.z+dir.z*u)>controls.target.y+0.03+dir.y*u){clear=Math.max(0.26,u-0.05);break}}
+      const want=Math.min(camWant,clear),nl=L+(want-L)*Math.min(1,dt*(want<L?9:1.6));camera.position.copy(controls.target).addScaledVector(dir,nl);camAuto=nl;
+      const sp=new THREE.Spherical().setFromVector3(camera.position.clone().sub(controls.target));
+      if(clear<=0.26&&viewBlocked(camera.position,controls.target)&&sp.phi>0.1){sp.phi=Math.max(0.1,sp.phi-Math.min(0.12,dt*2.2));camera.position.copy(controls.target).add(new THREE.Vector3().setFromSpherical(sp));camAuto=sp.radius}controls.update()}
     if(CUT.on){CUT.update(dt,T);renderer.render(CUT.sc,camera);return}
     if(IN.on){interiorTick(dt,T);$('labels').style.display='none';renderer.render(inScene,camera);return}else $('labels').style.display='';
     const fx=controls.target.x,fz=controls.target.z,camD=camera.position.distanceTo(controls.target);

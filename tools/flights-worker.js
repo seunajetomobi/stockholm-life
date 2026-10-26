@@ -1,5 +1,5 @@
 // Stockholm Life flights relay: a Cloudflare Worker that passes live aircraft positions around Stockholm to the game,
-// and the latest headlines from Swedish news feeds (/news).
+// the latest headlines from Swedish news feeds (/news) and security queue times at Arlanda, Bromma and Landvetter (/waittime).
 //
 // Browsers only let a page read data from another site if that site allows it (CORS). The free ADS-B feeds
 // don't, so this relay fetches them, keeps only what the game needs, caches it for 8 seconds and adds the header.
@@ -11,6 +11,11 @@
 //   4. Open https://stockholm-flights.<your-subdomain>.workers.dev/flights : you should see JSON with "ac": [...].
 //   5. Put that address (without /flights) in FLIGHT_RELAY_DEFAULT in index.html, or open the game once with
 //      ?flights=https://stockholm-flights.<your-subdomain>.workers.dev
+//
+// Security queue times (/waittime) come from Swedavia's WaitTime API, which needs a free subscription key:
+//   1. Sign up at https://apideveloper.swedavia.se and subscribe to the WaitTime product; copy the primary key.
+//   2. In Cloudflare: the worker -> Settings -> Variables and Secrets -> Add -> type Secret, name SWEDAVIA_KEY, paste the key -> Deploy.
+//   The key stays on Cloudflare; the game never sees it. Without it, /waittime answers 503 and the game says queue times are unavailable.
 //
 // Sources, tried in order: adsb.lol, adsb.fi, OpenSky Network. All are community ADS-B feeds with fair-use limits;
 // the 8-second cache means one request upstream per 8 seconds however many people play.
@@ -88,7 +93,25 @@ export default {
         res = new Response(JSON.stringify(d), { headers: { 'Content-Type': 'application/json', 'Cache-Control': 'public, max-age=300' } }); if (cache && ctx) ctx.waitUntil(cache.put(key, res.clone())); }
       const out = new Response(res.body, res); for (const [k2, v] of Object.entries(cors)) out.headers.set(k2, v); return out;
     }
-    if (url.pathname !== '/flights') return new Response('Stockholm Life relay. GET /flights, /news?src=dn|ab|exp|svt', { headers: cors });
+    // /waittime?airport=ARN[&flightid=SK1416&date=2026-10-26]: projected minutes at each security checkpoint (or only those near the flight's gate)
+    if (url.pathname === '/waittime') {
+      const json = (d, status) => new Response(JSON.stringify(d), { status: status || 200, headers: { ...cors, 'Content-Type': 'application/json' } });
+      const ap = (url.searchParams.get('airport') || 'ARN').toUpperCase(), fid = (url.searchParams.get('flightid') || '').toUpperCase(), date = url.searchParams.get('date') || '';
+      if (!/^(ARN|BMA|GOT)$/.test(ap)) return json({ error: 'airport must be ARN, BMA or GOT' }, 400);
+      if (fid && (!/^[A-Z0-9]{2,8}$/.test(fid) || !/^\d{4}-\d{2}-\d{2}$/.test(date))) return json({ error: 'flightid needs letters and digits, and date YYYY-MM-DD' }, 400);
+      if (!env || !env.SWEDAVIA_KEY) return json({ error: 'SWEDAVIA_KEY is not set on the relay' }, 503);
+      const up = `https://api.swedavia.se/waittimepublic/v2/airports/${ap}` + (fid ? `/flights?flightid=${fid}&date=${date}` : '');
+      const cache = typeof caches !== 'undefined' ? caches.default : null, key = new Request('https://relay.cache/waittime/' + ap + '/' + fid + '/' + date);
+      let res = cache && await cache.match(key);
+      if (!res) {
+        let r; try { r = await fetch(up, { headers: { 'Ocp-Apim-Subscription-Key': env.SWEDAVIA_KEY, 'Accept': 'application/json', 'Cache-Control': 'no-cache' } }); } catch (e) { return json({ error: 'Swedavia did not answer' }, 502); }
+        if (!r.ok) return json({ error: 'Swedavia answered ' + r.status }, r.status === 404 ? 404 : 502);
+        res = new Response(await r.text(), { headers: { 'Content-Type': 'application/json', 'Cache-Control': 'public, max-age=60' } });
+        if (cache && ctx) ctx.waitUntil(cache.put(key, res.clone()));
+      }
+      const out = new Response(res.body, res); for (const [k, v] of Object.entries(cors)) out.headers.set(k, v); return out;
+    }
+    if (url.pathname !== '/flights') return new Response('Stockholm Life relay. GET /flights, /news?src=dn|ab|exp|svt, /waittime?airport=ARN', { headers: cors });
     LOG.length = 0;
     const cache = typeof caches !== 'undefined' ? caches.default : null, key = new Request('https://relay.cache/flights');
     let res = !debug && cache && await cache.match(key);

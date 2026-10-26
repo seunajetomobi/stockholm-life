@@ -9,6 +9,7 @@ Run with `./start.sh` and open http://localhost:8000. There is no build step and
 - Rules: `ACTS`, `BG` (backgrounds), `JOBS`, `HOMES`, `sleep()` (day change), `spendTime()`, `addBill()` + `processBills()` (reminder → inkasso → Kronofogden).
 - Phone apps: `PHONE_APPS`, `openChats`, `openMailbox`, `openTodo`, `openBag`, `notify`.
 - Origins and start screen: `intro()`, `COUNTRIES`, `routesFrom()`, `applyOrigin()`, `airportSpot()`.
+- Arlanda arrival: `buildRoom('arlanda')`, guide card `airportGuide`/`airportNext`, belt 4 with your suitcase `apTick`/`apTake` (state `AP`), signs `apSign`, arrivals screen `apArrivals`. Customs from Tullverket's rules: `packSuitcase()` (`S.suitcase`, from `depCountry()`), `customsCheck()`, `customsChannel('green'|'red'|'blue')`, the declaration form and `custFinish()` (tax by card, fines as bills), `custRules()`.
 - Live data (needs internet; all degrade gracefully offline):
   - Weather: `LIVEWX`, `fetchLiveWeather()` (Open-Meteo, every 10 min), `applyLiveWeather()`, `dressAdvice()`, `wearTip()`, `openWeather()`. Sky, clouds, rain/snow density, wind and fog in `lightAt()`/`refresh()` read `S.wx`.
   - SL departures: `slSites()` (all stop areas, cached a week in localStorage), `slDepartures()`, `openDepartures()`, `departuresNear()`, `openDeparturesApp()`, `openFerries()`, `slLineCol()`.

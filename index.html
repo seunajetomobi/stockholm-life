@@ -313,8 +313,19 @@ h2.hero{font-size:34px;background:linear-gradient(90deg,var(--sweblue),#3a86ff 4
 .callscr,.ringing{position:fixed;inset:0;z-index:60;display:grid;place-items:center;background:rgba(6,12,18,.72)}.callscr>div,.ringing>div{display:grid;gap:6px;justify-items:center;background:#0e1b26;color:#fff;border-radius:22px;padding:26px 34px;min-width:250px;box-shadow:0 10px 40px rgba(0,0,0,.5)}
 .callscr small,.ringing small{color:#9fb0bd}.callscr b,.ringing b{font-size:22px}.callscr span,.ringing span{color:#c9d3da;font-size:13px}.callscr button,.ringing button{border:0;border-radius:20px;padding:9px 18px;font:700 13px inherit;cursor:pointer;margin-top:8px}
 .callscr .hang,.callscr .no,.ringing .no{background:#c8102e;color:#fff}.callscr .ok,.ringing .ok{background:#23a55a;color:#fff}.ringing>div{animation:ring 1s ease-in-out infinite}@keyframes ring{50%{transform:scale(1.03)}}
-.apguide{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(150px + env(safe-area-inset-bottom,0px));z-index:7;display:flex;gap:10px;align-items:center;padding:8px 8px 8px 14px;border-radius:22px;background:#0b3a6e;color:#fff;font:600 13px "Familjen Grotesk",sans-serif;box-shadow:0 6px 18px rgba(0,0,0,.35);max-width:calc(100% - 32px)}
-.apguide button{border:0;border-radius:16px;padding:7px 12px;background:#ffc21a;color:#1b1b1b;font:700 12px inherit;cursor:pointer;white-space:nowrap}
+.apsteps{position:fixed;right:16px;top:calc(var(--boardH,74px) + 92px + env(safe-area-inset-top,0px));z-index:7;width:300px;max-width:calc(100% - 32px);background:#11171d;color:#eef3f6;border-radius:14px;padding:12px 14px;box-shadow:0 10px 30px rgba(0,0,0,.4);font:500 13px var(--body)}
+.apsteps .aph{display:grid;gap:1px;margin-bottom:8px}.apsteps .aph b{font:700 16px var(--display);letter-spacing:.06em;text-transform:uppercase;color:#ffd200}.apsteps .aph small{color:#9aa7b3;font-size:12px}
+.apsteps ol{list-style:none;margin:0;padding:0;display:grid;gap:5px}.apsteps li{display:flex;gap:9px;align-items:center;color:#8c99a6}.apsteps li i{flex:0 0 22px;height:22px;border-radius:50%;display:grid;place-items:center;font:700 12px var(--body);font-style:normal;background:#26303a;color:#9aa7b3}
+.apsteps li.done{color:#9fd7b3}.apsteps li.done i{background:#1f6b45;color:#fff}.apsteps li.now{color:#fff;font-weight:700}.apsteps li.now i{background:#ffd200;color:#14181c}.apsteps li.skip{opacity:.6}.apsteps li small{display:block;font-weight:400;font-size:11px;color:#8c99a6}
+.apsteps .aphint{margin:10px 0 0;padding:9px 10px;border-radius:9px;background:#1c252e;color:#e6edf2;line-height:1.4}
+.apsteps .apbtns{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}.apsteps button{border:0;border-radius:8px;padding:7px 10px;background:#26303a;color:#eef3f6;font:700 12px var(--display);letter-spacing:.06em;text-transform:uppercase;cursor:pointer}.apsteps button.go{background:#ffd200;color:#14181c}
+.inact kbd{display:inline-block;margin-left:8px;padding:1px 7px;border-radius:5px;background:rgba(0,0,0,.18);font:700 12px var(--body)}
+.clist{list-style:none;margin:0;padding:0;display:grid;gap:6px}.clist li{display:grid;grid-template-columns:1fr auto;gap:2px 10px;align-items:center;padding:8px 10px;border-radius:9px;background:var(--surface2)}.clist li small{grid-column:1;color:var(--muted);font-size:12px}.clist li .ctag{grid-column:2;grid-row:1/span 2}
+.ctag{font:700 11px var(--body);padding:3px 8px;border-radius:20px;white-space:nowrap}.ctag.ok{background:#e3f4ea;color:#1f6b45}.ctag.tax{background:#fff3cd;color:#7a5a00}.ctag.bad{background:#fde3e1;color:#a5281f}
+.crules{width:100%;border-collapse:collapse;font-size:13px}.crules td{padding:6px 8px;border-bottom:1px solid var(--line);vertical-align:top}.crules td:first-child{font-weight:700;white-space:nowrap}
+.cchan{display:flex;flex-wrap:wrap;gap:6px}.cchan span{padding:5px 10px;border-radius:7px;color:#fff;font:700 12px var(--body)}.cchan .g{background:#1b7a3a}.cchan .r{background:#c62828}.cchan .b{background:#1565c0}
+.cdecl{display:grid;gap:6px}.cdecl label{display:flex;gap:10px;align-items:center;padding:8px 10px;border-radius:9px;background:var(--surface2);cursor:pointer}.cdecl input{width:20px;height:20px;accent-color:#c62828}.cdecl span{display:grid}.cdecl small{color:var(--muted);font-size:12px}
+@media (max-width:600px){.apsteps{top:auto;bottom:calc(210px + env(safe-area-inset-bottom,0px));right:8px;left:8px;width:auto;max-width:none;padding:10px 12px}.apsteps ol{grid-template-columns:repeat(4,1fr);gap:4px}.apsteps li span{display:none}.apsteps li.now span{display:inline}.apsteps li.now{grid-column:1/-1;order:-1}}
 .drivehud .limit{display:grid;place-items:center;width:34px;height:34px;border-radius:50%;border:4px solid #d71d24;background:#fff;color:#111;font:800 13px Arial}#coach{font-size:11.5px;color:#ffd27a;max-width:180px}
 /* ---- phones: nothing overlaps, everything within thumb reach ---- */
 @media (max-width:640px){
@@ -1804,7 +1815,7 @@ const ITEMS={
   paraply:{n:'Umbrella',c:179,use:'keep',s:'No mood loss from rain while you carry it',at:['supermarket','convenience','department_store','variety_store']},
   alvedon:{n:'Paracetamol (Alvedon)',c:45,use:'med',e:{mood:4,energy:6},s:'Eases a cold or a fever',at:['pharmacy','supermarket']},tval:{n:'Soap and shampoo',c:69,use:'keep',s:'+10 hygiene every time you shower at home',at:['supermarket','pharmacy','chemist','convenience']},
   blommor:{n:'Flowers',c:199,use:'gift',s:'Give to your partner or a date: +romance',at:['florist','supermarket']},vin:{n:'Bottle of wine',c:119,use:'eat',e:{fun:10,mood:3,energy:-6},s:'Systembolaget only · you must be 20+',at:['alcohol']},
-  sim:{n:'Prepaid SIM card',c:99,use:'keep',s:'Swedish phone number: mobile data and calls',at:['convenience','kiosk','mobile_phone','electronics']},laddare:{n:'Phone charger',c:199,use:'keep',at:['electronics','mobile_phone','department_store']}};
+  hemmat:{n:'Food from home',c:0,use:'eat',e:{hunger:25,mood:4},at:[]},sim:{n:'Prepaid SIM card',c:99,use:'keep',s:'Swedish phone number: mobile data and calls',at:['convenience','kiosk','mobile_phone','electronics']},laddare:{n:'Phone charger',c:199,use:'keep',at:['electronics','mobile_phone','department_store']}};
 function bagCount(){inboxInit(S);return Object.values(S.bag).reduce((a,b)=>a+b,0)}
 function shopItemsFor(p){const t=p.type;return Object.entries(ITEMS).filter(([k,it])=>it.at.includes(t))}
 function shopMenu(p){const list=shopItemsFor(p);if(!list.length){toast('Nothing to buy here');return}
@@ -1866,7 +1877,7 @@ const COUNTRIES=[['Sweden','🇸🇪','se',1,100,'',0],['Nigeria','🇳🇬','no
 // transfer airports: [city, Schengen, EU]
 const HUBS=[['Amsterdam',1,1],['Istanbul',0,0],['Frankfurt',1,1],['Doha',0,0],['Paris',1,1],['Dubai',0,0],['London',0,0],['Copenhagen',1,1],['Helsinki',1,1],['Warsaw',1,1]];
 const EUROPE_NONEU=new Set(['United Kingdom','Turkey']);
-function routesFrom(cn){const c=COUNTRIES.find(x=>x[0]===cn)||COUNTRIES[1];const city=c[5];const out=[];const inEU=c[2]==='eu'&&c[0]!=='Ireland'||c[2]==='nordic'&&['Finland','Denmark'].includes(c[0]);
+function routesFrom(cn){const c=COUNTRIES.find(x=>x[0]===cn)||COUNTRIES[1];const city=c[5];const out=[];const inEU=c[2]==='eu'||c[2]==='nordic'&&['Finland','Denmark'].includes(c[0]);
   if(cn==='Ukraine'){out.push({label:'Bus to Warsaw (Ukrainian airspace is closed), then fly Warsaw → Stockholm',last:'Warsaw',sch:1,eu:1});return out}
   if(c[6])out.push({label:`Direct flight ${city} → Stockholm Arlanda`,last:city,sch:c[3],eu:inEU});
   const near=c[2]!=='noneu'||EUROPE_NONEU.has(cn);
@@ -1947,7 +1958,7 @@ function applyOrigin(o){try{if(W&&W.inside&&W.inside())W.exitInterior(true)}catc
     log('On paper you still live in '+c[0]+': report your move to Skatteverket (flyttanmälan) so you are folkbokförd in Stockholm.');
     setTimeout(()=>{pushChat('fam',false,'Har du kommit fram? Ring när du är framme ❤️','call');sendMail('Skatteverket','Har du flyttat?','If you have moved you must report it (flyttanmälan) within one week. You can do it online with BankID.',null)},2500)}
   else if(o.kind==='abroad'){const nat=COUNTRIES.find(x=>x[0]===o.nat)||COUNTRIES[1];const dep=COUNTRIES.find(x=>x[0]===o.from)||nat;const rt=o.routeObj||routesFrom(dep[0])[o.route||0]||routesFrom(dep[0])[0];
-    S.from=dep[5]||dep[0];S.nat=nat[0];S.fromGroup=nat[2];S.schengen=!!rt.sch;S.lastLeg=rt.last;S.euFlight=!!rt.eu;S.route=rt.label;S.svenska=Math.max(S.svenska,nat[4]);
+    S.from=dep[5]||dep[0];S.depC=dep[0];S.arrFlight=null;S.suitcase=null;S.nat=nat[0];S.fromGroup=nat[2];S.schengen=!!rt.sch;S.lastLeg=rt.last;S.euFlight=!!rt.eu;S.route=rt.label;S.svenska=Math.max(S.svenska,nat[4]);
     if(nat[2]==='se'){Object.assign(S.docs,{permit:1,pn:1,id:0,bank:0,bankid:0});S.flags.moveR=1}else if(nat[2]!=='noneu')S.docs.permit=1;
     S.fam={n:pickA(nat[2]==='nordic'||nat[2]==='se'?['Mamma','Pappa']:['Mum','Dad']),where:dep[0]};S.flags.arlanda=1;S.flags.passport=0;S.flags.bags=0;S.flags.customs=0;
     log(`${rt.label}. ${rt.sch?'Your last flight is from inside Schengen: no passport control at Arlanda.':'Your last flight is from outside Schengen: Swedish passport control at Arlanda.'}`,'plus');
@@ -1961,19 +1972,86 @@ function applyBody(o){if(!o||!S)return;S.body={h:o.height||'avg',b:o.build||'avg
   if(W&&W.setLook)W.setLook(S.look)}
 const _newGame=newGame;newGame=function(n,bg,lk,pf,as,sk,o){_newGame(n,bg,lk,pf,as,sk);try{applyBody(o)}catch(e){console.warn('body',e)}try{applyOrigin(o);todoRoll();renderTodo();badges()}catch(e){console.warn('origin',e)}};
 // ---------- Arlanda arrivals: walk off the plane, passport control (if your last flight was outside Schengen), baggage, customs, into the city ----------
+// ---------- arriving at Arlanda: what is in your suitcase, and Swedish customs (Tullverket's rules, checked October 2026) ----------
+// From outside the EU: 1 l spirits (or 2 l fortified/sparkling), 4 l wine, 16 l beer, 200 cigarettes, other goods up to SEK 5 000 by air;
+// no meat or dairy (except from Norway, Switzerland, Andorra, Liechtenstein and San Marino); alcohol from 20, tobacco from 18; cash of €10 000 or more must be declared.
+// From an EU country: no fixed limits as long as it is for your own use. Taxes for going over are game estimates.
+const EU_GOODS=c=>{const x=COUNTRIES.find(k=>k[0]===c);return !!x&&(x[2]==='eu'||x[2]==='se'||['Finland','Denmark'].includes(c))};
+const FOOD_OK=new Set(['Norway','Switzerland','Andorra','Liechtenstein','San Marino']);
+const depCountry=()=>S.depC||(COUNTRIES.find(c=>c[5]&&c[5]===S.from)||[])[0]||(S.me&&S.me.nat)||'Sweden';
+const TAXK={spirits:300,wine:30,cig:2.3};
+function packSuitcase(){const c=depCountry(),eu=EU_GOODS(c),r=Math.random,L=[{k:'clothes',n:'Clothes, shoes and toiletries',q:1,cat:'own'}];
+  if(!eu){L.push({k:'spice',n:'Spices and tea from home',q:1,cat:'food_ok'});if(r()<0.7)L.push({k:'meat',n:'Dried meat and sausage from home',q:1,u:'kg',cat:'meat'});if(r()<0.45)L.push({k:'cheese',n:'Cheese from home',q:0.5,u:'kg',cat:'dairy'});
+    if(r()<0.6){const two=r()<0.45;L.push({k:'spirits',n:two?'Two bottles of spirits (duty-free)':'A bottle of spirits (duty-free)',q:two?2:1,u:'l',cat:'spirits'})}
+    if(r()<0.4){const two=r()<0.45;L.push({k:'cig',n:two?'Two cartons of cigarettes':'A carton of cigarettes',q:two?400:200,u:'cigarettes',cat:'cig'})}
+    if(r()<0.35){const v=r()<0.5?7400:3200;L.push({k:'goods',n:v>5000?'A new laptop bought abroad':'Gifts for new friends',q:v,u:'kr',cat:'goods'})}}
+  else{if(r()<0.7)L.push({k:'wine',n:'Three bottles of wine',q:2.25,u:'l',cat:'wine'});if(r()<0.6)L.push({k:'cheese',n:'Cheese and charcuterie from home',q:1,u:'kg',cat:'food_eu'});if(r()<0.25)L.push({k:'cig',n:'A carton of cigarettes',q:200,u:'cigarettes',cat:'cig'})}
+  const fx=S.fx||{},eur=(fx.EUR||0)+(fx.USD||0)*0.9;if(eur>=10000)L.push({k:'cash',n:`Cash: ${(fx.EUR||0).toFixed(0)} EUR and ${(fx.USD||0).toFixed(0)} USD`,q:eur,cat:'cash'});
+  return L}
+// what Tullverket makes of one thing in your suitcase: ok, over the allowance (tax to pay), not allowed in, or must be declared
+function customsCheck(it){const c=depCountry(),eu=EU_GOODS(c),age=(S.me&&+S.me.age)||25;
+  if(it.cat==='meat'||it.cat==='dairy')return FOOD_OK.has(c)?{ok:1,txt:'Allowed from '+c}:{ban:1,txt:'Meat and dairy from outside the EU may not be brought into Sweden'};
+  if(it.cat==='spirits'||it.cat==='wine'){if(age<20)return {ban:1,txt:'You must be 20 or older to bring alcohol into Sweden'};if(eu)return {ok:1,txt:'From an EU country, for your own use: no limit'};
+    const lim=it.cat==='spirits'?1:4,over=Math.max(0,+(it.q-lim).toFixed(2));return over>0?{over,tax:Math.round(over*TAXK[it.cat]),txt:`Duty-free allowance is ${lim} l: ${over} l over`}:{ok:1,txt:`Within the duty-free allowance (${lim} l)`}}
+  if(it.cat==='cig'){if(age<18)return {ban:1,txt:'You must be 18 or older to bring tobacco into Sweden'};if(eu)return {ok:1,txt:'From an EU country, for your own use: no limit'};const over=Math.max(0,it.q-200);
+    return over?{over,tax:Math.round(over*TAXK.cig),txt:`Duty-free allowance is 200 cigarettes: ${over} over`}:{ok:1,txt:'Within the duty-free allowance (200 cigarettes)'}}
+  if(it.cat==='goods'){if(eu)return {ok:1,txt:'Bought in the EU: nothing to pay'};return it.q>5000?{over:it.q,tax:Math.round(it.q*0.25),txt:'Over the SEK 5 000 allowance: VAT is due on the whole value'}:{ok:1,txt:'Under the SEK 5 000 allowance for air travellers'}}
+  if(it.cat==='cash')return eu?{ok:1,txt:'Within the EU you only declare cash if Tullverket asks'}:{decl:1,txt:'Cash of €10 000 or more from outside the EU must be declared'};
+  return {ok:1,txt:it.cat==='own'?'Personal belongings':'Allowed'}}
+const custBad=r=>r.ban||r.over||r.decl;
+function custTag(r,declared){if(r.ban)return `<span class="ctag bad">${declared?'Handed over':'Not allowed'}</span>`;if(r.over)return `<span class="ctag tax">Tax ${kr(r.tax)}</span>`;if(r.decl)return `<span class="ctag tax">${declared?'Declared':'Must declare'}</span>`;return '<span class="ctag ok">OK</span>'}
+function custRules(){const c=depCountry(),eu=EU_GOODS(c);
+  modal(`<div class="phonehead" style="--c:#1b4d8c">${glyphSVG('bag')}<h2>What can I bring?</h2></div><p>Your journey started in <b>${esc2(c)}</b>, ${eu?'inside':'outside'} the EU. Tullverket's rules for you:</p>
+    <table class="crules">${eu?`<tr><td>Alcohol and tobacco</td><td>No fixed limit if it is for your own use (alcohol from age 20, tobacco from 18)</td></tr><tr><td>Food</td><td>Meat, cheese and other food for your own use are fine</td></tr><tr><td>Other goods</td><td>Nothing to pay for things bought in the EU</td></tr>`
+      :`<tr><td>Spirits</td><td>1 litre (or 2 litres of fortified or sparkling wine)</td></tr><tr><td>Wine · beer</td><td>4 litres of wine · 16 litres of beer</td></tr><tr><td>Tobacco</td><td>200 cigarettes (from age 18)</td></tr><tr><td>Other goods</td><td>Up to SEK 5 000 in value when you fly</td></tr><tr><td>Meat and dairy</td><td>${FOOD_OK.has(c)?'Allowed from '+esc2(c):'<b>Not allowed</b>, not even small amounts'}</td></tr><tr><td>Cash</td><td>€10 000 or more must be declared</td></tr>`}</table>
+    <div class="cchan"><span class="g">Green · Nothing to declare</span><span class="r">Red · Goods to declare</span>${S.euFlight?'<span class="b">Blue · Flights from EU countries</span>':''}</div>
+    <p class="note">Over the allowance, or not sure? Take the red channel and declare: you pay the tax and hand in what is not allowed, with no fine. Goods found in the green channel are taken and a fine (tulltillägg) can follow. Source: Tullverket; tax amounts in the game are estimates.</p>
+    <div class="row2"><button class="btn ghost" id="no">Close</button></div>`,m=>m.querySelector('#no').onclick=closeModal)}
+function openSuitcase(first){const L=S.suitcase||[];
+  modal(`<div class="phonehead" style="--c:#2c4a6e">${glyphSVG('bag')}<h2>${first?'Got it!':'Your suitcase'}</h2></div>${first?'<p>Your blue suitcase with the yellow tag. This is what you packed:</p>':''}
+    <ul class="clist">${L.map(it=>`<li><b>${esc2(it.n)}</b>${it.u&&it.cat!=='goods'?`<small>${it.q} ${esc2(it.u)}</small>`:it.cat==='goods'?`<small>worth ${kr(it.q)}</small>`:''}</li>`).join('')}</ul>
+    ${S.flags.customs?'':'<p class="note">Next: customs. Check what you may bring, then pick the green or the red channel.</p>'}
+    <div class="row2">${S.flags.customs?'':'<button class="btn" id="rules">What can I bring?</button>'}<button class="btn ghost" id="no">${first?'Continue':'Close'}</button></div>`,m=>{m.querySelector('#no').onclick=closeModal;const r=m.querySelector('#rules');if(r)r.onclick=()=>custRules()})}
+// the officer's findings; paid taxes and fines; what you keep goes into your bag
+function custFinish(res,how){const kept=res.filter(x=>!x.lost);let pay=0;for(const x of res)if(x.payNow)pay+=x.payNow;
+  if(pay>0){if(S.money>=pay){S.money-=pay;log(`Tullverket: paid ${kr(pay)} in tax at the customs desk.`,'minus')}else{for(const x of res)if(x.payNow){x.lost=1;x.why='Handed over (not enough money for the tax)'}pay=0}}
+  for(const x of res)if(x.fine){addBill('Tullverket: tulltillägg (undeclared goods)',x.fine)}
+  S.bag=S.bag||{};for(const x of res){if(x.lost)continue;const it=x.it;if(['food_ok','food_eu','meat','dairy'].includes(it.cat))S.bag.hemmat=(S.bag.hemmat||0)+1;if(it.cat==='wine'||it.cat==='spirits')S.bag.vin=(S.bag.vin||0)+Math.max(1,Math.round(it.q/0.75))}
+  S.suitcase=res.filter(x=>!x.lost).map(x=>x.it);S.flags.customs=1;spendTime(how==='check'?0.4:0.15);W&&W.openGate&&W.openGate('customs');save();render();
+  const lost=res.filter(x=>x.lost),fines=res.reduce((a,x)=>a+(x.fine||0),0);
+  log(`Customs (${how}): ${lost.length?'handed over '+lost.map(x=>x.it.n.toLowerCase()).join(', '):'nothing taken'}${pay?' · tax '+kr(pay):''}${fines?' · tulltillägg '+kr(fines)+' (a bill)':''}.`,lost.length||fines?'minus':'plus');
+  modal(`<div class="phonehead" style="--c:#1b4d8c">${glyphSVG('bag')}<h2>Tullverket</h2></div><p>${how==='check'?'An officer opened your suitcase.':how==='declared'?'You declared your goods at the red channel.':'You walked through.'}</p>
+    <ul class="clist">${res.filter(x=>x.show).map(x=>`<li><b>${esc2(x.it.n)}</b><small>${esc2(x.why||x.r.txt)}</small>${x.lost?'<span class="ctag bad">Taken</span>':x.payNow?`<span class="ctag tax">Paid ${kr(x.payNow)}</span>`:x.fine?`<span class="ctag bad">Fine ${kr(x.fine)}</span>`:'<span class="ctag ok">OK</span>'}</li>`).join('')||'<li><b>Nothing to note</b><small>Välkommen till Sverige!</small></li>'}</ul>
+    <p class="note">Through customs. The exit to trains, buses and taxis is straight ahead.</p><div class="row2"><button class="btn" id="no">Continue</button></div>`,m=>m.querySelector('#no').onclick=closeModal);
+  toast('Through customs ✓')}
+function customsChannel(ch){if(!S.flags.bags){toast('Collect your suitcase from belt 4 first');return}if(S.flags.customs){toast('Already through customs');return}
+  const c=depCountry(),items=S.suitcase||[];
+  if(ch==='blue'){if(!S.euFlight){toast('The blue exit is only for flights from EU countries');return}
+    if(!EU_GOODS(c)){modal(`<h2>Blue exit</h2><p>The blue exit is for travellers whose whole journey was inside the EU. Your journey started in <b>${esc2(c)}</b>, outside the EU, so your bags go through the green or the red channel.</p><div class="row2"><button class="btn" id="r">What can I bring?</button><button class="btn ghost" id="no">OK</button></div>`,m=>{m.querySelector('#no').onclick=closeModal;m.querySelector('#r').onclick=()=>custRules()});return}}
+  const all=items.map(it=>({it,r:customsCheck(it)})),bad=all.filter(x=>custBad(x.r));
+  if(ch==='red'){
+    modal(`<div class="phonehead" style="--c:#c62828">${glyphSVG('bag')}<h2>Tulldeklaration</h2></div><p>Tick what you declare. Declared goods: you pay the tax or hand them over, with no fine.</p>
+      <div class="cdecl">${all.map((x,i)=>`<label><input type="checkbox" data-i="${i}" ${x.it.cat==='own'?'disabled':''}><span><b>${esc2(x.it.n)}</b><small>${x.it.u&&x.it.cat!=='goods'?x.it.q+' '+esc2(x.it.u):x.it.cat==='goods'?'worth '+kr(x.it.q):''}</small></span></label>`).join('')}</div>
+      <div class="row2"><button class="btn" id="go">Declare</button><button class="btn ghost" id="r">Rules</button><button class="btn ghost" id="no">Back</button></div>`,m=>{
+      m.querySelector('#no').onclick=closeModal;m.querySelector('#r').onclick=()=>custRules();
+      m.querySelector('#go').onclick=()=>{const dec=new Set([...m.querySelectorAll('input:checked')].map(b=>+b.dataset.i));closeModal();const look=Math.random()<0.35;
+        const res=all.map((x,i)=>{const d=dec.has(i),o={it:x.it,r:x.r,show:d||custBad(x.r)};if(d){if(x.r.ban){o.lost=1;o.why=x.r.txt+' · handed over, no fine'}else if(x.r.over)o.payNow=x.r.tax;else if(x.r.decl)o.why='Declared to Tullverket'}
+          else if(custBad(x.r)){if(look){if(x.r.ban){o.lost=1;o.why='Found, not declared: taken'}else if(x.r.over){o.lost=1;o.fine=Math.max(500,Math.round(x.r.tax*0.2));o.why='Found, not declared: taken, and a fine'}else if(x.r.decl){o.fine=Math.round(x.it.q*11*0.05);o.why='Cash not declared: a penalty fee'}}else o.show=0}return o});
+        custFinish(res,'declared')}});return}
+  // green, or blue for a journey inside the EU: random checks, more likely when something does not add up
+  const check=Math.random()<(bad.length?0.45:0.07);
+  if(!check){custFinish(all.map(x=>({it:x.it,r:x.r,show:0})),ch==='blue'?'blue exit':'green channel');return}
+  const res=all.map(x=>{const o={it:x.it,r:x.r,show:custBad(x.r)};if(x.r.ban){o.lost=1;o.why='Not allowed and not declared: taken'}else if(x.r.over){o.lost=1;o.fine=Math.max(500,Math.round(x.r.tax*0.2));o.why='Over the allowance and not declared: taken, and a fine'}else if(x.r.decl){o.fine=Math.round(x.it.q*11*0.05);o.why='Cash not declared: a penalty fee'}return o});
+  custFinish(res,'check')}
 function airportSpot(what){if(!S.flags.arlanda)return;
   if(what==='passport'){if(S.schengen){toast('Schengen arrival: no passport control here');return}if(S.flags.passport){toast('Already through passport control');return}
     const lane=['eu','nordic','se'].includes(S.fromGroup)?'the EU/EEA lane':'the lane for other passports';
     const msg=S.fromGroup==='noneu'?`In ${lane}, Gränspolisen checks your passport and your residence permit decision for ${S.bg==='student'?'studies':'work'}. A stamp, and "Välkommen till Sverige."`:`In ${lane}, Gränspolisen glances at your passport. "Välkommen."`;
     S.flags.passport=1;spendTime(S.fromGroup==='noneu'?0.5:0.2);log('Passport control: '+msg,'plus');toast('Passport checked ✓');W.openGate('passport');save();render();return}
-  if(what==='bags'){if(!S.schengen&&!S.flags.passport){toast('Passport control first');return}if(S.flags.bags){toast('You already have your suitcase');return}S.flags.bags=1;S.bag=S.bag||{};S.bag.smorgas=(S.bag.smorgas||0)+1;S.bag.vatten=(S.bag.vatten||0)+1;
-    spendTime(0.3);log('Baggage claim: your suitcase comes out last, of course. Snacks from home are in your bag.','plus');toast('Suitcase collected ✓');W.openGate('customs');save();render();return}
-  if(['green','red','blue'].includes(what)){if(!S.flags.bags){toast('Collect your suitcase first');return}if(S.flags.customs){toast('Already through customs');return}
-    if(what==='blue'&&!S.euFlight){toast('The blue exit is only for flights from EU countries');return}
-    if(what==='red'){log(S.euFlight?'Red channel: you declare your things. Tullverket: within the EU you can bring goods for your own use. All fine.':'Red channel: you declare the meat and cheese from home. Tullverket: meat and dairy from outside the EU are not allowed in. They take it, no fine since you declared it.','plus')}
-    else if(Math.random()<0.08){log('Tullverket picks you for a random check. They open your suitcase, find nothing, and wave you through.','plus')}else log(`${what==='blue'?'Blue exit (EU flights)':'Green channel: nothing to declare'}. You walk through customs.`,'plus');
-    S.flags.customs=1;spendTime(0.15);toast('Through customs ✓');save();render();return}
-  if(what==='exit'){if(!S.flags.customs){toast(!S.flags.bags?'Collect your suitcase first':'Go through customs (green, red or blue channel)');return}
+  if(what==='bags'){if(!S.schengen&&!S.flags.passport){toast('Passport control first');return}if(S.flags.bags){toast('You already have your suitcase');return}S.flags.bags=1;S.suitcase=packSuitcase();
+    spendTime(0.3);log('Baggage claim, belt 4: you have your suitcase.','plus');save();render();openSuitcase(true);return}
+  if(['green','red','blue'].includes(what)){customsChannel(what);return}
+  if(what==='exit'){if(!S.flags.customs){toast(!S.flags.bags?'Collect your suitcase from belt 4 first':'Go through customs first: green, red or blue channel');return}
     const home=S.addr&&S.home!=='none';const opts=[
       {k:'ae',n:'Arlanda Express to Stockholm C',s:'18 minutes · 340 kr (adult single)',c:340,min:22,to:'central'},
       {k:'pt',n:'SL pendeltåg from Arlanda C',s:'About 40 minutes to Stockholm City · 43 kr SL ticket + 157 kr airport passage fee',c:200,min:45,to:'central'},
@@ -3609,22 +3687,36 @@ const POSTERS_CITY=[['#f2b705','#1b1b1b','KANELBULLE','Färskt varje morgon','Ba
       npc(g,kind==='restaurant'?'Chef_Female':'Casual_Female',null,0.06,-HD+0.022,0);spot(0,-HD+0.11,kind==='bar'?'Order at the bar':'Order at the counter',()=>orderMenu(p,null));
       tables(4,0.02);tables(4,0.13);[[-0.25,0.02],[0.25,0.13],[-0.13,0.13]].forEach(([x,z])=>npc(g,null,null,x+0.055,z,-Math.PI/2));
       if(opts&&opts.date){const dp=opts.date;npc(g,dp.look.model,dp.look,0.185,0.02,-Math.PI/2);spot(0.06,0.02,`Sit down with ${dp.n}`,()=>{orderMenu(p,dp)})}}
-    else if(kind==='arlanda'){const nonS=!(S&&S.schengen);IN.gates={};const tape=(x,z,w)=>{const m=inBox(g,w,0.012,0.006,0xd32f2f,x,z,0.03,true);return m};
-      signPlane(g,['Välkommen till Stockholm','Welcome to Stockholm'],0.34,0.07,0,0.115,-HD+0.006,'#0b3a6e');
-      inBox(g,0.1,0.002,0.06,0x1565c0,0,-HD+0.04,0.001,true);signPlane(g,['Gate F32 · from '+((S&&S.lastLeg)||'abroad')],0.14,0.03,0.2,0.08,-HD+0.006,'#263238');
+    else if(kind==='arlanda'){const nonS=!(S&&S.schengen);IN.gates={};apReset();const tape=(x,z,w)=>inBox(g,w,0.012,0.006,0xd32f2f,x,z,0.03,true);
+      apSign(g,['Välkommen till Stockholm','Welcome to Stockholm'],0.32,0.06,0,0.112,-HD+0.006,0,{bg:'#0b3a6e',fg:'#ffffff'});
+      apSign(g,['Ankomst · Arrival '+apFlight().no,'från · from '+((S&&S.lastLeg)||'abroad')],0.15,0.034,0.2,0.068,-HD+0.006,0,{small:1});
+      // passport control, only after a flight from outside Schengen
       for(const x of [-0.29,-0.22,-0.15,0.15,0.22,0.29]){solid(g,0.06,0.05,0.035,nonS?0x37474f:0x9aa7b0,x,-0.1);if(nonS&&(x===-0.15||x===0.15))npc(g,'Suit_Male',null,x,-0.115,0)}
       solid(g,0.18,0.04,0.012,0x78909c,-0.04-0.09-0.025,-0.1);solid(g,0.18,0.04,0.012,0x78909c,0.04+0.09+0.025,-0.1);
-      if(nonS){signPlane(g,['Passkontroll · Passport control','EU/EEA ←   → All passports'],0.26,0.05,0,0.095,-0.08,'#1b1b1b');const b=[-0.06,0.06,-0.112,-0.088];IN.col.push(b);IN.gates.passport={c:[b],m:[tape(0,-0.1,0.1)]};spot(0,-0.15,'Passport control',()=>airportSpot('passport'),0.08)}
-      else{signPlane(g,['Schengen · ingen passkontroll','No passport control'],0.24,0.045,0,0.095,-0.08,'#1b5e20')}
-      solid(g,0.26,0.022,0.07,0x546e7a,0.0,0.015);inBox(g,0.24,0.004,0.05,0x263238,0.0,0.015,0.022);const sc=[0xc62828,0x1565c0,0x2e7d32,0x6a1b9a,0xef6c00,0x37474f];for(let i=0;i<7;i++)inBox(g,0.022,0.02,0.03,sc[i%sc.length],-0.1+i*0.033,0.015+(i%2?0.01:-0.01),0.026);
-      signPlane(g,['Bagage · Baggage claim'],0.14,0.03,-0.2,0.07,-0.06,'#0b3a6e');spot(0,0.075,'Baggage claim',()=>airportSpot('bags'),0.08);
-      const cz=0.15;const lanes=S&&S.euFlight?[[-0.2,'green'],[0,'red'],[0.2,'blue']]:[[-0.12,'green'],[0.12,'red']];const gx=lanes.map(l=>l[0]);
+      if(nonS){apSign(g,['Passkontroll','Passport control'],0.2,0.042,0,0.105,-0.082,0,{icon:'pass',back:1});apSign(g,['EU · EES · CH'],0.1,0.022,-0.22,0.082,-0.082,0,{small:1,back:1});apSign(g,['Alla pass · All passports'],0.1,0.022,0.22,0.082,-0.082,0,{small:1,back:1});
+        const b=[-0.06,0.06,-0.112,-0.088];IN.col.push(b);IN.gates.passport={c:[b],m:[tape(0,-0.1,0.1)]};spot(0,-0.15,'Passport control',()=>airportSpot('passport'),0.08)}
+      else apSign(g,['Schengen · ingen passkontroll','No passport control'],0.24,0.04,0,0.095,-0.082,0,{bg:'#1b5e20',fg:'#ffffff',back:1});
+      // baggage belt 4: a moving loop with a steel island in the middle; the screen above says what is on it
+      inBox(g,0.31,0.014,0.1,0x2b2f33,0,0.015,0);inBox(g,0.29,0.004,0.084,0x3c4146,0,0.015,0.014);inBox(g,0.21,0.026,0.022,0xaab2b9,0,0.015,0);IN.col.push([-0.167,0.167,-0.047,0.077]);
+      inBox(g,0.03,0.05,0.03,0x5e666e,-0.15,-0.03,0);apSign(g,['4'],0.03,0.03,-0.15,0.065,-0.0145,0,{big:1,back:1});
+      AP.beltC=ccnv(512,256);{const m=new THREE.MeshBasicMaterial({map:AP.beltC.t});for(const ry of [0,Math.PI]){const p=new THREE.Mesh(new THREE.PlaneGeometry(0.1,0.05),m);p.position.set(0.04,0.128,0.015);p.rotation.y=ry;g.add(p)}inBox(g,0.002,0.03,0.002,0x5e666e,0.04,0.015,0.153)}
+      AP.boardC=ccnv(768,448);{const p=new THREE.Mesh(new THREE.PlaneGeometry(0.16,0.093),new THREE.MeshBasicMaterial({map:AP.boardC.t}));p.position.set(HW-0.007,0.075,-0.03);p.rotation.y=-Math.PI/2;g.add(p);inBox(g,0.006,0.1,0.17,0x111417,HW-0.004,-0.03,0.026)}
+      spot(HW-0.06,-0.03,'Arrivals screen',()=>apBoardModal(),0.06);
+      apSign(g,['Bagage · Baggage claim'],0.14,0.03,-0.2,0.075,-0.055,0,{icon:'bag',back:1});
+      AP.g=g;
+      // customs: green, red and (after EU flights) blue channels; closed until you have chosen one
+      const cz=0.17;const lanes=S.euFlight?[[-0.2,'green'],[0,'red'],[0.2,'blue']]:[[-0.12,'green'],[0.12,'red']];const gx=lanes.map(l=>l[0]);
       const wallSeg=(a,b)=>{if(b-a>0.01)solid(g,b-a,0.05,0.012,0xb0bec5,(a+b)/2,cz)};let prev=-HW;for(const x of gx){wallSeg(prev,x-0.05);prev=x+0.05}wallSeg(prev,HW);
-      IN.gates.customs={c:[],m:[]};for(const [x,k] of lanes){const col={green:0x2e7d32,red:0xc62828,blue:0x1565c0}[k];inBox(g,0.09,0.002,0.06,col,x,cz,0.001,true);const b=[x-0.05,x+0.05,cz-0.012,cz+0.012];IN.col.push(b);IN.gates.customs.c.push(b);IN.gates.customs.m.push(tape(x,cz,0.1));
-        spot(x,cz-0.05,{green:'Green: nothing to declare',red:'Red: goods to declare',blue:'Blue: flights from EU countries'}[k],()=>airportSpot(k),0.06)}
-      signPlane(g,['Tull · Customs'],0.12,0.03,HW-0.08,0.07,cz-0.02,'#263238');
+      IN.gates.customs={c:[],m:[]};const LANE={green:['Ingenting att förtulla','Nothing to declare','#1b7a3a'],red:['Varor att förtulla','Goods to declare','#c62828'],blue:['EU-flyg · EU flights','No customs check','#1565c0']};
+      for(const [x,k] of lanes){const col={green:0x2e7d32,red:0xc62828,blue:0x1565c0}[k];inBox(g,0.09,0.002,0.06,col,x,cz,0.001,true);const b=[x-0.05,x+0.05,cz-0.012,cz+0.012];IN.col.push(b);IN.gates.customs.c.push(b);IN.gates.customs.m.push(tape(x,cz,0.1));
+        apSign(g,LANE[k].slice(0,2),0.1,0.03,x,0.082,cz-0.01,0,{bg:LANE[k][2],fg:'#ffffff',back:1});spot(x,cz-0.04,{green:'Green channel: nothing to declare',red:'Red channel: goods to declare',blue:'Blue exit: flights from EU countries'}[k],()=>airportSpot(k),0.045)}
+      apSign(g,['Tull · Customs'],0.12,0.03,HW-0.08,0.07,cz-0.02,0,{icon:'cust',back:1});
+      {const tc=ccnv(512,384,(q,W,H)=>{q.fillStyle='#ffffff';q.fillRect(0,0,W,H);q.fillStyle='#1b4d8c';q.fillRect(0,0,W,70);q.fillStyle='#fff';q.font=`700 36px ${CF}`;q.textBaseline='middle';q.fillText('Tullverket',24,36);
+          q.fillStyle='#14202c';q.font=`700 30px ${CF}`;q.fillText('Vad får du ta med?',24,110);q.font=`500 24px ${CF}`;['What can I bring into Sweden?','• Spirits 1 l · wine 4 l · beer 16 l','• 200 cigarettes · goods SEK 5 000','• No meat or dairy from outside the EU','• Cash €10 000+: declare'].forEach((t,i)=>q.fillText(t,24,150+i*40))});
+        const p=new THREE.Mesh(new THREE.PlaneGeometry(0.1,0.075),new THREE.MeshBasicMaterial({map:tc.t}));p.position.set(-HW+0.007,0.07,0.1);p.rotation.y=Math.PI/2;g.add(p);spot(-HW+0.06,0.1,'Customs rules (Tullverket)',()=>custRules(),0.06)}
+      apSign(g,['Utgång · Exit','Tåg · Buss · Taxi'],0.16,0.04,0,0.105,HD-0.03,Math.PI,{icon:'exit',back:1});
       solid(g,0.09,0.05,0.04,0xd84315,-HW+0.06,0.22);npc(g,'Worker_Female',null,-HW+0.06,0.2,Math.PI/2);spot(-HW+0.11,0.22,'Pressbyrån: snacks and a SIM card',()=>shopMenu({type:'convenience',name:'Pressbyrån Arlanda',i:-1}));
-      [[-0.25,-0.18],[0.25,-0.17],[0.2,0.06],[-0.22,0.07]].forEach(([x,z],i)=>{npc(g,null,null,x,z,i*1.7);inBox(g,0.022,0.03,0.016,sc[i],x+0.03,z,0.0)})}
+      const sc=[0xc62828,0x1565c0,0x2e7d32,0x6a1b9a,0xef6c00,0x37474f];[[-0.25,0.09],[0.25,0.09],[0.2,-0.065],[-0.22,-0.065]].forEach(([x,z],i)=>{npc(g,null,null,x,z,i<2?Math.PI:0);inBox(g,0.022,0.03,0.016,sc[i],x+0.03,z,0.0)})}
     else if(kind==='museum'){const art=[0x9b2226,0x005f73,0xee9b00,0x0a9396,0x6a4c93,0x3a5a40,0xbb3e03];for(let i=0;i<5;i++){const x=-0.26+i*0.13;inBox(g,0.08,0.06,0.004,0x3e2723,x,-HD+0.008,0.05);inBox(g,0.07,0.05,0.003,art[i%art.length],x,-HD+0.011,0.055,true)}
       for(const sd of [-1,1])for(let i=0;i<3;i++){const z=-0.12+i*0.12;inBox(g,0.004,0.06,0.08,0x3e2723,sd*(HW-0.008),z,0.05);inBox(g,0.003,0.05,0.07,art[(i+3)%art.length],sd*(HW-0.012),z,0.055,true)}
       if(p&&/vasa/i.test(p.name)){solid(g,0.3,0.05,0.08,0x5d4037,0,-0.04);inBox(g,0.008,0.13,0.008,0x4e342e,-0.06,-0.04,0.05);inBox(g,0.008,0.15,0.008,0x4e342e,0.04,-0.04,0.05)}
@@ -3695,22 +3787,80 @@ const POSTERS_CITY=[['#f2b705','#1b1b1b','KANELBULLE','Färskt varje morgon','Ba
     IN.on=false;IN.mixers=[];inScene=null;$('inhud').style.display='none';$('inAct').style.display='none';DESK=null;closeModal();vel.set(0,0)}
   function inMove(x,z,dx,dz){const hit=(a,b)=>a<-HW+0.025||a>HW-0.025||b<-HD+0.025||b>HD-0.015||IN.col.some(c=>a>c[0]&&a<c[1]&&b>c[2]&&b<c[3]);
     if(!hit(x+dx,z+dz))return [x+dx,z+dz];if(!hit(x+dx,z))return [x+dx,z];if(!hit(x,z+dz))return [x,z+dz];return [x,z]}
-  // Arlanda arrivals hall: the next thing to do glows on the floor, and the guide banner walks you there
+  // ---------- Arlanda arrivals hall: airport signs, the arrivals screen, belt 4 and your suitcase, and the step-by-step guide ----------
+  // airport wayfinding style: dark grey with white text, yellow pictograms; bilingual Swedish and English
+  const AP_ICON={pass:'🛂',bag:'🧳',cust:'🛃',exit:'➜'};
+  function apSign(g,lines,w,h,x,y,z,ry,o={}){const px=1024,py=Math.max(64,Math.round(px*h/w));const C=ccnv(px,py,(q,W,H)=>{q.fillStyle=o.bg||'#22272c';q.fillRect(0,0,W,H);let x0=H*0.12;
+      if(o.icon){q.fillStyle='#ffd200';q.fillRect(H*0.1,H*0.1,H*0.8,H*0.8);q.font=`${H*0.55}px ${CF}`;q.textAlign='center';q.textBaseline='middle';q.fillStyle='#14181c';q.fillText(AP_ICON[o.icon]||'',H*0.5,H*0.54);x0=H*1.05}
+      q.fillStyle=o.fg||'#ffffff';q.textBaseline='middle';const n=lines.length;lines.forEach((l,i)=>{let fs=o.big?H*0.8:(i?0.36:0.5)*H/Math.max(1,n*0.72);if(n===1&&!o.big)fs=H*0.52;q.font=`${i?500:700} ${fs}px ${CF}`;
+        const avail=W-x0-H*0.15,mw=q.measureText(l).width;if(mw>avail){fs*=avail/mw;q.font=`${i?500:700} ${fs}px ${CF}`}if(i)q.fillStyle=o.fg?o.fg:'#ffd200';q.textAlign=o.big?'center':'left';q.fillText(l,o.big?W/2:x0,H*(i+0.5)/n)})});
+    const mat=new THREE.MeshBasicMaterial({map:C.t});for(const r of o.back?[ry,ry+Math.PI]:[ry]){const m=new THREE.Mesh(new THREE.PlaneGeometry(w,h),mat);m.position.set(x,y,z);m.rotation.y=r;g.add(m)}}
+  // your flight: the airline of the last leg, a number that stays the same for the whole arrival
+  const AIRL={Amsterdam:['KL','KLM'],Frankfurt:['LH','Lufthansa'],Paris:['AF','Air France'],Copenhagen:['SK','SAS'],Helsinki:['AY','Finnair'],Warsaw:['LO','LOT'],Istanbul:['TK','Turkish Airlines'],Doha:['QR','Qatar Airways'],Dubai:['EK','Emirates'],London:['BA','British Airways']};
+  function apFlight(){if(!S)return {no:'',air:''};if(!S.arrFlight){const a=AIRL[S.lastLeg]||(Math.random()<0.5?['SK','SAS']:['DY','Norwegian']);S.arrFlight={no:a[0]+' '+(100+Math.floor(Math.random()*1800)),air:a[1]}}return S.arrFlight}
+  const AP={t:0,start:null,myAt:0,next:0,bags:[],mine:null,spot:null,beltC:null,boardC:null,g:null,drawT:0};
+  function apReset(){AP.t=0;AP.start=null;AP.myAt=0;AP.next=0;AP.bags=[];AP.mine=null;AP.spot=null;AP.drawT=0}
+  // the loop the bags ride on: two straights and two half circles round the island of belt 4
+  const BL=0.105,BR=0.04,BPER=4*BL+2*Math.PI*BR;
+  function beltPos(s){s=((s%BPER)+BPER)%BPER;const z0=0.015;if(s<2*BL)return {x:-BL+s,z:z0-BR,ry:Math.PI/2};s-=2*BL;if(s<Math.PI*BR){const a=-Math.PI/2+s/BR;return {x:BL+Math.cos(a)*BR,z:z0+Math.sin(a)*BR,ry:Math.PI/2-a-Math.PI/2}}s-=Math.PI*BR;
+    if(s<2*BL)return {x:BL-s,z:z0+BR,ry:-Math.PI/2};s-=2*BL;const a=Math.PI/2+s/BR;return {x:-BL+Math.cos(a)*BR,z:z0+Math.sin(a)*BR,ry:Math.PI/2-a-Math.PI/2}}
+  const BAGC=[0x1d1d1d,0x8b1e2d,0x37474f,0x6a1b9a,0x2e7d32,0xc62828,0xb0bec5,0xef6c00,0x5d4037,0x0d47a1];
+  function apBag(mine){const g=new THREE.Group(),w=0.018+Math.random()*0.006,col=mine?0x2c4a6e:pickR(BAGC);const b=new THREE.Mesh(new THREE.BoxGeometry(w,0.014,0.026),inMat(col));b.position.y=0.007;g.add(b);
+    const h=new THREE.Mesh(new THREE.BoxGeometry(0.008,0.003,0.004),inMat(0x111111));h.position.set(0,0.0155,0);g.add(h);
+    if(mine){const tag=new THREE.Mesh(new THREE.BoxGeometry(0.006,0.008,0.001),new THREE.MeshBasicMaterial({color:0xffd200}));tag.position.set(w/2+0.001,0.012,0.006);g.add(tag);
+      const sp=textSprite('Din väska · Your suitcase',{fs:26,bg:'rgba(255,210,0,.97)',fg:'#14181c',scale:0.00016});sp.position.set(0,0.05,0);g.add(sp)}
+    g.position.y=0.018;AP.g.add(g);return {g,s:0,mine,loops:0,leave:mine?99:1+Math.floor(Math.random()*2)}}
+  const apReady=()=>S&&(S.schengen||S.flags.passport);
+  function apTick(dt,T){if(!AP.g)return;AP.t+=dt;
+    if(AP.start===null&&apReady()){AP.start=AP.t+4;AP.myAt=AP.start+10+Math.random()*10;AP.next=AP.start}
+    if(AP.start!==null&&AP.t>=AP.next&&AP.bags.length<12){AP.bags.push(apBag(false));AP.next=AP.t+1.6+Math.random()*2.2}
+    if(AP.start!==null&&!S.flags.bags&&!AP.mine&&AP.t>=AP.myAt){AP.mine=apBag(true);AP.bags.push(AP.mine);sfxTone()}
+    for(let i=AP.bags.length-1;i>=0;i--){const b=AP.bags[i],prev=b.s;b.s+=0.03*dt;if(Math.floor(b.s/BPER)>Math.floor(prev/BPER))b.loops++;
+      if(!b.mine&&b.loops>=b.leave&&(b.s%BPER)>BPER*0.55){AP.g.remove(b.g);AP.bags.splice(i,1);continue}const p=beltPos(b.s);b.g.position.x=p.x;b.g.position.z=p.z;b.g.rotation.y=p.ry}
+    // your suitcase: a "Take your suitcase" button whenever it passes within reach
+    if(AP.mine&&!S.flags.bags){const p=AP.mine.g.position,d=Math.hypot(av.position.x-p.x,av.position.z-p.z);if(!AP.spot)AP.spot={x:p.x,z:p.z,label:'🧳 Take your suitcase',fn:apTake,r:0.075};AP.spot.x=p.x;AP.spot.z=p.z;
+      const has=IN.spots.includes(AP.spot);if(d<0.09&&!has)IN.spots.push(AP.spot);else if(d>=0.09&&has)IN.spots.splice(IN.spots.indexOf(AP.spot),1)}
+    AP.drawT-=dt;if(AP.drawT<=0){AP.drawT=1;apDraw()}}
+  function apTake(){if(!AP.mine)return;const i=IN.spots.indexOf(AP.spot);if(i>=0)IN.spots.splice(i,1);AP.g.remove(AP.mine.g);AP.bags.splice(AP.bags.indexOf(AP.mine),1);AP.mine=null;AP.spot=null;IN.near=null;airportSpot('bags')}
+  function sfxTone(){try{audInit();tone(880,0,0.25,0.06);tone(1175,0.18,0.35,0.06)}catch(e){}}
+  function apStatus(){if(S.flags.bags)return ['Your suitcase is collected','#7ee0a1'];if(AP.start===null)return [S.schengen?'Baggage on its way':'After passport control','#ffd200'];
+    if(AP.t<AP.start)return ['Baggage coming now','#ffd200'];if(AP.mine)return ['Your suitcase is on the belt','#7ee0a1'];return ['Baggage on the belt','#ffffff']}
+  function apDraw(){const f=apFlight(),[st,sc]=apStatus();
+    if(AP.beltC){const q=AP.beltC.g,W=512,H=256;q.fillStyle='#0b0f14';q.fillRect(0,0,W,H);q.fillStyle='#ffd200';q.fillRect(0,0,120,H);q.fillStyle='#14181c';q.font=`800 150px ${CF}`;q.textAlign='center';q.textBaseline='middle';q.fillText('4',60,H/2+8);
+      q.textAlign='left';q.fillStyle='#fff';q.font=`700 46px ${CF}`;q.fillText(f.no,142,58);q.font=`500 34px ${CF}`;q.fillStyle='#c9d1d8';q.fillText('från '+(S.lastLeg||''),142,110);q.fillStyle=sc;q.font=`700 30px ${CF}`;q.fillText(st,142,185);AP.beltC.t.needsUpdate=true}
+    if(AP.boardC){const q=AP.boardC.g,W=768,H=448,rows=apArrivals(),rh=44;q.fillStyle='#0b0f14';q.fillRect(0,0,W,H);q.fillStyle='#ffd200';q.font=`700 34px ${CF}`;q.textBaseline='middle';q.textAlign='left';q.fillText('Ankomster · Arrivals',20,32);
+      q.textAlign='right';q.fillText(hhmm(S.hour),W-20,32);q.font=`600 20px ${CF}`;q.fillStyle='#8c99a6';q.textAlign='left';[['Tid',20],['Från · From',110],['Flyg',380],['Band',505],['',585]].forEach(([t,x])=>q.fillText(t,x,76));
+      rows.forEach((r,i)=>{const y=110+i*rh;if(r.me){q.fillStyle='rgba(255,210,0,.16)';q.fillRect(0,y-rh/2,W,rh)}q.font=`${r.me?700:600} 26px ${CF}`;q.fillStyle='#fff';q.fillText(r.t,20,y);q.fillText(r.from,110,y);q.fillText(r.no,380,y);q.fillStyle='#ffd200';q.fillText(r.belt,520,y);q.fillStyle=r.c;q.font=`600 20px ${CF}`;q.fillText(r.st,585,y)});
+      q.fillStyle='#66727e';q.font=`500 16px ${CF}`;q.textAlign='right';q.fillText('Simulerad · simulated',W-16,H-14);AP.boardC.t.needsUpdate=true}}
+  function apArrivals(){const f=apFlight(),h=S.hour,m=Math.floor(h*60),[st,sc]=apStatus();const other=[['London','BA 776',3],['Copenhagen','SK 1416',5],['Helsinki','AY 805',2],['Amsterdam','KL 1105',6],['Oslo','DY 4307',1],['Frankfurt','LH 804',7]];
+    const rows=other.map(([c,no,b],i)=>({t:hhmm((m-25+i*9)/60),from:c,no,belt:String(b),st:i<2?'Bagage klart · done':i<4?'Bagage på band':'Landat · landed',c:i<2?'#8c99a6':'#7ee0a1'}));
+    rows.splice(3,0,{t:hhmm((m-8)/60),from:S.lastLeg||'',no:f.no,belt:'4',st,c:sc,me:1});return rows.slice(0,7)}
+  function apBoardModal(){const rows=apArrivals();modal(`<h2>Ankomster · Arrivals</h2><div class="csboard"><div class="r h"><span>Tid</span><span>Från · From</span><span>Band</span><span></span></div>${rows.map(r=>`<div class="r"${r.me?' style="background:rgba(255,210,0,.14);border-radius:6px"':''}><span>${r.t}</span><span>${esc2(r.from)} · ${esc2(r.no)}</span><span style="color:#ffcf33">${r.belt}</span><span style="color:${r.c}">${esc2(r.st)}</span></div>`).join('')}</div>
+    <p class="note">Your flight is highlighted: collect your bags at belt 4. The other flights are simulated.</p><div class="row2"><button class="btn ghost" id="no">Close</button></div>`,m=>m.querySelector('#no').onclick=closeModal)}
+  // the steps of arriving, the one you are on, and a way to get there
   let guideMark=null,guideWalk=null;
   function airportNext(){if(!S.flags.arlanda)return null;const sp=l=>IN.spots.find(s=>typeof l==='string'?s.label===l:l(s));
-    if(!S.schengen&&!S.flags.passport)return {t:'Passport control',s:sp('Passport control')};if(!S.flags.bags)return {t:'Collect your suitcase',s:sp('Baggage claim')};
-    if(!S.flags.customs)return {t:S.euFlight?'Customs: blue exit (EU flight) or green':'Customs: green if nothing to declare',s:sp(x=>/^(Blue|Green)/.test(x.label)&&(S.euFlight||/^Green/.test(x.label)))};
-    return {t:'Exit to trains, buses and taxis',s:sp(x=>/^Exit/.test(x.label))}}
+    if(!S.schengen&&!S.flags.passport)return {k:'passport',s:sp('Passport control')};if(!S.flags.bags)return {k:'bags',s:AP.spot&&IN.spots.includes(AP.spot)?AP.spot:{x:AP.mine?AP.mine.g.position.x:0,z:0.098}};
+    if(!S.flags.customs)return {k:'customs',s:sp(x=>/^(Green|Blue)/.test(x.label)&&(S.euFlight||/^Green/.test(x.label)))};return {k:'exit',s:sp(x=>/^Exit/.test(x.label))}}
   function airportGuide(dt,T){const el=document.getElementById('apguide');if(!IN.on||IN.kind!=='arlanda'){if(el)el.remove();if(guideMark){inScene&&inScene.remove(guideMark);guideMark=null}return}
-    const n=airportNext();if(!n||!n.s)return;if(!guideMark||guideMark.parent!==inScene){guideMark=new THREE.Mesh(new THREE.RingGeometry(0.018,0.03,24),new THREE.MeshBasicMaterial({color:0xffc21a,transparent:true,depthWrite:false}));guideMark.rotation.x=-Math.PI/2;inScene.add(guideMark)}
-    guideMark.position.set(n.s.x,0.003,n.s.z);guideMark.material.opacity=0.55+Math.sin(T*4)*0.35;guideMark.scale.setScalar(1+Math.sin(T*4)*0.15);
-    let b=el;if(!b){b=document.createElement('div');b.id='apguide';b.className='apguide';b.innerHTML='<span></span><button>Take me there</button>';document.body.appendChild(b);b.querySelector('button').onclick=()=>{const m=airportNext();if(m&&m.s)guideWalk={x:m.s.x,z:m.s.z}}}
-    b.querySelector('span').textContent='Next: '+n.t;
-    if(guideWalk){const dx=guideWalk.x-av.position.x,dz=guideWalk.z-av.position.z,d=Math.hypot(dx,dz),st=Math.min(d,dt*0.35);if(d<0.02)guideWalk=null;else{av.position.x+=dx/d*st;av.position.z+=dz/d*st;av.rotation.y=Math.atan2(dx,dz)}}}
+    const n=airportNext();if(!n)return;if(!guideMark||guideMark.parent!==inScene){guideMark=new THREE.Mesh(new THREE.RingGeometry(0.018,0.03,24),new THREE.MeshBasicMaterial({color:0xffc21a,transparent:true,depthWrite:false}));guideMark.rotation.x=-Math.PI/2;inScene.add(guideMark)}
+    if(n.s){guideMark.visible=true;guideMark.position.set(n.s.x,0.003,n.s.z);guideMark.material.opacity=0.55+Math.sin(T*4)*0.35;guideMark.scale.setScalar(1+Math.sin(T*4)*0.15)}else guideMark.visible=false;
+    const left=AP.start===null?null:Math.max(0,Math.ceil(AP.myAt-AP.t));
+    const hint={passport:S.fromGroup==='noneu'?'Queue at the booths on the right with your passport and your residence permit decision.':'Show your passport at a booth (EU/EEA lane on the left).',
+      bags:AP.mine?'Your blue suitcase with the yellow tag is on belt 4. Stand by the belt and take it as it passes.':left===null?'Belt 4 starts when you are through passport control.':`Wait at belt 4. Your suitcase comes out in about ${left} s.`,
+      customs:'Nothing over the limits? Green channel. Bringing more, or food from outside the EU? Red channel, and declare it.',exit:'Walk out through the doors to trains, buses and taxis.'}[n.k];
+    const steps=[['passport','Passport control',S.schengen?'skip':S.flags.passport],['bags','Baggage · belt 4',S.flags.bags],['customs','Customs',S.flags.customs],['exit','Exit to the city',false]];
+    const key=n.k+'|'+hint+'|'+steps.map(s=>s[2]).join();if(el&&el.dataset.key===key)return;
+    const b=el||document.createElement('div');if(!el){b.id='apguide';b.className='apsteps';b.setAttribute('role','region');b.setAttribute('aria-label','Arriving at Arlanda');document.body.appendChild(b)}b.dataset.key=key;
+    b.innerHTML=`<div class="aph"><b>Arriving at Arlanda</b><small>${esc2(apFlight().no)} from ${esc2(S.lastLeg||'')}</small></div><ol>${steps.map(([k,t,d])=>`<li class="${d==='skip'?'skip':d?'done':k===n.k?'now':''}"><i>${d==='skip'?'–':d?'✓':steps.findIndex(s=>s[0]===k)+1}</i><span>${t}${d==='skip'?' <small>not needed after a Schengen flight</small>':''}</span></li>`).join('')}</ol>
+      <p class="aphint">${esc2(hint)}</p><div class="apbtns"><button class="go">Take me there</button>${S.flags.bags?'<button class="sc">My suitcase</button>':''}${S.flags.customs?'':'<button class="ru">Customs rules</button>'}<button class="ar">Arrivals</button></div>`;
+    b.querySelector('.go').onclick=()=>{const m=airportNext();if(m&&m.s)guideWalk={x:m.s.x,z:m.s.z+(m.k==='customs'||m.k==='passport'?-0.04:0)}};const sc=b.querySelector('.sc');if(sc)sc.onclick=()=>openSuitcase(false);const ru=b.querySelector('.ru');if(ru)ru.onclick=()=>custRules();b.querySelector('.ar').onclick=()=>apBoardModal()}
+  function apWalk(dt){if(!guideWalk)return;const dx=guideWalk.x-av.position.x,dz=guideWalk.z-av.position.z,d=Math.hypot(dx,dz),st=Math.min(d,dt*0.35);if(d<0.02){guideWalk=null;return}
+    const [nx,nz]=inMove(av.position.x,av.position.z,dx/d*st,dz/d*st);if(Math.hypot(nx-av.position.x,nz-av.position.z)<st*0.2){guideWalk=null;return}av.position.x=nx;av.position.z=nz;av.rotation.y=Math.atan2(dx,dz)}
   function interiorTick(dt,T){IN.mixers.forEach(m=>m.update(dt));IN.lights.forEach((L,i)=>{L.intensity=0.8+Math.sin(T*4+i*2)*0.6});
-    try{airportGuide(dt,T)}catch(e){}
-    let best=null,bd=1e9;for(const s of IN.spots){const d=Math.hypot(av.position.x-s.x,av.position.z-s.z);if(d<s.r&&d<bd){bd=d;best=s}}
-    if(best!==IN.near){IN.near=best;const b=$('inAct');if(best){b.textContent=best.label;b.style.display='block'}else b.style.display='none'}}
+    if(IN.kind==='arlanda'){try{apTick(dt,T);airportGuide(dt,T);apWalk(dt)}catch(e){console.warn('arrivals',e)}}
+    let best=null,bd=1e9;for(const s of IN.spots){const d=Math.hypot(av.position.x-s.x,av.position.z-s.z)-(s===AP.spot?1:0);if(d<s.r&&d<bd){bd=d;best=s}}// your passing suitcase comes before anything else
+    if(best!==IN.near||(best&&$('inAct').dataset.l!==best.label)){IN.near=best;const b=$('inAct');if(best){b.innerHTML=`${esc2(best.label)} <kbd>E</kbd>`;b.dataset.l=best.label;b.style.display='block'}else{b.style.display='none';b.dataset.l=''}}}
   // ---------- driving ----------
   const DR={on:false,g:null,v:0,h:0,dist:0,fineT:0,t:0};let parked=null;
   function carMesh(){const g=new THREE.Group();if(MODELS.cars&&MODELS.cars.length){const i=(MODELS.carNames||[]).indexOf('sedan');g.add(MODELS.cars[i>=0?i:0].clone(true))}
@@ -4225,6 +4375,7 @@ const POSTERS_CITY=[['#f2b705','#1b1b1b','KANELBULLE','Färskt varje morgon','Ba
   function promptAnswer(a,i){const s=PRM.cur;if(!s)return;const ex=pv(s.extra)||[];PRM.dis.add(s.id);promptSet(null);audInit();if(a===1)s.yes();else if(a===2&&ex[i])ex[i].fn();else if(s.no)s.no()}
   addEventListener('keydown',e=>{const t=e.target&&e.target.tagName;if(t==='INPUT'||t==='TEXTAREA'||t==='SELECT')return;const k=e.key.toLowerCase();
     if(JR&&JR.view==='ext'&&(k==='escape'||k===' '||k==='enter')){e.preventDefault();jrCineEnd();return}
+    if(IN.on&&IN.near&&k==='e'&&!$('modalRoot').innerHTML&&!PRM.cur){e.preventDefault();IN.near.fn();return}
     if($('modalRoot').innerHTML||!PRM.cur)return;if(k==='e'||k==='enter'||k==='y'){e.preventDefault();promptAnswer(1)}else if(k==='escape'||k==='n')promptAnswer(0)});
 
   // ---------- sound: hall murmur, train rumble, the two-tone chime, gate beeps, door warning, announcements (Swedish voice if the browser has one) ----------

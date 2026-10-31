@@ -1,0 +1,135 @@
+# Tests for every pull request to main, and the test stage of the Deploy workflow (called with workflow_call).
+name: Tests
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_call:
+    inputs:
+      sha:
+        description: Exact commit to test (resolved by the Deploy workflow)
+        type: string
+        required: true
+      browser:
+        description: Run the browser suite
+        type: boolean
+        required: true
+
+permissions: {}
+
+concurrency:
+  group: tests-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  # Inside a called workflow the github context is the caller's (Deploy, started by workflow_dispatch),
+  # so the only event test used here is "is this a pull request"; a deployment is recognised by its inputs.
+  TARGET: ${{ github.event_name == 'pull_request' && github.sha || inputs.sha }}
+  EVENT: ${{ github.event_name }}
+  BASE_SHA: ${{ github.event.pull_request.base.sha }}
+  BROWSER_INPUT: ${{ inputs.browser }}
+
+jobs:
+  syntax:
+    name: tests-syntax
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.TARGET }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Find the tests for this commit
+        id: src
+        run: |
+          set -eu
+          echo "- event \`$EVENT\`, commit \`$TARGET\`, browser input \`${BROWSER_INPUT:-none}\`" >> "$GITHUB_STEP_SUMMARY"
+          if [ -f tests/test_syntax.py ]; then echo "have=yes" >> "$GITHUB_OUTPUT"; exit 0; fi
+          if [ "$EVENT" = pull_request ]; then
+            if git cat-file -e "$BASE_SHA:tests/test_syntax.py" 2>/dev/null; then
+              echo "::error::This pull request removes tests/test_syntax.py, which main has."; exit 1
+            fi
+            echo "::notice::main has no tests/ yet (bootstrap pull request): nothing to run."
+            echo "have=no" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          # A deployment of a commit from before tests/ existed: check it with main's syntax test
+          git checkout "$GITHUB_SHA" -- tests
+          echo "::notice::$TARGET predates tests/: checking it with the syntax test from $GITHUB_SHA."
+          echo "have=yes" >> "$GITHUB_OUTPUT"
+      - if: steps.src.outputs.have == 'yes'
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: '3.14'
+      - if: steps.src.outputs.have == 'yes'
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '22'
+      - if: steps.src.outputs.have == 'yes'
+        run: python -m pip install -r tests/requirements.txt
+      - if: steps.src.outputs.have == 'yes'
+        run: python tests/test_syntax.py
+
+  browser:
+    name: tests-browser
+    needs: syntax
+    # Pull requests: always. A deployment (called by Deploy): only when its browser_tests box is ticked.
+    # Deliberately does not name the caller's event; see the env comment above.
+    if: github.event_name == 'pull_request' || inputs.browser == true
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.TARGET }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Find the browser tests for this commit
+        id: src
+        run: |
+          set -eu
+          if [ -f tests/test_smoke.py ]; then echo "have=yes" >> "$GITHUB_OUTPUT"; exit 0; fi
+          if [ "$EVENT" = pull_request ] && ! git cat-file -e "$BASE_SHA:tests/test_smoke.py" 2>/dev/null; then
+            echo "::notice::main has no browser tests yet (bootstrap pull request): nothing to run."
+            echo "have=no" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          echo "::error::$TARGET has no browser tests (or this pull request removes them). Commits from before tests/ existed are deployed with browser_tests unticked."
+          exit 1
+      - if: steps.src.outputs.have == 'yes'
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: '3.14'
+      - if: steps.src.outputs.have == 'yes'
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '22'
+      - if: steps.src.outputs.have == 'yes'
+        run: python -m pip install -r tests/requirements.txt
+      - name: Install the Chromium build this Playwright version is made for
+        if: steps.src.outputs.have == 'yes'
+        run: python -m playwright install --with-deps chromium
+      - name: Use that Chromium, never the runner's Google Chrome
+        if: steps.src.outputs.have == 'yes'
+        run: |
+          set -eu
+          path=$(python -c 'from playwright.sync_api import sync_playwright as s; p = s().start(); print(p.chromium.executable_path); p.stop()')
+          want=$(python -c 'import json, pathlib, playwright; f = pathlib.Path(playwright.__file__).parent / "driver/package/browsers.json"; print(next(b["browserVersion"] for b in json.loads(f.read_text())["browsers"] if b["name"] == "chromium"))')
+          got=$("$path" --version)
+          echo "Chromium: $path -> $got (this Playwright expects $want)"
+          case "$path" in "$HOME/.cache/ms-playwright/"*) ;; *) echo "::error::Not Playwright's Chromium: $path"; exit 1 ;; esac
+          case "$got" in *" $want"*) ;; *) echo "::error::Got '$got', expected Chromium $want"; exit 1 ;; esac
+          echo "CHROME=$path" >> "$GITHUB_ENV"
+          echo "- browser \`$got\` at \`$path\`" >> "$GITHUB_STEP_SUMMARY"
+      - if: steps.src.outputs.have == 'yes'
+        run: python -m pytest tests
+      - if: always() && steps.src.outputs.have == 'yes'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: screenshots-${{ github.run_id }}-${{ github.run_attempt }}
+          path: tests/output/
+          retention-days: 7
+          if-no-files-found: ignore

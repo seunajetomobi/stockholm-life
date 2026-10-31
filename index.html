@@ -339,7 +339,8 @@ h2.hero{font-size:34px;background:linear-gradient(90deg,var(--sweblue),#3a86ff 4
   .inhud,.drivehud{left:8px;right:8px;transform:none;max-width:none;justify-content:space-between;padding:6px 6px 6px 12px;font-size:12px}.inhud b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}.inhud button{padding:7px 10px;font-size:12px}
   .cshud{left:8px;right:8px;transform:none;width:auto;max-width:none;justify-content:flex-start;gap:5px;padding:6px 8px;font-size:11.5px}.cshud b{flex:1 1 100%;font-size:12.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .cshud button{padding:6px 8px;font-size:10.5px;letter-spacing:.04em}.cshud .chip{padding:2px 6px}
-  .csline{top:auto;bottom:calc(290px + env(safe-area-inset-bottom,0px));left:8px;right:8px;transform:none;width:auto;max-width:none;font-size:12px;border-radius:12px}
+  #csLine{top:auto;bottom:calc(290px + env(safe-area-inset-bottom,0px));left:8px;right:8px;transform:none;width:auto;max-width:none;font-size:12px;border-radius:12px}
+  #csPrompt:not(:empty)~#csLine{bottom:calc(350px + env(safe-area-inset-bottom,0px))}/* above an open prompt */
   .csprompt{left:8px;right:8px;transform:none;width:auto;bottom:calc(196px + env(safe-area-inset-bottom,0px))}
   .inact{bottom:calc(196px + env(safe-area-inset-bottom,0px));max-width:calc(100% - 32px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 }

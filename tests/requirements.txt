@@ -1,0 +1,3 @@
+# Test-only dependencies (the game itself needs none). Versions used when the tests were written.
+playwright==1.58.0
+pytest==9.0.2

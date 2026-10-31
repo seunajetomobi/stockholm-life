@@ -4,3 +4,5 @@ __pycache__/
 .DS_Store
 # Overpass downloads used by tools/osm_lanes.py
 osm_lanes.json
+# Test screenshots
+tests/output/

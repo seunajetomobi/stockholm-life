@@ -1,0 +1,203 @@
+# Publishes a commit that is already on main to GitHub Pages.
+# Started by hand only; the deploy job waits for approval in the github-pages environment.
+name: Deploy to GitHub Pages
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: 'What to publish: main, a tag, or a commit SHA that is on main (for a rollback)'
+        type: string
+        required: true
+        default: main
+      browser_tests:
+        description: 'Run the browser suite first (untick only for an urgent rollback or a commit from before tests/; the syntax check always runs)'
+        type: boolean
+        default: true
+
+permissions: {}
+
+concurrency:
+  group: pages-production
+  cancel-in-progress: false
+
+jobs:
+  resolve:
+    name: resolve
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    outputs:
+      sha: ${{ steps.r.outputs.sha }}
+    steps:
+      - name: Run only from main
+        if: github.ref != 'refs/heads/main'
+        run: |
+          echo "::error::Start this workflow from main ('Use workflow from: main'), not $GITHUB_REF."
+          exit 1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - id: r
+        name: Resolve the ref to one commit on main
+        env:
+          REF: ${{ inputs.ref }}
+          BROWSER: ${{ inputs.browser_tests }}
+        run: |
+          set -eu
+          case "$REF" in
+            ''|-*|*[!A-Za-z0-9._/-]*) echo "::error::Not a valid ref: '$REF'"; exit 1 ;;
+          esac
+          sha=$(git rev-parse --verify --quiet "$REF^{commit}" || git rev-parse --verify --quiet "origin/$REF^{commit}") \
+            || { echo "::error::'$REF' is not a commit, tag or branch in this repository"; exit 1; }
+          git merge-base --is-ancestor "$sha" origin/main \
+            || { echo "::error::$sha is not on main. Only commits merged into main can be published."; exit 1; }
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+          {
+            echo "### Publishing"
+            echo "- ref \`$REF\` = commit \`$sha\`: $(git log -1 --format='%s (%cs)' "$sha")"
+            echo "- browser tests: \`$BROWSER\`"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  test:
+    name: test
+    needs: resolve
+    permissions:
+      contents: read
+    uses: ./.github/workflows/tests.yml
+    with:
+      sha: ${{ needs.resolve.outputs.sha }}
+      browser: ${{ inputs.browser_tests }}
+
+  build:
+    name: build
+    needs: [resolve, test]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.resolve.outputs.sha }}
+          persist-credentials: false
+      - name: Check the game files
+        run: |
+          python3 - <<'PY'
+          import gzip, json, os, sys
+          # loadCity() reads these without try/catch; without them the game falls back to a simplified city
+          ESSENTIAL = ['b', 'r', 'm']
+          # loaded in try/catch (x, t, o, e) or replaced by simple shapes (the three model files)
+          OPTIONAL = ['x', 't', 'o', 'e', 'people', 'vehicles', 'trees']
+
+          def parse(path):
+              raw = open(path, 'rb').read()
+              if raw[:2] == b'\x1f\x8b':  # the game also accepts gzip (gunzipFetch)
+                  raw = gzip.decompress(raw)
+              return json.loads(raw)
+
+          def structure(name, d):
+              """Only what index.html reads without a guard once the city is loaded. Extra keys are allowed."""
+              err = []
+              if not isinstance(d, dict):
+                  return [f'{name}.json: top level is not an object']
+              def need(key, typ, nonempty=False):
+                  v = d.get(key)
+                  if isinstance(v, bool) or not isinstance(v, typ):
+                      err.append(f'{name}.json: "{key}" missing or of the wrong type')
+                      return None
+                  if nonempty and not v:
+                      err.append(f'{name}.json: "{key}" is empty')
+                  return v
+              if name == 'b':
+                  ts = need('ts', (int, float))
+                  if ts is not None and ts <= 0:
+                      err.append('b.json: "ts" is not positive')
+                  need('types', list); need('cols', list); need('tiles', dict, True); need('lod', dict)
+              elif name == 'r':
+                  nodes, edges = need('nodes', list, True), need('edges', list, True)
+                  need('names', list); need('tiles', dict, True)
+                  if nodes is not None and len(nodes) % 2:
+                      err.append('r.json: "nodes" has odd length (x,z pairs expected)')
+                  if nodes and edges:
+                      n = len(nodes) // 2
+                      bad = sum(1 for e in edges if not (isinstance(e, list) and len(e) >= 2
+                                and all(isinstance(i, int) and not isinstance(i, bool) and 0 <= i < n for i in e[:2])))
+                      if bad:
+                          err.append(f'r.json: {bad} edges without two valid node indices')
+              elif name == 'm':
+                  for k in ('water', 'pois', 'cats', 'gkind', 'rail', 'railt', 'aero'):
+                      need(k, list)
+                  for k in ('green', 'trees'):
+                      need(k, dict)
+                  for k in ('land', 'lakes'):  # read behind a guard: may be absent, must be a list if present
+                      if k in d and not isinstance(d[k], list):
+                          err.append(f'm.json: "{k}" is present but not a list')
+              return err
+
+          errors, notes = [], []
+          if not os.path.isfile('index.html') or os.path.getsize('index.html') == 0:
+              errors.append('index.html is missing or empty')
+          for n in ESSENTIAL + OPTIONAL:
+              f = f'data/{n}.json'
+              if not os.path.isfile(f):
+                  if n in ESSENTIAL:
+                      errors.append(f'{f} is missing (essential)')
+                  else:
+                      notes.append(f'{f} is missing (optional; the game runs without it)')
+                      print(f'::warning::{f} is missing (optional; the game runs without it)')
+                  continue
+              try:
+                  d = parse(f)
+              except Exception as e:
+                  errors.append(f'{f} is present but not valid JSON: {str(e)[:120]}')
+                  continue
+              if n in ESSENTIAL:
+                  errors += structure(n, d)
+          with open(os.environ['GITHUB_STEP_SUMMARY'], 'a') as s:
+              s.write('### Game files\n' + ''.join(f'- {x}\n' for x in (notes + errors) or ['all present and valid']))
+          for e in errors:
+              print(f'::error::{e}')
+          sys.exit(1 if errors else 0)
+          PY
+      - name: Collect the game files only
+        env:
+          SHA: ${{ needs.resolve.outputs.sha }}
+        run: |
+          set -eu
+          mkdir _site
+          cp -R index.html data _site/
+          printf '%s\n' "$SHA" > _site/version.txt
+          du -sh _site
+          ls -l _site _site/data
+      - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+        with:
+          path: _site
+
+  deploy:
+    name: deploy
+    needs: [resolve, build]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.d.outputs.page_url }}
+    steps:
+      - id: d
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1
+      - name: Check what is live
+        env:
+          URL: ${{ steps.d.outputs.page_url }}
+          SHA: ${{ needs.resolve.outputs.sha }}
+        run: |
+          for i in $(seq 1 66); do
+            live=$(curl -fsS --max-time 20 "${URL}version.txt?check=${GITHUB_RUN_ID}-${i}" || true)
+            if [ "$live" = "$SHA" ]; then echo "Live: $SHA"; exit 0; fi
+            sleep 10
+          done
+          echo "::warning::version.txt does not show $SHA after 11 minutes (CDN cache?). Check $URL by hand."

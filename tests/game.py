@@ -23,8 +23,8 @@ def chrome_path():
 # published game are never changed. A name that no longer exists makes buildWorld throw, and the tests fail
 # at boot with a ReferenceError naming it.
 HOOK_NAMES = ['csEnter', 'CS_DOORS', 'ptNext', 'csClk', 'csLine', 'promptSet',
-              'jrStart', 'jrSit', 'jrStand', 'jrAlight', 'jrSkipNext', 'jrSkipStop',
-              'icam', 'av', 'camera', 'controls', 'scene', 'ring', 'IW', 'IH', 'HALF', 'CARM', 'zcOf', 'DOORZ']
+              'jrStart', 'jrSit', 'jrStand', 'jrCam', 'jrArm', 'jrBlockers', 'jrAlight', 'jrSkipNext', 'jrSkipStop',
+              'icam', 'av', 'camera', 'controls', 'scene', 'ring', 'IW', 'IH', 'HALF', 'CARM', 'zcOf', 'DOORZ', 'JRC']
 HOOK_LIVE = ['CS', 'JR', 'JRS', 'avHidden']  # reassigned during play, so read through getters
 
 

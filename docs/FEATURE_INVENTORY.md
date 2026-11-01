@@ -1,6 +1,6 @@
 # Feature inventory
 
-What the game does today, measured on `main` at `3d04635` (2026-11-01). The live site serves the game files of `870fe30`: the pendeltåg camera and the message-strip changes on `main` (PR #3, PR #4) are merged but not yet deployed. First written in the audit of 2026-10-31.
+What the game does today, measured on `main` at `3d04635` (2026-11-01). The live site serves the game files of `870fe30`: the pendeltåg camera and the message-strip changes on `main` (PR #3 `40d913e`, PR #4 `3d04635`, and PR #6 `d9b8882`, merged after this measurement) are merged but not yet deployed; current status in [PROJECT_STATUS.md](PROJECT_STATUS.md). First written in the audit of 2026-10-31.
 
 ## How to read this
 

@@ -1,6 +1,6 @@
 # Stockholm Life tests
 
-Automated checks for the game, preserved from the 2026-10-31 audit. They test the game as it is; they do not change it. There is no build step: the tests are Python scripts that drive headless Chrome against a local copy of the game.
+Automated checks for the game, preserved from the 2026-10-31 audit and the two fixes after it (pendeltåg camera `df54793`, M14 `742403b`). They test the game as it is; they do not change it. There is no build step: the tests are Python scripts that drive headless Chrome against a local copy of the game.
 
 ## What is here
 
@@ -10,11 +10,13 @@ Automated checks for the game, preserved from the 2026-10-31 audit. They test th
 | `test_smoke.py` | Desktop 1366×768: city loads, WebGL canvas, no game file fails to load, character creation shown; "Go" starts a life and writes a save; each dock tab renders; every phone app opens without an uncaught error (at least 39 tiles); every places-bar button responds, Centralen opens its travel card | Yes | No |
 | `test_save.py` | Reload restores name, day, hour, money and position; a corrupted save starts a fresh life without errors; an old `stockholm-life-v3` save migrates (HUD 10:00, 1 200 kr, v4 written) | Yes | No |
 | `test_layout.py` | 390×844 and 520×900 (touch) and 1366×768: no horizontal overflow on the intro or while playing; dock, joystick, Run, zoom and places bar inside the viewport | Yes | No |
+| `test_m14.py` | M14 regression at the same three sizes: in the station, boarding (with the "Sit down?" prompt), a three-line prompt (phones), seated. The message strip is at most 60 px tall; on phones it overlaps none of the ride HUD, prompt, joystick, Run, zoom or dock; on desktop it is still centred near the top | Yes | Yes |
+| `test_traincam.py` | Pendeltåg camera regression: every tested seat (60) × 24 yaws × 3 pitches and 17 standing spots × 24 yaws keep the camera inside the car and out of posts, poles and cab walls; seated default is "You" with the avatar visible; "Eyes" puts the camera exactly where it was before `df54793`; standing resets pitch; the camera stays below the gangway header; walking along the aisle with W (real key presses) moves you and the camera follows, inside the car with you on screen; getting off restores the city camera; at 390×844 the ride HUD fits in three rows with the short "🧍 You" label | Yes | Yes |
 | `game.py`, `conftest.py` | Shared helpers: local server, browser, test hook, page set-up, measurements | | |
 
 Every browser test fails on an uncaught JavaScript error (`pageerror`). Console errors and failed requests to external services (weather, SL, flights, news) are recorded but do not fail a test, because those services can be offline. A failed request for the game's own files does fail `test_smoke.py`.
 
-The station and train regression tests (`test_m14.py`, `test_traincam.py`) are added together with the camera and M14 changes they check.
+`test_traincam.py::test_place_label_after_getting_off` is marked **xfail**: it documents KNOWN_ISSUES L10 (the place label can stay on "Pendeltåg 41" after getting off). It reports `XFAIL` while the issue exists and `XPASS` if it no longer shows; neither fails the run.
 
 ## Install (once)
 
@@ -41,7 +43,7 @@ From the repository root:
 python3 tests/test_syntax.py            # syntax only, about 1 s
 python3 -m pytest tests                 # everything
 python3 -m pytest tests -m "not hook"   # without the station/train tests
-python3 -m pytest tests/test_save.py    # one file
+python3 -m pytest tests/test_m14.py     # one file
 python3 -m pytest tests -k 390          # only the 390 px cases
 python3 -m pytest tests -s              # also print load times and recorded console errors
 ```
@@ -54,7 +56,7 @@ python3 -m pytest tests -s              # also print load times and recorded con
 
 ## The test hook
 
-The station, the train and the cameras live inside the `buildWorld()` closure, and walking to Stockholm Central at 1–2 fps would take far too long. The `hook` tests (`test_m14.py`, `test_traincam.py`, added with the camera and M14 changes) therefore use a **test-only copy** of `index.html`:
+The station, the train and the cameras live inside the `buildWorld()` closure, and walking to Stockholm Central at 1–2 fps would take far too long. The `hook` tests (`test_m14.py`, `test_traincam.py`) therefore use a **test-only copy** of `index.html`:
 
 1. `game.hooked_html()` reads `index.html` from disk and replaces the closure's last statement, `return API;`, with `window.__T={csEnter, jrStart, jrSit, …, get CS(){…}, get JR(){…}};return API;` (the full list is `HOOK_NAMES` and `HOOK_LIVE` in `game.py`).
 2. Playwright's `context.route('**/index.html', …)` serves that copy to the test browser only. Data files come unchanged from the local server.
@@ -62,7 +64,12 @@ The station, the train and the cameras live inside the `buildWorld()` closure, a
 
 The file on disk, the local server's copy and the published game are never changed, so normal play cannot see the hook. If `return API;` disappears or appears twice, the tests stop with an explicit message; if a hooked name is renamed, the page throws a `ReferenceError` naming it at boot. Update `HOOK_NAMES` when that happens.
 
-To run the hooked tests on another version of the game, point `SL_INDEX_HTML` at a saved copy (for example `git show <rev>:index.html > /tmp/old.html`).
+To run the hooked tests on another version of the game, point `SL_INDEX_HTML` at a saved copy. This is how the M14 test was checked against the code before the fix, where it fails with the original 365 px strip:
+
+```sh
+git show df54793:index.html > /tmp/before-m14.html
+SL_INDEX_HTML=/tmp/before-m14.html python3 -m pytest tests/test_m14.py -k 390   # expected: 1 failed
+```
 
 Because the hook jumps straight into the station and the train, a hooked test shows that the code works once you are there. It does not show that a player can walk there, buy a ticket or pass the gates.
 

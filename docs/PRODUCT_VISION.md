@@ -1,6 +1,8 @@
 # Product vision
 
-Stockholm Life is a life simulation set in a realistic, living Stockholm, where players create a character and develop their own life: arriving, finding a home and work, building relationships and choosing where their life goes.
+**STOCKHOLM LIFE — Live your own story.**
+
+A single-player-first, realistic Stockholm life simulation where the player builds a life through exploration, housing, employment, finances, relationships, transportation, education, personal progression and interaction with a living city: arriving, finding a home and work, building relationships and choosing where their life goes.
 
 This document states the agreed direction. What exists today is in [FEATURE_INVENTORY.md](FEATURE_INVENTORY.md); the order of work is in [MASTER_ROADMAP.md](MASTER_ROADMAP.md).
 
@@ -44,7 +46,10 @@ Its systems, acceptance criteria and tests are defined in MASTER_ROADMAP.md (M4)
 2. **Evolve, don't rewrite.** The existing code and data are kept and improved step by step, guarded by automated tests.
 3. **Honest status.** A system counts as functional only when its behaviour works and is tested; buttons and visuals alone do not count.
 4. **Facts are checked and dated.** Prices, fees and rules come from real sources and are reviewed regularly.
-5. **Nothing reaches players untested.** Every release goes through the tested, approval-gated deployment pipeline.
+5. **Nothing reaches players untested.** Every release goes through the tested, approval-gated deployment pipeline; merging alone never publishes.
+6. **District by district.** Stockholm becomes playable area by area, each with meaningful activities and interiors, rather than thinly everywhere at once.
+7. **Living people, not records.** NPCs are simulated with homes, schedules and behaviour; economy, employment, housing and transport stay connected to them and to each other.
+8. **Measure before optimising.** Performance claims rest on measurements on real devices.
 
 ## Multiplayer: a future possibility
 

@@ -1,6 +1,6 @@
 # Technical architecture
 
-How Stockholm Life is built today, its known weaknesses, and the target architecture. Replaces the audit's `ARCHITECTURE.md` (never committed). Measured on `main` at `40d913e`. Sections are marked **Observed** (from the code, test runs and the GitHub API) or **Target** (agreed direction).
+How Stockholm Life is built today, its known weaknesses, and the target architecture. Replaces the audit's `ARCHITECTURE.md` (never committed). Measured on `main` at `3d04635`. Sections are marked **Observed** (from the code, test runs and the GitHub API) or **Target** (agreed direction).
 
 ## 1. Current architecture (observed)
 
@@ -19,7 +19,7 @@ How Stockholm Life is built today, its known weaknesses, and the target architec
 
 | Path | Size | Role |
 | --- | --- | --- |
-| `index.html` | 820,778 bytes, 5,316 lines | Everything: CSS, markup and one inline script (about 4,860 lines) |
+| `index.html` | 823,279 bytes, 5,340 lines | Everything: CSS, markup and one inline script (about 4,880 lines) |
 | `data/b.json`, `r.json`, `m.json`, `t.json` | 7.3, 8.1, 3.2, 2.1 MB | Buildings in 1,101 tiles; street graph; green areas, water, POIs; transit routes |
 | `data/x.json`, `o.json`, `e.json` | 0.4 MB | Signals, one-way and lanes, station entrances |
 | `data/people.json`, `vehicles.json`, `trees.json` | 14.7 MB | GLB models as base64 inside JSON |
@@ -32,15 +32,15 @@ The generators for `b`, `r`, `m`, `t` and the model files are not in the reposit
 
 ### Code structure inside `index.html`
 
-One IIFE with 608 named functions. Approximate layers in file order:
+One IIFE with 609 named functions. Approximate layers in file order:
 
 | Lines | Layer | Contents |
 | --- | --- | --- |
 | ~457–1250 | Rules and life simulation | Areas, `JOBS` (14), `HOMES` (10), `BG` (3), `ACTS` (57), needs, people and relationships, dating, courses, shops, civic system; `newGame`, `migrate`, `save`/`load`, `spendTime`, work |
 | ~1250–1920 | Travel and phone | Travel cards, crime, live SL data, flights, places bar, invest, calls, care, banks, news, mail, chats, to-do, bag (`ITEMS`: 8) |
 | ~1920–2360 | Onboarding and day cycle | Origins, Arlanda customs, bills, `sleep` (day change, payday, rent), events, `goals`, `render` |
-| 2360–5284 | `buildWorld()` | The whole 3D world as one closure: renderer, tiles, collision, routing, ambient agents, transit, interiors, Arlanda, driving, emergencies, aircraft, input, camera, main loop `tick()`; Stockholm Central and the pendeltåg ride (about lines 4378–5284) including the train camera (`jrCam`, `jrArm`, `jrBlockers`, `jrOcclude`) |
-| 5285–5316 | Boot | `loadCity`, `start` |
+| 2360–5309 | `buildWorld()` | The whole 3D world as one closure: renderer, tiles, collision, routing, ambient agents, transit, interiors, Arlanda, driving, emergencies, aircraft, input, camera, main loop `tick()`; Stockholm Central and the pendeltåg ride (about lines 4378–5309) including the train camera (`jrCam`, `jrArm`, `jrBlockers`, `jrOcclude`) and the message-strip placement (`csLineFit`) |
+| 5310–5340 | Boot | `loadCity`, `start` |
 
 ### State and data flow
 
@@ -66,7 +66,7 @@ One IIFE with 608 named functions. Approximate layers in file order:
 
 1. **Persistence:** one slot, silent failures, unsaved world state (M1).
 2. **Time tied to movement:** blocks schedules and opening-hours gameplay (M2).
-3. **Monolith:** one 820 kB file with a 2,924-line closure; no module boundaries (M3).
+3. **Monolith:** one 823 kB file with a 2,950-line closure; no module boundaries (M3).
 4. **Global mutable state** without owner, events or validation (M1, M3).
 5. **Monkey-patched core functions** and silent error handling (M3).
 6. **Simulation driven by the render loop** (M2, M7).
@@ -77,6 +77,12 @@ One IIFE with 608 named functions. Approximate layers in file order:
 ## 3. Target architecture
 
 Principle: **evolve, don't rewrite.** Keep three.js and static hosting; move code before changing it; every move guarded by the test suite.
+
+- **Browser-first**, no game-engine change and no unnecessary rewrite.
+- **Simulation separate from rendering and UI:** rules and state run without the 3D world or the panels, which read from them.
+- **No unnecessary dependencies or build tooling:** native ES modules, no bundler, no TypeScript.
+- **Measure before optimising:** performance claims come from recorded measurements (M7).
+- **Deploying is separate from merging:** merging into `main` never publishes; only the approved Deploy workflow does.
 
 ### 3.1 Modules without a build step (M3)
 

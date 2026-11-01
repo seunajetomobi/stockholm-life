@@ -2,24 +2,26 @@
 
 The order of work from today's game to the [product vision](PRODUCT_VISION.md). It replaces the earlier audit roadmap (`IMPLEMENTATION_ROADMAP.md`, never committed); what that roadmap delivered is under "History" at the end.
 
-Status as of 2026-11-01, `main` at `40d913e`.
+Status as of 2026-11-01, `main` at `3d04635`. No milestone is complete; M0 is in progress.
 
 ## Guiding rules
 
 1. **Foundations before features.** Durable state, an explicit game clock and a registry of places and people come before new gameplay that depends on them.
 2. **One complete slice before breadth.** The first-week slice (M4) must work end to end before systems are expanded city-wide.
 3. **Move before you change.** Moving code into modules (M3) happens in separate pull requests from behaviour changes, each guarded by the test suite.
-4. **Every milestone ships through the pipeline.** Pull request with the required checks (`tests-syntax`, `tests-browser`), review, merge, then a manual, approved deployment.
+4. **Every milestone ships through the pipeline.** Pull request with the required checks (`tests-syntax`, `tests-browser`), review, merge, then a manual, approved deployment. Merging never publishes.
 5. **Keep three.js r128 and no-build static hosting** until a later, explicit decision.
+6. **Measure before optimising,** and build Stockholm district by district, each with meaningful activities and interiors.
+7. **Multiplayer waits** until the single-player game is stable and engaging; M8 only prepares the architecture.
 
 ## Dependencies
 
 ```
 M0 Stabilise
- └─ M1 Save and state ─┬─ M2 Time model ──┐
-                       └─ M3 Modularise ──┴─ M4 First-week slice ── M5 Simulation systems ── M6 World expansion
-                          M3 ── M7 Visual and performance (measure first)
-            M1 + M2 + M3 + M5 ── M8 Multiplayer preparation (long term)
+ └─ M1 Save and state ─┬─ M2 Game-time model ──┐
+                       └─ M3 Modularisation ───┴─ M4 First playable week ── M5 NPCs and relationships ── M6 World expansion
+                          M3 ── M7 Performance (measure first)
+            M1 + M2 + M3 + M5 ── M8 Multiplayer preparation only (long term)
 ```
 
 ## M0 — Stabilise (in progress)
@@ -27,14 +29,14 @@ M0 Stabilise
 | | |
 | --- | --- |
 | Objective | A clean, published, documented baseline before new development |
-| Scope | Merge the short-screen M14 fix (PR #4); real-device check of the pendeltåg camera and M14; deploy `main`; commit the project documentation; redeploy the flights relay with `/waittime` (KNOWN_ISSUES M1) |
+| Scope | Merge the responsive message-strip fix (PR #4, done); real-device check of the pendeltåg camera and M14; deploy `main`; commit the project documentation; redeploy the flights relay with `/waittime` (KNOWN_ISSUES M1) |
 | Dependencies | None |
 | Risks | Deployment regressions; the CI Chromium-install step can stall (KNOWN_ISSUES L12) |
 | Deliverables | Live site = `main`; documentation in the repository; relay up to date |
 | Acceptance | Live verification of the deployed commit passes all rounds (files, identity, browser startup); real-device checklist in TEST_PLAN.md §4 completed and recorded |
 | Testing | Existing CI suite; post-deployment live checks |
 
-Done so far: automated tests in CI (required checks), approval-gated manual deployment, Pages published by GitHub Actions, `main` protected by a ruleset, Actions hardened, camera and M14 merged (PR #3). Open: PR #4, real-device check, deployment of `main`, this documentation PR, the relay.
+Done so far: automated tests in CI (required checks), approval-gated manual deployment, Pages published by GitHub Actions, `main` protected by a ruleset, Actions hardened, camera and M14 merged (PR #3), the message strip kept clear of every control at phone, tablet, landscape and desktop sizes (PR #4, merged as `3d04635`, not deployed). Open: real-device check, deployment of `main`, this documentation PR, the relay.
 
 ## M1 — Save and state foundation
 
@@ -48,7 +50,7 @@ Done so far: automated tests in CI (required checks), approval-gated manual depl
 | Acceptance | Reloading in every place restores the same place and state; v3 and v4 saves migrate; a full storage shows an error; a corrupted save is not overwritten silently |
 | Testing | Unit tests for every migration and for the envelope; browser tests that save and reload in each place type |
 
-## M2 — Time model
+## M2 — Independent, consistent game-time model
 
 | | |
 | --- | --- |
@@ -60,7 +62,7 @@ Done so far: automated tests in CI (required checks), approval-gated manual depl
 | Acceptance | Time passes while standing still; existing rules (rent, salary, bills, needs) give the same results at the same game time; the station and the city agree on the time |
 | Testing | Unit tests for the clock, needs and day change; browser test of time passing without movement |
 
-## M3 — Modularise along the seams
+## M3 — Gradual modularisation
 
 | | |
 | --- | --- |
@@ -72,7 +74,7 @@ Done so far: automated tests in CI (required checks), approval-gated manual depl
 | Acceptance | Full test suite green after every move; no behaviour change in any move-only pull request |
 | Testing | Full suite per move; new unit tests for each moved rules module |
 
-## M4 — First-week slice (core gameplay)
+## M4 — First complete playable week in Stockholm
 
 | | |
 | --- | --- |
@@ -84,7 +86,7 @@ Done so far: automated tests in CI (required checks), approval-gated manual depl
 | Acceptance | The week can be completed without menu-only shortcuts for mission steps; each step advances from game state; saving and reloading at every step restores place and progress; the ledger balances; 30 fps on the target laptop and phone |
 | Testing | Unit tests for the mission step machine, shift scoring and the ledger; browser tests that drive the week through the test hook with time skips and check mission and save state each day |
 
-## M5 — Simulation systems
+## M5 — NPC schedules, personalities and relationships
 
 | | |
 | --- | --- |
@@ -96,7 +98,7 @@ Done so far: automated tests in CI (required checks), approval-gated manual depl
 | Acceptance | NPCs are found where their timetable says at the right game time; relationships change through encounters, not menu actions |
 | Testing | Schedule and position tests at fixed game times; relationship unit tests |
 
-## M6 — World expansion
+## M6 — World expansion and additional interiors
 
 | | |
 | --- | --- |
@@ -108,19 +110,19 @@ Done so far: automated tests in CI (required checks), approval-gated manual depl
 | Acceptance | Each new job, building or mission passes the same acceptance template as M4 |
 | Testing | Tests per addition, following the M4 pattern |
 
-## M7 — Visual and performance
+## M7 — Performance measurement and optimisation
 
 | | |
 | --- | --- |
-| Objective | Smooth play on ordinary laptops and phones, then better visuals |
+| Objective | Smooth play on ordinary laptops and phones, measured; visual improvements only within the measured budget |
 | Scope | Measure first (debug overlay: fps, draw calls, triangles, memory, loaded tiles); per-tile data loaded on demand and parsed in a Web Worker; phone-specific render settings; facade and street-furniture improvements in the slice area; rebuildable data pipeline |
 | Dependencies | M3 |
 | Risks | Device variety; data pipeline effort |
 | Deliverables | Performance budget recorded per release |
-| Acceptance | ≥ 30 fps on the target devices (TEST_PLAN.md §3.4); JS memory under 500 MB; time to playable under 15 s |
+| Acceptance | ≥ 30 fps on the target devices (TEST_PLAN.md §5, M7); JS memory under 500 MB; time to playable under 15 s |
 | Testing | Performance runs per release on real devices |
 
-## M8 — Multiplayer preparation (long term)
+## M8 — Multiplayer preparation only (long term)
 
 | | |
 | --- | --- |

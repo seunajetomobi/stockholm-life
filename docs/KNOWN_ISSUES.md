@@ -1,6 +1,6 @@
 # Known issues
 
-Current as of 2026-11-01, `main` at `40d913e`. First written in the audit of 2026-10-31 (at `870fe30`); numbering is kept so earlier references stay valid. Severity: **High** = can lose progress, break releases or block the roadmap; **Medium** = visible defect or significant risk; **Low** = minor.
+Current as of 2026-11-01, `main` at `3d04635`. First written in the audit of 2026-10-31 (at `870fe30`); numbering is kept so earlier references stay valid. Severity: **High** = can lose progress, break releases or block the roadmap; **Medium** = visible defect or significant risk; **Low** = minor.
 
 Evidence: **[B]** headless browser run, **[T]** automated test, **[C]** code reading, **[L]** live probe or GitHub API, **[D]** documented in CLAUDE.md.
 
@@ -8,9 +8,9 @@ Evidence: **[B]** headless browser run, **[T]** automated test, **[C]** code rea
 
 | Ref | Commit | Contents | Live? |
 | --- | --- | --- | --- |
-| `main` | `40d913e` | Game of `870fe30` + pendeltåg camera + M14 fix (PR #3), CI and deployment workflows, tests | **No.** Merged, not yet deployed |
+| `main` | `3d04635` | Game of `870fe30` + pendeltåg camera + M14 fix (PR #3) + responsive message-strip placement (PR #4), CI and deployment workflows, tests | **No.** Merged, not yet deployed |
 | Live site | game files of `870fe30` | Deployment `7465401024` (run `41249126992`, 2026-10-31 22:58:50 Z), published by GitHub Actions; `version.txt` = `870fe309543c6eb375e6e150423002a09763a3db` | Yes |
-| `fix/m14-short-screen` | `adc765d` | Fix for M16 (PR #4, open) | No |
+| `fix/m14-short-screen` | `081682f` | Responsive message-strip placement (PR #4), merged into `main` as `3d04635` | No (on `main`, not deployed) |
 | `fix-m14-phone-message-strip`, `pendeltag-camera` | `742403b`, `df54793` | Original camera and M14 commits (preserved; integrated via cherry-pick in PR #3) | — |
 
 Publishing happens only through the manual "Deploy to GitHub Pages" workflow with approval; merging into `main` does not change the live site.
@@ -22,7 +22,7 @@ Publishing happens only through the manual "Deploy to GitHub Pages" workflow wit
 | H3 | **Save failures are silent.** `save()` wraps `localStorage.setItem` in an empty `catch`; full or blocked storage loses progress without a message | [C] | Roadmap M1 |
 | H4 | **Single save slot in localStorage only.** Clearing site data, private browsing or another browser loses the life; no export | [C][T] | Roadmap M1 |
 | H5 | **A corrupted save is overwritten silently** with a fresh start | [T] | Roadmap M1: keep it under a backup key and tell the player |
-| H6 | **One 820 kB, 5,316-line file with a 2,924-line closure** (`buildWorld`) makes every change risky and blocks testing parts in isolation | [C] | Roadmap M3 |
+| H6 | **One 823 kB, 5,340-line file with a 2,950-line closure** (`buildWorld`) makes every change risky and blocks testing parts in isolation | [C] | Roadmap M3 |
 
 ## Medium
 
@@ -41,8 +41,7 @@ Publishing happens only through the manual "Deploy to GitHub Pages" workflow wit
 | M11 | three.js r128 via CDN without Subresource Integrity; first load needs cdnjs, jsdelivr and Google Fonts | [C] | SRI or vendored files |
 | M12 | Vision gaps: no mission system, no NPC schedules or memory, work is a menu action, interiors are generic and POI-only, no home ownership, time stops when you stand still | [C] | Roadmap M2, M4–M6 |
 | M13 | The flights relay's CORS allows only GitHub Pages, `localhost:8000` and `127.0.0.1:8000` | [L][C] | Document, or allow a configurable list |
-| M15 | **The pendeltåg camera and M14 fix are merged but not deployed**, and not yet checked on a real GPU or phone | [L] | Real-device checklist (TEST_PLAN.md §4), then deploy `main` (M0) |
-| M16 | **The station/train message strip can overlap the HUD on short or tablet screens.** It has a fixed place (a fixed distance above the bottom on phones, below the top bar from 641 px), while the HUD grows with its buttons: 10 px overlap at 360×640 with a prompt open, 19 px at 768×1024 | [T] new test fails on `main` | **Fix in PR #4 (open):** move the strip below the HUD only when they overlap |
+| M15 | **The pendeltåg camera (PR #3) and the message-strip fixes (PR #3, PR #4) are merged but not deployed**, and not yet checked on a real GPU, phone or tablet | [L] | Real-device checklist (TEST_PLAN.md §4), then deploy `main` (M0) |
 
 ## Low
 
@@ -59,17 +58,19 @@ Publishing happens only through the manual "Deploy to GitHub Pages" workflow wit
 | L9 | On phones the station/train prompt (`#csPrompt`) and ride HUD (`#csHud`) ignore part of their phone layout: the phone rules come before the base rules, which win (same cause as the original M14). The prompt stays centred and only as wide as its text; from 601 to 640 px it sits at the base position | [C][B] | Same approach as M14 when wanted |
 | L10 | After getting off the pendeltåg, the place label sometimes stays on "Pendeltåg 41 · Stockholm City". Intermittent: wrong in most local runs, right in the PR #3 CI run (an `xfail` test records it) | [T] only via a getting-off shortcut, not a real arrival | Check after a real ride; refresh the label in `jrAlight` if confirmed |
 | L11 | The console logs "THREE.Color: Unknown color #4" once per session; source not confirmed | [B] | Find the caller |
-| L12 | The CI step that installs Playwright's Chromium (`--with-deps`) can stall: in PR #4's run it has been running for over 30 minutes (normally about 20 s); the browser job's 45-minute limit is the only timeout | [L] run `41259068792` | Re-run; consider a timeout on that step (workflow change, needs review) |
+| L12 | The CI step that installs Playwright's Chromium (`--with-deps`) can stall: in PR #4's first run it hung until the browser job's 45-minute limit and the run was cancelled (normally about 20 s); a re-run passed. The job limit is the only timeout | [L] run `41259068792` (attempt 1 cancelled, attempt 2 passed) | Re-run; consider a timeout on that step (workflow change, needs review) |
 | L13 | Rolling back by switching Pages to the legacy branch builder may now be blocked: full-SHA pinning is required for actions, and GitHub's built-in legacy workflow may not pin its actions. Unverified | [C] reasoning only | Prefer rollback through the Deploy workflow (an earlier commit) |
+| L14 | Some station/train controls overlap each other (not the message strip): at 768×1024 the ride HUD covers part of the "Next up" card; on phones held sideways (640×360, 844×390) the "Sit down?" prompt and the joystick overlap the ride HUD. At 640×360 a three-line message has no free place at all, so the strip is drawn beneath the Run button (by design: Run stays on top and takes taps) | [B] PR #4 test screenshots | Lay out the ride HUD and prompt for tablets and landscape (with L9) |
 
 ## Resolved
 
 | # | Issue | Resolution | Verification | Still open |
 | --- | --- | --- | --- | --- |
 | H1 | Every push to `main` was a production release | Pages published by GitHub Actions since 2026-10-31; only the manual Deploy workflow publishes, behind the `github-pages` approval gate; `main` protected by the "Protect main" ruleset | [L] the legacy deployments started by merging PR #1 and PR #2 were stopped at the approval gate; merging PR #3 under the Actions source published nothing; the first Actions deployment was verified live | — |
-| H2 | No automated tests in the repository | `tests/` (PR #2, PR #3): syntax, smoke, save, layout, M14, train camera; required checks `tests-syntax` and `tests-browser` | [T] 27 passed + 1 xpass on PR #3's CI run | Unit tests of rules (TEST_PLAN.md §3) |
+| H2 | No automated tests in the repository | `tests/` (PR #2, PR #3): syntax, smoke, save, layout, M14, train camera; required checks `tests-syntax` and `tests-browser` | [T] 27 passed + 1 xpass on PR #3's CI run; 31 passed + 1 xpass on PR #4's (`41269872906`) | Unit tests of rules (TEST_PLAN.md §3) |
 | H7 | Uncommitted pendeltåg camera change in the working tree | Committed as `df54793`, merged via PR #3 (`40d913e`) | [T] camera tests | Real devices (M15) |
-| M14 | On phones the message strip stretched over most of the screen (365 px tall at 390×844) | `742403b`: phone rule uses `#csLine`; the strip lifts above an open prompt. Merged via PR #3 | [T] 29–44 px tall at 390 and 520 px; desktop unchanged; the test fails on the old code | Short screens (M16, PR #4); real devices (M15) |
+| M14 | On phones the message strip stretched over most of the screen (365 px tall at 390×844) | `742403b`: phone rule uses `#csLine`; the strip lifts above an open prompt. Merged via PR #3 | [T] 29–44 px tall at 390 and 520 px; desktop unchanged; the test fails on the old code | Short and tablet screens: resolved as M16; real devices (M15) |
+| M16 | The station/train message strip could cover controls on short, tablet and landscape screens: the ride HUD (10 px at 360×640, 19 px at 768×1024), the places bar's Home button (768×1024), the "Next up" card and the prompt (844×390, 1024×768), and it could leave the top of the screen (640×360) | PR #4 (`081682f`, merged as `3d04635`): the strip keeps its CSS place unless it would cover a visible control or leave the screen. `csLineFit()` measures the rendered boxes of every visible control (ride HUD, prompt, top bar, "Next up", places buttons, zoom, joystick, Run, dock, care chip) and moves the strip to the nearest free place: the same height, narrowed between side columns, or moved up or down. With no free place it sits where it overlaps least, beneath the controls. The strip never takes taps (`pointer-events: none`). No control is hidden, disabled, shrunk or moved; desktop positions where nothing is in the way, and the camera and train, are unchanged | [T] 4 new tests check every visible control at 360×640, 375×667, 390×844, 520–768 px wide, 640×360, 844×390, 1024×768 and four desktop sizes (station, boarding with the prompt open and three lines tall, seated; two- and three-line messages), plus an explicit 768×1024 Home-button test and the no-room fallback. They fail on the earlier PR #4 commit `adc765d` (31 of 80 phone/tablet and 20 of 32 desktop layouts covered a control) and pass on `081682f`; CI 31 passed + 1 xpass | Not deployed; real devices including safe-area insets (M15); control-on-control overlaps (L14) |
 
 ## Documented exceptions
 

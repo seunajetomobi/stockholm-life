@@ -1,6 +1,6 @@
 # Feature inventory
 
-What the game does today, measured on `main` at `40d913e` (2026-11-01). The live site serves the game files of `870fe30`: the pendeltåg camera and M14 changes on `main` are merged but not yet deployed. First written in the audit of 2026-10-31.
+What the game does today, measured on `main` at `3d04635` (2026-11-01). The live site serves the game files of `870fe30`: the pendeltåg camera and the message-strip changes on `main` (PR #3, PR #4) are merged but not yet deployed. First written in the audit of 2026-10-31.
 
 ## How to read this
 
@@ -20,6 +20,17 @@ A system is not counted as functional because a button, menu or visual exists; o
 
 **Evidence:** **[C]** read in `index.html` (search for the names given); **[T]** covered by the automated tests in `tests/`; **[B]** observed in a headless browser run; **[B-hook]** observed in a test that reaches the station or train through the test hook rather than by playing there; **[L]** a live service or the GitHub API probed. Headless runs use software rendering, so they say nothing about frame rate or feel on real devices.
 
+## Status at a glance
+
+| Status | What it covers today |
+| --- | --- |
+| **Implemented and working** | Loading the city; character creation; save, reload and v3 migration; live weather; SL departures and ferries; all 39 phone apps open; the travel picker; one prompt at a time in the station and train; the approval-gated release pipeline; the automated test suite |
+| **Implemented but incomplete** (works, but not deployed, not verified on real devices, or a defined part missing) | Pendeltåg camera and station/train message strip (merged, not deployed, headless only); saving (one slot, silent failures, world state not saved); live flights (security queue times unavailable until the relay is redeployed) |
+| **Prototype or partially functional** | City and world, movement, employment (menu shifts), economy, housing (renting only), transport (rides abstracted), time (stops when you stand still), interiors (generic rooms), NPCs (ambient only), relationships (records only), inventory, missions (goals only) |
+| **Code exists, unverified** | Arlanda arrivals and customs, driving lessons and test, a full pendeltåg ride between stations, start-up fallback messages |
+| **Planned, not implemented** | Mission system, independent game clock, save slots and world state, modules, playable work, NPC schedules and memory, buying and furnishing homes, performance overlay, multiplayer preparation (see [MASTER_ROADMAP.md](MASTER_ROADMAP.md)) |
+| **Known issues** | [KNOWN_ISSUES.md](KNOWN_ISSUES.md); the most important: silent save failures (H3), one save slot (H4), the monolithic file (H6), the out-of-date relay (M1), merged work not deployed (M15) |
+
 ## System maturity
 
 | # | System | Maturity | Evidence |
@@ -37,10 +48,10 @@ A system is not counted as functional because a button, menu or visual exists; o
 | 11 | Time and calendar | PARTIALLY FUNCTIONAL | Time advances only with walking, driving and actions (`spendTime`); standing still stops time; real calendar dates; weekdays only used for healthcare opening hours; a separate station clock (`csClk`) [C] |
 | 12 | Weather and seasons | FUNCTIONAL | Live Open-Meteo weather drives sky, rain, snow, fog and wind, clothing advice and mood effects (rain without a coat, darkness) [C][L][T: Weather app]; seasons from the real date |
 | 13 | Missions and progression | PROTOTYPE | Five long-term goals, daily wants, "next steps" advice, to-do list, Arlanda guide [C][T: tabs render]. No mission system |
-| 14 | Phone and interface | FUNCTIONAL | All 39 phone apps open without errors; live data apps (weather, departures, ferries, flights, news) [T]. Some apps are information screens; phone-layout leftovers L9 and M16 (KNOWN_ISSUES) |
+| 14 | Phone and interface | FUNCTIONAL | All 39 phone apps open without errors; live data apps (weather, departures, ferries, flights, news) [T]. Some apps are information screens. The station/train message strip avoids every visible control at phone, tablet, landscape and desktop sizes (PR #4) [T][B-hook]; phone-layout leftovers L9 and L14 (KNOWN_ISSUES) |
 | 15 | Saving and persistence | PARTIALLY FUNCTIONAL | One localStorage key (`save`), migration from v3 (`migrate`) [T]; failures silent; no slots or export; no save on leaving the page; world state not saved |
 | 16 | Performance and optimisation | PARTIALLY FUNCTIONAL | Tile streaming, culling, instancing, Fast/Rich presets with auto-switch [C]. About 12 MB parsed at start; never measured on real devices |
-| 17 | Testing and reliability | FUNCTIONAL (for its scope) | 28 tests in CI, required for merging (syntax, smoke, save, layout, M14, train camera) [T]. No unit tests of rules; no tests of day change, economy, jobs or housing |
+| 17 | Testing and reliability | FUNCTIONAL (for its scope) | 32 tests in CI, required for merging (syntax, smoke, save, layout, M14, train camera) [T]. No unit tests of rules; no tests of day change, economy, jobs or housing |
 | 18 | Multiplayer preparation | NOT STARTED | No networking; global mutable state, unseeded randomness and movement-driven time [C] |
 | — | Release pipeline | FUNCTIONAL | Approval-gated manual deployment of an exact commit, tests before deploying, rollback to any commit on `main`, live verification [L] |
 
@@ -67,6 +78,7 @@ A system is not counted as functional because a button, menu or visual exists; o
 | City camera | PARTIALLY FUNCTIONAL | [C] orbit camera that pulls in when blocked; no follow camera with collision |
 | Pendeltåg camera (seated "You", "Eyes", standing) | FUNCTIONAL (headless; merged, not deployed) | [T][B-hook] camera inside the car and clear of posts, poles and cab walls at all 60 tested seats × 24 yaws × 3 pitches and 17 standing spots; "Eyes" unchanged; standing resets pitch; walking with W keeps the camera following. **Feel, frame rate and touch dragging on real devices not verified** |
 | Interaction prompts | FUNCTIONAL | [T] one prompt at a time in the station and train (`promptFor`/`promptSet`) |
+| Station/train message strip | FUNCTIONAL (headless; merged, not deployed) | [T][B-hook] a short bar that keeps its place unless it would cover a control, then moves to the nearest free place measured from the rendered controls; beneath the controls only when no place is free (PR #4). **Real phones and tablets not verified** |
 
 ### World
 

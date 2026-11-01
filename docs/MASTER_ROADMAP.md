@@ -2,7 +2,7 @@
 
 The order of work from today's game to the [product vision](PRODUCT_VISION.md). It replaces the earlier audit roadmap (`IMPLEMENTATION_ROADMAP.md`, never committed); what that roadmap delivered is under "History" at the end.
 
-Status as of 2026-11-01, `main` at `b0ad590`. No milestone is complete; M0 is in progress.
+Where each milestone stands, with evidence: [PROJECT_STATUS.md](PROJECT_STATUS.md), the single authoritative status.
 
 ## Guiding rules
 
@@ -24,19 +24,19 @@ M0 Stabilise
             M1 + M2 + M3 + M5 ── M8 Multiplayer preparation only (long term)
 ```
 
-## M0 — Stabilise (in progress)
+## M0 — Stabilise
 
 | | |
 | --- | --- |
 | Objective | A clean, published, documented baseline before new development |
-| Scope | Merge the responsive message-strip fix (PR #4, done); real-device check of the pendeltåg camera and M14; deploy `main`; commit the project documentation (PR #5, done); redeploy the flights relay with `/waittime` (KNOWN_ISSUES M1) |
+| Scope | Merge the responsive message-strip fix (PR #4); real-device check of the pendeltåg camera and M14; deploy `main`; commit the project documentation (PR #5); redeploy the flights relay with `/waittime` (KNOWN_ISSUES M1) |
 | Dependencies | None |
 | Risks | Deployment regressions; the CI Chromium-install step can stall (KNOWN_ISSUES L12) |
 | Deliverables | Live site = `main`; documentation in the repository; relay up to date |
 | Acceptance | Live verification of the deployed commit passes all rounds (files, identity, browser startup); real-device checklist in TEST_PLAN.md §4 completed and recorded |
 | Testing | Existing CI suite; post-deployment live checks |
 
-Done so far: automated tests in CI (required checks), approval-gated manual deployment, Pages published by GitHub Actions, `main` protected by a ruleset, Actions hardened, camera and M14 merged (PR #3), the message strip kept clear of every control at phone, tablet, landscape and desktop sizes (PR #4, merged as `3d04635`, not deployed), the project documentation (PR #5, merged as `b0ad590`). Open: real-device check, deployment of `main`, the relay.
+What is done and what is open in M0: [PROJECT_STATUS.md](PROJECT_STATUS.md#milestone).
 
 ## M1 — Save and state foundation
 

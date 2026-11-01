@@ -4855,6 +4855,13 @@ const POSTERS_CITY=[['#f2b705','#1b1b1b','KANELBULLE','Färskt varje morgon','Ba
         if(!best||c<best.c)best={c,x0,x1,y,free:!hs.length}}}
     st.left=st.right=st.maxWidth='';if(!best)return;if(best.x0!==r0.left||best.x1!==r0.right)span(best.x0,best.x1);
     st.top=(best.y-pr.top)+'px';st.bottom='auto';if(!best.free)st.zIndex='1'}
+  // The calls above come from the game's own frame code, but the controls also move between frames: the top bar's
+  // height reaches the HUD, places bar and Next up through --boardH, set by a ResizeObserver in the browser's
+  // rendering step (after the frame code), and the screen, HUD or prompt can resize. So the strip is placed again in
+  // that same rendering step, before anything is drawn. Border boxes, so padding counts; the strip itself is not
+  // observed, so placing it cannot set the observer off again.
+  if(window.ResizeObserver){const ro=new ResizeObserver(()=>{if($('csLine').style.display!=='none')csLineFit()});
+    for(const id of ['stage','board','csHud','csPrompt','next','places'])ro.observe($(id),{box:'border-box'})}
   function csTicket(){if(S.slUntil>=S.day)return {n:'SL 30-day ticket',until:'day '+S.slUntil};const a=csAbs();S.tix=(S.tix||[]).filter(t=>t.until>a-1440);const t=S.tix.find(t=>t.from<=a&&t.until>a);return t?{n:t.n,until:hmm(t.until%1440)}:null}
   function csTick(dt,T){const B=CS.B,modalOpen=!!$('modalRoot').innerHTML;if(!modalOpen)CS.pend+=dt*CRATE/60;CS.flushT+=dt;if(CS.flushT>20){CS.flushT=0;csFlush()}
     const c=csClk();let moving=false,spd=0;const p=av.position;

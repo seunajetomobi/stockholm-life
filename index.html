@@ -4404,9 +4404,9 @@ const POSTERS_CITY=[['#f2b705','#1b1b1b','KANELBULLE','Färskt varje morgon','Ba
       if(d>s.r){if(d>s.r*1.5+0.3)PRM.dis.delete(s.id);continue}if(PRM.dis.has(s.id)||(s.ok&&!s.ok()))continue;if(d<bd){bd=d;best=s}}
     promptSet(best)}
   function promptSet(s){const q=s?pv(s.q):'',sub=s?pv(s.sub)||'':'',ex=s?pv(s.extra)||[]:[],key=s?[s.id,q,sub,ex.length].join('\n'):'';
-    if(s===PRM.cur&&key===PRM.key)return;PRM.cur=s;PRM.key=key;const el=PRM.el;if(!s){el.style.display='none';el.innerHTML='';return}
+    if(s===PRM.cur&&key===PRM.key)return;PRM.cur=s;PRM.key=key;const el=PRM.el;if(!s){el.style.display='none';el.innerHTML='';csLineFit();return}
     el.innerHTML=`<b>${esc2(q)}</b>${sub?`<small>${esc2(sub)}</small>`:''}<div class="cspbtns"><button class="y">${esc2(pv(s.yesL)||'Yes')}</button>${ex.map((e,i)=>`<button class="x" data-i="${i}">${esc2(e.l)}</button>`).join('')}<button class="n">${esc2(s.noL||'No')}</button></div>`;
-    el.style.display='grid';el.querySelector('.y').onclick=()=>promptAnswer(1);el.querySelector('.n').onclick=()=>promptAnswer(0);el.querySelectorAll('.x').forEach(b=>b.onclick=()=>promptAnswer(2,+b.dataset.i))}
+    el.style.display='grid';el.querySelector('.y').onclick=()=>promptAnswer(1);el.querySelector('.n').onclick=()=>promptAnswer(0);el.querySelectorAll('.x').forEach(b=>b.onclick=()=>promptAnswer(2,+b.dataset.i));csLineFit()}
   function promptAnswer(a,i){const s=PRM.cur;if(!s)return;const ex=pv(s.extra)||[];PRM.dis.add(s.id);promptSet(null);audInit();if(a===1)s.yes();else if(a===2&&ex[i])ex[i].fn();else if(s.no)s.no()}
   addEventListener('keydown',e=>{const t=e.target&&e.target.tagName;if(t==='INPUT'||t==='TEXTAREA'||t==='SELECT')return;const k=e.key.toLowerCase();
     if(JR&&JR.view==='ext'&&(k==='escape'||k===' '||k==='enter')){e.preventDefault();jrCineEnd();return}
@@ -4830,7 +4830,14 @@ const POSTERS_CITY=[['#f2b705','#1b1b1b','KANELBULLE','Färskt varje morgon','Ba
   function csGuideTick(T){const B=CS.B;if(!CS.guide){B.mark.visible=false;return}const g=CSG[CS.guide],z=csZone(),zi=ZORD.indexOf(z),ti=ZORD.indexOf(g[1]);let tx=g[2],ty=g[3],tz=g[4],txt='Guide: '+g[0];
     if(zi!==ti){const cs=CONN[z+'>'+ZORD[zi+Math.sign(ti-zi)]];if(cs){const p=av.position,c=cs.slice().sort((a,b)=>Math.hypot(a[0]-p.x,a[2]-p.z)-Math.hypot(b[0]-p.x,b[2]-p.z))[0];[tx,ty,tz]=c;txt=`Guide to ${g[0]}: ${c[3]}`}}else if(Math.hypot(av.position.x-tx,av.position.z-tz)<1.8){csGuideOff();csLine('You have arrived: '+g[0],4);return}
     B.mark.visible=true;B.mark.position.set(tx,ty+0.03,tz);B.mark.material.opacity=0.55+Math.sin(T*4)*0.35;B.mark.scale.setScalar(1+Math.sin(T*4)*0.12);csLine(txt+'  ↘ follow the yellow ring',-1)}
-  let csLineT=0;function csLine(t,sec){const el=$('csLine');if(sec===-1){if(el.textContent!==t)el.textContent=t;el.style.display='block';csLineT=0.5;return}if(!t){el.style.display='none';return}el.textContent=t;el.style.display='block';csLineT=sec||5}
+  let csLineT=0;function csLine(t,sec){const el=$('csLine');if(sec===-1){if(el.textContent!==t)el.textContent=t;el.style.display='block';csLineT=0.5;csLineFit();return}if(!t){el.style.display='none';return}el.textContent=t;el.style.display='block';csLineT=sec||5;csLineFit()}
+  // The strip keeps its CSS place, but the HUD above it grows with its buttons, so on short or narrow screens the two
+  // can meet. Only then the strip moves to just below the HUD, in the middle of the room left above an open prompt.
+  function csLineFit(){const el=$('csLine'),h=$('csHud');el.style.top='';el.style.bottom='';
+    if(el.style.display==='none'||getComputedStyle(h).display==='none')return;
+    const hr=h.getBoundingClientRect(),r=el.getBoundingClientRect();if(r.top>=hr.bottom||r.bottom<=hr.top)return;
+    const p=PRM.el,pt=p.innerHTML&&getComputedStyle(p).display!=='none'?p.getBoundingClientRect().top:innerHeight;
+    el.style.top=(hr.bottom+clamp((pt-hr.bottom-r.height)/2,0,8))+'px';el.style.bottom='auto'}
   function csTicket(){if(S.slUntil>=S.day)return {n:'SL 30-day ticket',until:'day '+S.slUntil};const a=csAbs();S.tix=(S.tix||[]).filter(t=>t.until>a-1440);const t=S.tix.find(t=>t.from<=a&&t.until>a);return t?{n:t.n,until:hmm(t.until%1440)}:null}
   function csTick(dt,T){const B=CS.B,modalOpen=!!$('modalRoot').innerHTML;if(!modalOpen)CS.pend+=dt*CRATE/60;CS.flushT+=dt;if(CS.flushT>20){CS.flushT=0;csFlush()}
     const c=csClk();let moving=false,spd=0;const p=av.position;
@@ -4860,7 +4867,7 @@ const POSTERS_CITY=[['#f2b705','#1b1b1b','KANELBULLE','Färskt varje morgon','Ba
     const tgt=new THREE.Vector3(p.x,p.y+1.45,p.z),before=controls.target.clone();controls.target.lerp(tgt,1-Math.exp(-dt*8));camera.position.add(controls.target.clone().sub(before));
     if(CS.auto&&CS.auto.type==='path'){const fw=new THREE.Vector3(Math.sin(av.rotation.y),0,Math.cos(av.rotation.y)),want=tgt.clone().addScaledVector(fw,-4.2).add(new THREE.Vector3(0,1.6,0));camera.position.lerp(want,1-Math.exp(-dt*3))}
     controls.update();if(!CS.auto||CS.auto.type!=='path'){const zb=csCamBox();if(zb){camera.position.x=clamp(camera.position.x,zb[0],zb[1]);camera.position.y=clamp(camera.position.y,zb[2],zb[3]);camera.position.z=clamp(camera.position.z,zb[4],zb[5])}}
-    CS.hudT-=dt;if(CS.hudT<=0){CS.hudT=0.3;csHudSync()}
+    CS.hudT-=dt;if(CS.hudT<=0){CS.hudT=0.3;csHudSync();csLineFit()}
     renderer.render(B.sc,camera)}
   function csAnimAv(dt,moving,spd){if(avMixer){if(CS.sit){avMixer.update(0);return}setAvState(moving?(spd>5?'Run':'Walk'):'Idle');if(avActs.Walk)avActs.Walk.timeScale=clamp(spd/2.6,0.7,1.5);if(avActs.Run)avActs.Run.timeScale=clamp(spd/6,0.8,1.3);avMixer.update(dt)}
     else animPerson(av,moving?spd*dt*CM:0,dt,moving,AV_S,spd>5)}
@@ -5132,7 +5139,7 @@ const POSTERS_CITY=[['#f2b705','#1b1b1b','KANELBULLE','Färskt varje morgon','Ba
     // sound
     audSet('rumble',0.05+JR.v*(under?0.5:0.3),80+JR.v*260);audSet('wind',under?JR.v*0.12:JR.v*0.03,1400);audSet('crowd',JR.phase==='dwell'&&JR.doors>0.5?0.03:0.01);
     JR.tvT-=dt;if(JR.tvT<=0){JR.tvT=0.5;for(let i=tveh.length-1;i>=0;i--){const v=tveh[i];if(v.m!=='train')continue;const q=posOnR(v.R,v.d);if(Math.hypot(q.x-ctr.x,q.z-ctr.z)<4){v.parts.forEach(o=>scene.remove(o));if(v.label)scene.remove(v.label);tveh.splice(i,1)}}}
-    CS.hudT-=dt;if(CS.hudT<=0){CS.hudT=0.3;csHudSync();if(Math.floor(c)!==CS.lastMin){CS.lastMin=Math.floor(c);jrScreen()}}
+    CS.hudT-=dt;if(CS.hudT<=0){CS.hudT=0.3;csHudSync();csLineFit();if(Math.floor(c)!==CS.lastMin){CS.lastMin=Math.floor(c);jrScreen()}}
     if(csLineT>0){csLineT-=dt;if(csLineT<=0)$('csLine').style.display='none'}
     return ctr}
   function jrRender(){if(JR.view==='ext'){declutter();renderer.render(scene,camera);return}

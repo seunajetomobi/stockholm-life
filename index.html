@@ -375,7 +375,7 @@ h2.hero{font-size:34px;background:linear-gradient(90deg,var(--sweblue),#3a86ff 4
 .cshud{position:absolute;left:50%;top:calc(var(--boardH,74px) + 18px + env(safe-area-inset-top,0px));transform:translateX(-50%);display:none;flex-wrap:wrap;gap:6px 8px;align-items:center;justify-content:center;background:var(--glass);color:var(--glass-ink);padding:8px 10px;border-radius:12px;font-size:13px;z-index:5;width:max-content;max-width:calc(100% - 32px)}
 .cshud b{font:700 14px var(--display);letter-spacing:.05em;text-transform:uppercase}.cshud .chip{background:rgba(255,255,255,.1);border-radius:7px;padding:3px 8px;font-variant-numeric:tabular-nums}.cshud .chip.ok{background:#1f6b45}.cshud .chip.bad{background:#7a2b26}
 .cshud button{font:700 12px var(--display);letter-spacing:.07em;text-transform:uppercase;border:0;border-radius:8px;padding:7px 11px;background:rgba(255,255,255,.16);color:var(--glass-ink);cursor:pointer}.cshud button.hi{background:var(--amber);color:#0A1219}
-.csline{position:absolute;left:50%;top:calc(var(--boardH,74px) + 78px + env(safe-area-inset-top,0px));transform:translateX(-50%);display:none;background:#0b3a6e;color:#fff;padding:7px 14px;border-radius:18px;font:600 13px var(--body);z-index:5;width:max-content;max-width:calc(100% - 32px);text-align:center}
+.csline{position:absolute;left:50%;top:calc(var(--boardH,74px) + 78px + env(safe-area-inset-top,0px));transform:translateX(-50%);display:none;background:#0b3a6e;color:#fff;padding:7px 14px;border-radius:18px;font:600 13px var(--body);z-index:5;width:max-content;max-width:calc(100% - 32px);text-align:center;pointer-events:none}
 .cscine{position:fixed;inset:0;pointer-events:none;z-index:8;display:none}.cscine::before,.cscine::after{content:"";position:absolute;left:0;right:0;height:9vh;background:#000}.cscine::before{top:0}.cscine::after{bottom:0}
 .cscine button{pointer-events:auto;position:absolute;right:20px;bottom:calc(9vh + 16px);font:700 15px var(--display);letter-spacing:.08em;text-transform:uppercase;border:0;border-radius:10px;padding:11px 18px;background:var(--amber);color:#0A1219;cursor:pointer}
 .cscine span{position:absolute;left:20px;bottom:calc(9vh + 24px);color:#fff;font:600 14px var(--body);text-shadow:0 1px 4px #000}
@@ -4831,13 +4831,30 @@ const POSTERS_CITY=[['#f2b705','#1b1b1b','KANELBULLE','Färskt varje morgon','Ba
     if(zi!==ti){const cs=CONN[z+'>'+ZORD[zi+Math.sign(ti-zi)]];if(cs){const p=av.position,c=cs.slice().sort((a,b)=>Math.hypot(a[0]-p.x,a[2]-p.z)-Math.hypot(b[0]-p.x,b[2]-p.z))[0];[tx,ty,tz]=c;txt=`Guide to ${g[0]}: ${c[3]}`}}else if(Math.hypot(av.position.x-tx,av.position.z-tz)<1.8){csGuideOff();csLine('You have arrived: '+g[0],4);return}
     B.mark.visible=true;B.mark.position.set(tx,ty+0.03,tz);B.mark.material.opacity=0.55+Math.sin(T*4)*0.35;B.mark.scale.setScalar(1+Math.sin(T*4)*0.12);csLine(txt+'  ↘ follow the yellow ring',-1)}
   let csLineT=0;function csLine(t,sec){const el=$('csLine');if(sec===-1){if(el.textContent!==t)el.textContent=t;el.style.display='block';csLineT=0.5;csLineFit();return}if(!t){el.style.display='none';return}el.textContent=t;el.style.display='block';csLineT=sec||5;csLineFit()}
-  // The strip keeps its CSS place, but the HUD above it grows with its buttons, so on short or narrow screens the two
-  // can meet. Only then the strip moves to just below the HUD, in the middle of the room left above an open prompt.
-  function csLineFit(){const el=$('csLine'),h=$('csHud');el.style.top='';el.style.bottom='';
-    if(el.style.display==='none'||getComputedStyle(h).display==='none')return;
-    const hr=h.getBoundingClientRect(),r=el.getBoundingClientRect();if(r.top>=hr.bottom||r.bottom<=hr.top)return;
-    const p=PRM.el,pt=p.innerHTML&&getComputedStyle(p).display!=='none'?p.getBoundingClientRect().top:innerHeight;
-    el.style.top=(hr.bottom+clamp((pt-hr.bottom-r.height)/2,0,8))+'px';el.style.bottom='auto'}
+  // The strip keeps its CSS place unless it would cover a control (HUD, prompt, places bar, Next up, joystick, zoom,
+  // dock…) or leave the screen, as on short, narrow or tablet screens. Then it takes the nearest free place: the same
+  // height narrowed between side columns, or moved up or down. With no free place it goes where it covers least and
+  // drops below the controls, which stay visible and tappable (the strip never takes taps).
+  const CS_KEEP='#csHud,#csPrompt,#board,#next,#ride,#places button,#inAct,#inhud,.ctrls,.sos112,.carechip,#joy,#runbtn,#dock';
+  function csLineFit(){const el=$('csLine'),st=el.style;st.top=st.bottom=st.left=st.right=st.maxWidth=st.zIndex='';
+    if(el.style.display==='none')return;
+    const obs=[...document.querySelectorAll(CS_KEEP)].map(e=>e.getBoundingClientRect()).filter(o=>o.width>0&&o.height>0);
+    const r0=el.getBoundingClientRect(),G=4,hit=(x0,x1,y0,y1)=>obs.filter(o=>o.left<x1&&o.right>x0&&o.top<y1&&o.bottom>y0);
+    if(r0.top>=0&&r0.bottom<=innerHeight&&!hit(r0.left,r0.right,r0.top,r0.bottom).length)return;
+    const pr=(el.offsetParent||document.body).getBoundingClientRect(),wide=getComputedStyle(el).transform==='none';
+    const span=(x0,x1)=>{if(wide){st.left=(x0-pr.left)+'px';st.right=(pr.right-x1)+'px'}else{st.left=((x0+x1)/2-pr.left)+'px';st.maxWidth=(x1-x0)+'px'}
+      return el.getBoundingClientRect()};
+    const mid=(r0.left+r0.right)/2,L=new Set([r0.left]),R=new Set([r0.right]),spans=[];
+    for(const o of obs){if(o.right+G>r0.left&&o.right+G<mid)L.add(Math.ceil(o.right+G));if(o.left-G<r0.right&&o.left-G>mid)R.add(Math.floor(o.left-G))}
+    for(const x0 of L)for(const x1 of R)spans.push([x0,x1]);
+    let best=null;for(const[x0,x1]of spans){if(x1-x0<160)continue;const r=span(x0,x1),H=r.height,ys=[r0.top,0,innerHeight-H];
+      for(const o of obs)ys.push(o.bottom+G,o.top-G-H);
+      for(const y of ys){if(y<0||y+H>innerHeight)continue;const hs=hit(r.left,r.right,y,y+H);
+        const c=hs.reduce((a,o)=>a+(Math.min(o.right,r.right)-Math.max(o.left,r.left))*(Math.min(o.bottom,y+H)-Math.max(o.top,y)),0)*1e3
+          +Math.abs(y-r0.top)+(r0.width-r.width)/4;
+        if(!best||c<best.c)best={c,x0,x1,y,free:!hs.length}}}
+    st.left=st.right=st.maxWidth='';if(!best)return;if(best.x0!==r0.left||best.x1!==r0.right)span(best.x0,best.x1);
+    st.top=(best.y-pr.top)+'px';st.bottom='auto';if(!best.free)st.zIndex='1'}
   function csTicket(){if(S.slUntil>=S.day)return {n:'SL 30-day ticket',until:'day '+S.slUntil};const a=csAbs();S.tix=(S.tix||[]).filter(t=>t.until>a-1440);const t=S.tix.find(t=>t.from<=a&&t.until>a);return t?{n:t.n,until:hmm(t.until%1440)}:null}
   function csTick(dt,T){const B=CS.B,modalOpen=!!$('modalRoot').innerHTML;if(!modalOpen)CS.pend+=dt*CRATE/60;CS.flushT+=dt;if(CS.flushT>20){CS.flushT=0;csFlush()}
     const c=csClk();let moving=false,spd=0;const p=av.position;

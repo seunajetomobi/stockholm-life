@@ -12,6 +12,7 @@ Automated checks for the game, preserved from the 2026-10-31 audit and the two f
 | `test_layout.py` | 390×844 and 520×900 (touch) and 1366×768: no horizontal overflow on the intro or while playing; dock, joystick, Run, zoom and places bar inside the viewport | Yes | No |
 | `test_m14.py` | M14 regression at the same three sizes: in the station, boarding (with the "Sit down?" prompt), a three-line prompt (phones), seated. The message strip is at most 60 px tall; on phones it overlaps none of the ride HUD, prompt, joystick, Run, zoom or dock; on desktop it is still centred near the top. The strip never covers any visible control (ride HUD, prompt, top bar, Next up, places bar, zoom, joystick, Run, dock…), even by part of a pixel: two- and three-line messages in the station, boarding (prompt open, also three lines tall) and seated (prompt closed), at 360×640, 375×667, 390×844, 520, 601, 640 and 768 px wide, landscape 640×360, 844×390 and 1024×768, and four desktop sizes; where nothing is in the way the desktop strip keeps its place. Explicit regression: the Home button at 768×1024. Where no place is free (a three-line message at 640×360) the strip may share space only beneath a control, which stays on top and takes the tap. The strip also follows layout changes between the game's frames (the top bar growing, which moves the HUD through `--boardH`; the HUD growing; a resize) with the periodic HUD update held. Layouts are measured once they have stayed the same for three rendered frames, not after a fixed time | Yes | Yes |
 | `test_traincam.py` | Pendeltåg camera regression: every tested seat (60) × 24 yaws × 3 pitches and 17 standing spots × 24 yaws keep the camera inside the car and out of posts, poles and cab walls; seated default is "You" with the avatar visible; "Eyes" puts the camera exactly where it was before `df54793`; standing resets pitch; the camera stays below the gangway header; walking along the aisle with W (real key presses) moves you and the camera follows, inside the car with you on screen; getting off restores the city camera; at 390×844 the ride HUD fits in three rows with the short "🧍 You" label | Yes | Yes |
+| `test_live_check.py` | `tools/live_check.py` (see "Live check" below): the verdict rules and CDN confirmation window, the expected sources (local Git, simulated GitHub API), exact file comparison by Git blob ID, gzip in transit and gzip files, the Deploy workflow's data rules (and that they still match `deploy.yml`), redirects checked hop by hop, DNS pinning, Chromium's resolver rules, route interception of the page and every same-origin file, failure classification, safe output paths, and that a run changes nothing in the repository. Uses only loopback servers and generated sites in `tmp_path`; no internet | Some | No |
 | `game.py`, `conftest.py` | Shared helpers: local server, browser, test hook, page set-up, measurements | | |
 
 Every browser test fails on an uncaught JavaScript error (`pageerror`). Console errors and failed requests to external services (weather, SL, flights, news) are recorded but do not fail a test, because those services can be offline. A failed request for the game's own files does fail `test_smoke.py`.
@@ -72,6 +73,35 @@ SL_INDEX_HTML=/tmp/before-m14.html python3 -m pytest tests/test_m14.py -k 390   
 ```
 
 Because the hook jumps straight into the station and the train, a hooked test shows that the code works once you are there. It does not show that a player can walk there, buy a ticket or pass the gates.
+
+## Live check (`tools/live_check.py`)
+
+A read-only check that the published site serves exactly one commit and that the game starts there. It never deploys, pushes, fetches or changes Git refs, and reads no credentials. By default it writes no file at all. Only `--json` and `--screenshot` write, each a new file (never overwriting an existing file or following a symbolic link, mode 600). Those paths are refused inside this repository and inside the `--repo` repository unless `--allow-repo-output` is given; `.git` and `tests/output/` there are refused even then.
+
+```sh
+python3 tools/live_check.py --expect <full 40-character SHA>                     # files and browser startup, 1 round
+python3 tools/live_check.py --expect <sha> --rounds 4 --interval 300 --json /tmp/live.json   # after a deployment
+python3 tools/live_check.py --expect <sha> --no-browser                          # files only
+python3 tools/live_check.py --expect <sha> --source github                       # expected files from GitHub, no local repo
+```
+
+`--expect` is required and must be a full SHA; the tool never compares against a branch. What it checks:
+
+1. **Files.** The expected list comes from the commit itself (`index.html`, every file under `data/`, and `version.txt` = the SHA and a newline, as the Deploy workflow writes it), from the local repository (`git ls-tree`, read-only) or with `--source github` from the Git Trees API. Each live file is compared by its Git blob ID over the exact bytes served (gzip in transit removed, gzip files kept).
+2. **Rounds and the CDN.** GitHub Pages caches files for 10 minutes (`max-age=600`), so a difference counts as a confirmed mismatch only if it stays the same over at least that window (`--rounds`, `--interval`). A difference seen once, or edges disagreeing, is INCONCLUSIVE, not FAIL. Every round is reported.
+3. **Data.** The bytes that match are checked with exactly the Deploy workflow's rules for `b`, `r` and `m` (`test_live_check.py` fails if the two ever differ).
+4. **Browser.** Headless Chromium starts the game with every same-origin request intercepted: the tool fetches it, hashes it and gives the page exactly those bytes, so it knows the browser ran the verified files. Startup needs `#loading` gone, a WebGL canvas, no fallback message and the character-creation screen. A JavaScript error when every file matched is a game defect (FAIL); outside services or CDNs failing are only warnings, or INCONCLUSIVE when a required startup script is missing.
+5. **Deployment record** (GitHub API, no login): evidence only. GitHub records the commit the workflow was started from, not the commit it published.
+
+Exit codes: 0 PASS, 1 FAIL (a confirmed mismatch, data that fails the Deploy rules, or a game defect), 2 INCONCLUSIVE (could not check; nothing proven wrong), 3 usage or local error.
+
+**Loopback mode.** An `http://` URL switches on the mode the tests use: every connection must go to a loopback address, names are resolved once and pinned (only `localhost` and the test resolver's names), redirects are checked before they are followed, Chromium only resolves pinned names, and every other outside request is refused before it is made. The test-only settings `SL_LIVE_GITHUB_API`, `SL_LIVE_EXTERNAL_STUBS`, `SL_LIVE_TEST_RESOLVER`, `SL_LIVE_TEST_SINK`, `SL_LIVE_FAULT` and `SL_LIVE_TEST_CHROME_ARGS` work only in this mode. To prove the tests use no network:
+
+```sh
+unshare -rn sh -c 'ip link set lo up && python3 -m pytest tests/test_live_check.py'
+```
+
+**What it cannot see.** Each request reaches one CDN edge; it cannot list the edges, nor prove that no extra files are live. The browser's same-origin requests go through Playwright's HTTP client rather than Chromium's own network stack. Under SwiftShader it shows that the game starts, not how well it runs, and it does not replace the checks on real devices.
 
 ## Still manual
 

@@ -4,13 +4,13 @@ The single source of the current task and the tasks after it. Project status (co
 
 How to use it: one task is **Current**. The coordinator (ChatGPT, through the user) adds and orders tasks; the user approves them. An agent starts only the current task, moves it to **Done** with a link to its pull request or report when the user has accepted it, and does not start the next one without approval. A task that needs more than a few lines gets a spec in `.agent/tasks/<task-id>.md`.
 
-Updated 2026-11-01.
+Updated 2026-11-02.
 
 ## Current
 
 | ID | Task | Owner | Status | Needs approval for |
 | --- | --- | --- | --- | --- |
-| m0-live-check | Read-only live verification tool `tools/live_check.py` with its tests (`tests/test_live_check.py`) and documentation | Claude Code | In review (branch `feat/live-check`) | Merging |
+| status-after-pr8 | Bring `docs/PROJECT_STATUS.md`, this queue and `docs/TEST_PLAN.md` up to date after PR #8 | Claude Code | In review (branch `docs/status-after-pr8`) | Merging |
 
 ## Up next
 
@@ -27,6 +27,7 @@ In order. None of these has started.
 
 | ID | Result |
 | --- | --- |
+| m0-live-check | PR #8, merged as `d91a5d4` (a tool and its tests; it does not change the published files) |
 | agent-workspace | PR #7, merged as `bb93709` |
 | local-cleanup | The user's local checkout brought up to `main` `bb93709` (2026-11-01); local files kept in the user's private backup; local branches kept |
 | m14-layout-timing | PR #6, merged as `d9b8882` (not deployed) |

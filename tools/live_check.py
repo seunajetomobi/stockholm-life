@@ -863,6 +863,11 @@ def decide_startup(res, base, required, timed_out):
     all_match = bool(obs) and all(o['value'] == MATCH for o in obs)
     nav = [o for o in obs if o['target'] == 'index.html' and o.get('resource_type') == 'document']
     dep_missing = [e['url'] for e in res['external'] if e['required'] and e['result'] != 'stub' and not e['result'].startswith('HTTP 2')]
+    # optional outside services that failed (weather, SL, the flights relay, news...): a game error at the same time may be
+    # their consequence (an unhandled failed fetch is reported as a page error), so it is not attributed to the commit
+    optional_failed = [e for e in res['external'] if not e['required'] and e['result'] != 'stub' and not e['result'].startswith('HTTP 2')]
+    res['external_failures'] = [{'host': urllib.parse.urlsplit(e['url']).hostname, 'url': e['url'][:150], 'result': e['result']}
+                                for e in optional_failed]
     game_errors = [e for e in res['page_errors'] if base in e['stack'] or base in e['message']
                    or not re.search(r'https?://', e['stack'] + e['message'])]
     nogl = sig.get('nogl') or []
@@ -890,7 +895,12 @@ def decide_startup(res, base, required, timed_out):
     elif dep_missing:
         res.update(verdict=INCONCLUSIVE, reason=f'dependency unavailable: cannot test startup without {dep_missing[0]}')
     elif problems:
-        if all_match:
+        if all_match and game_errors and optional_failed and not (data_msg or webgl_msg):
+            hosts = sorted({x['host'] or '?' for x in res['external_failures']})
+            res.update(verdict=INCONCLUSIVE, category='external-outage-associated-game-error',
+                       reason=f'game error while optional outside services failed ({", ".join(hosts)}); it may be caused by '
+                       'the outage and cannot be attributed to the commit: ' + '; '.join(problems))
+        elif all_match:
             res.update(verdict=FAIL, category='game-defect',
                        reason='the expected commit itself fails to start (every same-origin file matched): ' + '; '.join(problems))
         else:
@@ -1187,6 +1197,11 @@ def run(args):
         overall = PASS
     report['categories'] = [c for c in (final.get('category'), report['data'].get('category'), report['browser'].get('category')) if c]
     report['result'] = overall
+    complete_matching = [r for r in rounds if r['complete'] and all(o['value'] == MATCH for o in r['observations'])]
+    if overall == PASS and len(complete_matching) == 1:
+        report['warnings'].append('PASS from one complete observation round: each request reaches a single CDN edge, so '
+                                  'stale content on other edges cannot be ruled out; after a deployment use '
+                                  '--rounds 3 --interval 300 or more')
     report['exit'] = EXIT[overall]
     report['finished'] = time.strftime('%Y-%m-%d %H:%M:%S Z', time.gmtime())
     if outputs.get('json'):
@@ -1238,6 +1253,8 @@ def print_report(r, quiet, verbose):
                 out.append(f'    external requests: ' + '; '.join(f'{x["url"][:70]} {x["result"]}' for x in ext[:8]))
             for x in b.get('other_same_origin', []):
                 out.append(f'    WARN unexpected same-origin request: {x["url"]} -> {x["status"] or x["error"]}')
+            for x in b.get('external_failures', [])[:10]:
+                out.append(f'    outside service failed: {x["host"]} {x["url"]} ({x["result"]})')
             for x in b.get('console_errors', [])[:5]:
                 out.append(f'    console error: {x}')
         i = r['identity']

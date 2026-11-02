@@ -474,6 +474,36 @@ def test_exact_files_pass(tmp_path, site_for):                                  
     assert 'LOCAL GIT' in out and 'Targets: 5' in out
 
 
+SINGLE = 'PASS from one complete observation round'
+
+
+def test_single_round_pass_warns(tmp_path, site_for):
+    repo, sha, site = site_for(game_files())
+    code, rep, out = check(tmp_path, repo, sha, site)
+    assert code == 0 and SINGLE in out and 'stale content on other edges cannot be ruled out' in out, out
+    assert any(w.startswith(SINGLE) for w in rep['warnings'])
+
+
+def test_single_complete_round_after_a_failed_round_warns(tmp_path, site_for):
+    repo, sha, site = site_for(game_files())
+    n, body = [0], site.files['data/m.json']
+
+    def first_fails(h):
+        n[0] += 1
+        return send(h, 503, b'') if n[0] == 1 else send(h, 200, body, {'Content-Type': 'application/json'})
+    site.hooks['data/m.json'] = first_fails
+    code, rep, out = check(tmp_path, repo, sha, site, '--rounds', '2')
+    assert code == 0 and SINGLE in out, out
+
+
+def test_two_complete_rounds_do_not_warn(tmp_path, site_for):
+    repo, sha, site = site_for(game_files())
+    code, rep, out = check(tmp_path, repo, sha, site, '--rounds', '2')
+    assert code == 0 and SINGLE not in out, out
+    code, rep, out = check(tmp_path, repo, sha, site, '--rounds', '2', '--confirm-window', '600')
+    assert code == 0 and SINGLE not in out and 'cannot confirm a mismatch' in out, out
+
+
 def test_version_mismatch(tmp_path, site_for):                                                   # F2
     repo, sha, site = site_for(game_files())
     site.files['version.txt'] = ('e' * 40 + '\n').encode()
@@ -940,10 +970,76 @@ def test_expected_file_redirect_in_the_browser(tmp_path, site_for):             
 
 
 @browser
-def test_game_defect(tmp_path, site_for):                                                       # B2'
+def test_game_defect(tmp_path, site_for):                                                       # B2', M1 (2)
     repo, sha, site = site_for(game_files(extra="setTimeout(() => { throw new Error('boom from the game') }, 0);"))
     code, rep, out = bcheck(tmp_path, repo, sha, site)
     assert code == 1 and rep['browser']['category'] == 'game-defect' and 'boom' in rep['browser']['reason'], out
+    assert rep['browser']['external_failures'] == [], 'no outside service failed, so the error is the game\'s own'
+
+
+# a live-data call without a handler: when the service is down, Chromium reports "TypeError: Failed to fetch" as a
+# page error from the game's own script (checked with Playwright 1.58), exactly what an outage looks like
+OUTAGE = "fetch('https://api.example.invalid/weather').then(r => r.json());"
+
+
+@browser
+def test_outside_outage_is_not_a_game_defect(tmp_path, site_for):                               # M1 (1)
+    repo, sha, site = site_for(game_files(extra=OUTAGE + " await new Promise(r => setTimeout(r, 300));"))
+    code, rep, out = bcheck(tmp_path, repo, sha, site)
+    b = rep['browser']
+    assert code == 2 and b['verdict'] == 'INCONCLUSIVE' and b['category'] == 'external-outage-associated-game-error', out
+    assert 'game-defect' not in rep['categories'] and any('Failed to fetch' in e['message'] for e in b['page_errors'])
+    assert [x['host'] for x in b['external_failures']] == ['api.example.invalid'] and 'api.example.invalid' in b['reason']
+    assert 'outside service failed: api.example.invalid' in out and rep['content']['verdict'] == 'PASS'
+
+
+@browser
+def test_required_dependency_wins_over_outage(tmp_path, site_for):                              # M1 (4)
+    repo, sha, site = site_for(game_files(extra=OUTAGE))
+    code, rep, out = bcheck(tmp_path, repo, sha, site, with_dep=False)
+    assert code == 2 and 'dependency unavailable' in rep['browser']['reason'] and rep['browser']['category'] is None, out
+
+
+@browser
+def test_outage_does_not_hide_a_content_mismatch(tmp_path, site_for):                           # M1 (5)
+    repo, sha, site = site_for(game_files(extra=OUTAGE + " await new Promise(r => setTimeout(r, 300));"))
+    site.files['version.txt'] = ('e' * 40 + '\n').encode()
+    code, rep, out = bcheck(tmp_path, repo, sha, site, '--browser-anyway')
+    assert code == 1 and rep['content']['verdict'] == 'FAIL', out
+    assert rep['categories'] == ['content-mismatch', 'external-outage-associated-game-error']
+
+
+def startup(external=(), errors=(), nogl=(), match=True):
+    base = 'https://site.example/x/'
+    res = {'verdict': None, 'reason': '', 'category': None,           # as browser_check() starts it
+           'signals': {'loading_gone': True, 'canvas': True, 'nogl': list(nogl), 'intro': True}, 'webgl_probe': True,
+           'interception_failures': [], 'external': list(external),
+           'page_errors': [{'message': m, 'stack': f'Error: {m}\n    at {base}index.html?lc=1:9:9'} for m in errors],
+           'observations': [{'target': 'index.html', 'resource_type': 'document', 'value': 'MATCH' if match else 'DIFF'}]}
+    lc.decide_startup(res, base, [], False)
+    return res
+
+
+@pytest.mark.parametrize('external,errors,nogl,want', [
+    ([{'url': 'https://api.sr.se/x', 'result': 'failed: net::ERR_NAME_NOT_RESOLVED', 'required': False}], ['Failed to fetch'], [],
+     ('INCONCLUSIVE', 'external-outage-associated-game-error')),                                 # production: failed request
+    ([{'url': 'https://relay.example/flights', 'result': 'HTTP 503', 'required': False}], ['boom'], [],
+     ('INCONCLUSIVE', 'external-outage-associated-game-error')),                                 # production: 5xx response
+    ([], ['boom'], [], ('FAIL', 'game-defect')),
+    ([{'url': 'https://api.sr.se/x', 'result': 'HTTP 503', 'required': False}], [], [], ('PASS', None)),     # M1 (3)
+    ([{'url': 'https://api.sr.se/x', 'result': 'HTTP 503', 'required': False}], ['boom'], ['Could not load the city data'],
+     ('FAIL', 'game-defect')),                                                                   # the game reports its own data
+    ([{'url': 'https://cdn.example/three.js', 'result': 'failed: x', 'required': True}], ['THREE is not defined'], [],
+     ('INCONCLUSIVE', None)),                                                                    # required dependency
+])
+def test_startup_classification(external, errors, nogl, want):
+    res = startup(external, errors, nogl)
+    assert (res['verdict'], res['category']) == want, res['reason']
+
+
+def test_outage_with_differing_files_stays_a_cdn_question():                                     # M1 (5), unit
+    res = startup([{'url': 'https://api.sr.se/x', 'result': 'HTTP 503', 'required': False}], ['boom'], match=False)
+    assert res['verdict'] == 'INCONCLUSIVE' and 'CDN inconsistency' in res['reason']
 
 
 @browser
@@ -968,7 +1064,8 @@ def test_unneeded_external_and_unexpected_same_origin(tmp_path, site_for):      
     repo, sha, site = site_for(game_files(extra="fetch('https://api.example.invalid/x').catch(() => {}); "
                                                 "await fetch('data/not-published.json').catch(() => {});"))
     code, rep, out = bcheck(tmp_path, repo, sha, site)
-    assert code == 0, out
+    assert code == 0 and rep['browser']['category'] is None, out                                   # M1 (3)
+    assert [x['host'] for x in rep['browser']['external_failures']] == ['api.example.invalid']
     assert any(e['url'].startswith('https://api.example.invalid') and not e['required'] for e in rep['browser']['external'])
     assert [o['status'] for o in rep['browser']['other_same_origin'] if o['url'].endswith('not-published.json')] == [404]
     assert 'unexpected same-origin request' in out

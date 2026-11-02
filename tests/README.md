@@ -76,7 +76,7 @@ Because the hook jumps straight into the station and the train, a hooked test sh
 
 ## Live check (`tools/live_check.py`)
 
-A read-only check that the published site serves exactly one commit and that the game starts there. It never deploys, pushes, fetches or changes Git refs, writes nothing unless asked (and never into the repository, `.git` or `tests/output/`), and reads no credentials.
+A read-only check that the published site serves exactly one commit and that the game starts there. It never deploys, pushes, fetches or changes Git refs, and reads no credentials. By default it writes no file at all. Only `--json` and `--screenshot` write, each a new file (never overwriting an existing file or following a symbolic link, mode 600). Those paths are refused inside this repository and inside the `--repo` repository unless `--allow-repo-output` is given; `.git` and `tests/output/` there are refused even then.
 
 ```sh
 python3 tools/live_check.py --expect <full 40-character SHA>                     # files and browser startup, 1 round

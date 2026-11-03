@@ -10,17 +10,17 @@ Updated 2026-11-03.
 
 | ID | Task | Owner | Status | Needs approval for |
 | --- | --- | --- | --- | --- |
-| m15-docs | Record the M15 seated-train comparison in `docs/PROJECT_STATUS.md`, `docs/KNOWN_ISSUES.md`, `docs/TEST_PLAN.md` and this queue, with the L15 row | Claude Code | In review (branch `docs/m15-three-arm`) | Committing, pushing and merging |
+| m0-desktop-checks | The remaining manual desktop checks in [TEST_PLAN.md §4](../docs/TEST_PLAN.md), results recorded. First, by hand: "Sit down?" with the mouse, the HUD button, E, Enter and Y. Automated simulated mouse presses did not activate it (1 of 40, then 0 of 40). A person has not yet tested the interaction. | User, with Claude Code recording | Not started | Starting; any fix is a separate pull request |
 
 ## Up next
 
-In order. Apart from the part of `m0-devices` noted below, none of these has started.
+In order. Apart from the part of `m0-devices` noted below, none of these has started. `m1-save` depends on M0 being closed.
 
 | ID | Task | Owner | Notes | Needs approval for |
 | --- | --- | --- | --- | --- |
-| m0-devices | Real-device checks of the pendeltåg camera and the message strip ([TEST_PLAN.md §4](../docs/TEST_PLAN.md)), results recorded | User, with Claude Code recording | Seated-train comparison done on one laptop ([TEST_PLAN.md §6](../docs/TEST_PLAN.md)). A manual desktop session took place on 2026-11-02. Remaining manual desktop checks and physical-device checks have not yet been completed. No physical iPhone, Android or tablet test has run; M15 stays open | — |
-| m0-deploy | Deploy `main` with the "Deploy to GitHub Pages" workflow and verify it live with `tools/live_check.py` (before: against the live commit; after: against the deployed one, over at least the 10-minute cache window) | User approves; Claude Code verifies | Live is still `870fe30` | Deploying |
-| m0-relay | Redeploy the flights relay (`tools/flights-worker.js`) with `/waittime` and the `SWEDAVIA_KEY` secret | User | Needs Cloudflare access; KNOWN_ISSUES M1 | Deploying the Worker |
+| m0-devices | Real-device checks of the pendeltåg camera and the message strip ([TEST_PLAN.md §4](../docs/TEST_PLAN.md)), results recorded | User, with Claude Code recording | Follows `m0-desktop-checks`. Needs a real iPhone, Android phone and tablet. Seated-train comparison done on one laptop ([TEST_PLAN.md §6](../docs/TEST_PLAN.md)). A manual desktop session took place on 2026-11-02. Remaining manual desktop checks and physical-device checks have not yet been completed. No physical iPhone, Android or tablet test has run; M15 stays open | — |
+| m0-deploy | Deploy `main` with the "Deploy to GitHub Pages" workflow and verify it live with `tools/live_check.py` (before: against the live commit; after: against the deployed one, over at least the 10-minute cache window) | User approves; Claude Code verifies | Live is still `870fe30`. Should not go ahead until the "Sit down?" result from `m0-desktop-checks` is known | Deploying |
+| m0-relay | Redeploy the flights relay (`tools/flights-worker.js`) with `/waittime` and the `SWEDAVIA_KEY` secret | User | Needs Cloudflare access; KNOWN_ISSUES M1. Independent of the other M0 tasks, so it can be done at any point | Deploying the Worker |
 | m1-save | M1 save and state foundation ([MASTER_ROADMAP.md](../docs/MASTER_ROADMAP.md#m1--save-and-state-foundation)) | Claude Code | Spec to be written in `.agent/tasks/` when M0 is closed | Starting, then merging |
 
 ## Proposed, not approved
@@ -31,6 +31,7 @@ Follow-ups from the seated-train comparison ([TEST_PLAN.md §6](../docs/TEST_PLA
 
 | ID | Result |
 | --- | --- |
+| m15-docs | PR #10, merged as `2d9d753` (documentation only, not deployed), with the L15 row. M15 overall stays open |
 | m15-three-arm | Automated seated-train comparison complete: 22 sessions ran, all 18 required results exist, 4 invalid sessions preserved and excluded ([TEST_PLAN.md §6](../docs/TEST_PLAN.md); evidence private, outside this repository). M15 overall stays open |
 | status-after-pr8 | PR #9, merged as `3ac8b53` |
 | m0-live-check | PR #8, merged as `d91a5d4` (a tool and its tests; it does not change the published files) |

@@ -4,29 +4,35 @@ The single source of the current task and the tasks after it. Project status (co
 
 How to use it: one task is **Current**. The coordinator (ChatGPT, through the user) adds and orders tasks; the user approves them. An agent starts only the current task, moves it to **Done** with a link to its pull request or report when the user has accepted it, and does not start the next one without approval. A task that needs more than a few lines gets a spec in `.agent/tasks/<task-id>.md`.
 
-Updated 2026-11-02.
+Updated 2026-11-03.
 
 ## Current
 
 | ID | Task | Owner | Status | Needs approval for |
 | --- | --- | --- | --- | --- |
-| status-after-pr8 | Bring `docs/PROJECT_STATUS.md`, this queue and `docs/TEST_PLAN.md` up to date after PR #8 | Claude Code | In review (branch `docs/status-after-pr8`) | Merging |
+| m15-docs | Record the M15 seated-train comparison in `docs/PROJECT_STATUS.md`, `docs/KNOWN_ISSUES.md`, `docs/TEST_PLAN.md` and this queue, with the L15 row | Claude Code | In review (branch `docs/m15-three-arm`) | Committing, pushing and merging |
 
 ## Up next
 
-In order. None of these has started.
+In order. Apart from the part of `m0-devices` noted below, none of these has started.
 
 | ID | Task | Owner | Notes | Needs approval for |
 | --- | --- | --- | --- | --- |
-| m0-devices | Real-device checks of the pendeltåg camera and the message strip ([TEST_PLAN.md §4](../docs/TEST_PLAN.md)), results recorded | User, with Claude Code recording | Needs a real phone, tablet and desktop GPU | — |
+| m0-devices | Real-device checks of the pendeltåg camera and the message strip ([TEST_PLAN.md §4](../docs/TEST_PLAN.md)), results recorded | User, with Claude Code recording | Seated-train comparison done on one laptop ([TEST_PLAN.md §6](../docs/TEST_PLAN.md)). A manual desktop session took place on 2026-11-02. Remaining manual desktop checks and physical-device checks have not yet been completed. No physical iPhone, Android or tablet test has run; M15 stays open | — |
 | m0-deploy | Deploy `main` with the "Deploy to GitHub Pages" workflow and verify it live with `tools/live_check.py` (before: against the live commit; after: against the deployed one, over at least the 10-minute cache window) | User approves; Claude Code verifies | Live is still `870fe30` | Deploying |
 | m0-relay | Redeploy the flights relay (`tools/flights-worker.js`) with `/waittime` and the `SWEDAVIA_KEY` secret | User | Needs Cloudflare access; KNOWN_ISSUES M1 | Deploying the Worker |
 | m1-save | M1 save and state foundation ([MASTER_ROADMAP.md](../docs/MASTER_ROADMAP.md#m1--save-and-state-foundation)) | Claude Code | Spec to be written in `.agent/tasks/` when M0 is closed | Starting, then merging |
+
+## Proposed, not approved
+
+Follow-ups from the seated-train comparison ([TEST_PLAN.md §6](../docs/TEST_PLAN.md)). None has started: investigate the You camera's above-ground cost; repeat on a stronger GPU; run the frame-cap-off test; check r02's reading again with GPU clock recorded.
 
 ## Done
 
 | ID | Result |
 | --- | --- |
+| m15-three-arm | Automated seated-train comparison complete: 22 sessions ran, all 18 required results exist, 4 invalid sessions preserved and excluded ([TEST_PLAN.md §6](../docs/TEST_PLAN.md); evidence private, outside this repository). M15 overall stays open |
+| status-after-pr8 | PR #9, merged as `3ac8b53` |
 | m0-live-check | PR #8, merged as `d91a5d4` (a tool and its tests; it does not change the published files) |
 | agent-workspace | PR #7, merged as `bb93709` |
 | local-cleanup | The user's local checkout brought up to `main` `bb93709` (2026-11-01); local files kept in the user's private backup; local branches kept |

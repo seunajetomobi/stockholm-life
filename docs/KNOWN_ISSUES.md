@@ -1,6 +1,6 @@
 # Known issues
 
-Issues checked as of 2026-11-01. First written in the audit of 2026-10-31 (at `870fe30`); numbering is kept so earlier references stay valid. Severity: **High** = can lose progress, break releases or block the roadmap; **Medium** = visible defect or significant risk; **Low** = minor.
+Issues checked as of 2026-11-01; M18 and L15 were added on 2026-11-03, and the other entries were not re-checked then. First written in the audit of 2026-10-31 (at `870fe30`); numbering is kept so earlier references stay valid. Severity: **High** = can lose progress, break releases or block the roadmap; **Medium** = visible defect or significant risk; **Low** = minor.
 
 Evidence: **[B]** headless browser run, **[T]** automated test, **[C]** code reading, **[L]** live probe or GitHub API, **[D]** documented in the project's notes for coding agents (CLAUDE.md until 2026-11-01).
 
@@ -34,7 +34,8 @@ Which commit is on `main`, which is live, and what is merged but not deployed: [
 | M11 | three.js r128 via CDN without Subresource Integrity; first load needs cdnjs, jsdelivr and Google Fonts | [C] | SRI or vendored files |
 | M12 | Vision gaps: no mission system, no NPC schedules or memory, work is a menu action, interiors are generic and POI-only, no home ownership, time stops when you stand still | [C] | Roadmap M2, M4–M6 |
 | M13 | The flights relay's CORS allows only GitHub Pages, `localhost:8000` and `127.0.0.1:8000` | [L][C] | Document, or allow a configurable list |
-| M15 | **The pendeltåg camera (PR #3) and the message-strip fixes (PR #3, PR #4, PR #6) are merged but not deployed** ([PROJECT_STATUS.md](PROJECT_STATUS.md)), and not yet checked on a real GPU, phone or tablet | [L] | Real-device checklist (TEST_PLAN.md §4), then deploy `main` (M0) |
+| M15 | **The pendeltåg camera (PR #3) and the message-strip fixes (PR #3, PR #4, PR #6) are merged but not deployed** ([PROJECT_STATUS.md](PROJECT_STATUS.md)). A manual desktop session took place on 2026-11-02. Seated frame rate has been measured on one laptop (M18). Remaining manual desktop checks and physical-device checks have not yet been completed. No physical iPhone, Android or tablet test has run | [L] | Real-device checklist (TEST_PLAN.md §4), then deploy `main` (M0) |
+| M18 | Seated in the pendeltåg on an Intel UHD 620 laptop, the frame rate dips below 30 fps at both `870fe30` and `3ac8b53`, in every camera tested, on Rich and Fast: each arm's lowest 1-second window is 9–27 fps by scene, though one single run stayed at 31. Typical fps is above 30 only on Fast above ground in the first-person arms. Above ground at `3ac8b53` the You camera is slower than Eyes, about 5 fps on Fast and 3 fps on Rich. The cause is not established, and other devices were not tested | M15 comparison of 2026-11-03, not an M7 test: [TEST_PLAN.md §6](TEST_PLAN.md). Evidence is private and outside this repository | Measure first (M7): investigate the You camera's above-ground cost, and repeat on a stronger GPU |
 
 ## Low
 
@@ -54,6 +55,7 @@ Which commit is on `main`, which is live, and what is merged but not deployed: [
 | L12 | The CI step that installs Playwright's Chromium (`--with-deps`) can stall: in PR #4's first run it hung until the browser job's 45-minute limit and the run was cancelled (normally about 20 s); a re-run passed. The job limit is the only timeout | [L] run `41259068792` (attempt 1 cancelled, attempt 2 passed) | Re-run; consider a timeout on that step (workflow change, needs review) |
 | L13 | Rolling back by switching Pages to the legacy branch builder may now be blocked: full-SHA pinning is required for actions, and GitHub's built-in legacy workflow may not pin its actions. Unverified | [C] reasoning only | Prefer rollback through the Deploy workflow (an earlier commit) |
 | L14 | Some station/train controls overlap each other (not the message strip): at 768×1024 the ride HUD covers part of the "Next up" card; on phones held sideways (640×360, 844×390) the "Sit down?" prompt and the joystick overlap the ride HUD. At 640×360 a three-line message has no free place at all, so the strip is drawn beneath the Run button (by design: Run stays on top and takes taps) | [B] PR #4 test screenshots | Lay out the ride HUD and prompt for tablets and landscape (with L9) |
+| L15 | The console logs "THREE.SimplifyModifier: No next vertex" (34 times in one session at `SimplifyModifier.js:106`, at `3ac8b53` in Chrome 156); it is a log line, not an error, and its cause and any visible effect are not investigated | Browser console, manual M15 session of 2026-11-02 | Find the caller, or leave it |
 
 ## Resolved
 

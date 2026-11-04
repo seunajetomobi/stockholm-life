@@ -226,6 +226,7 @@ label.f select,input[type=text]{font:inherit;color:var(--fg);background:var(--su
 .fres small{color:var(--muted);font-size:12px}
 .fitem{font:inherit;text-align:left;background:var(--surface2);color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:8px 10px;display:grid;gap:2px}
 .fitem span{font-size:12px;color:var(--muted)}.fitem .ok{color:var(--good)}
+#saveStatus{position:fixed;left:50%;top:calc(8px + env(safe-area-inset-top,0px));transform:translateX(-50%);width:max-content;max-width:calc(100% - 32px);background:var(--fg);color:var(--bg);padding:9px 16px;border-radius:8px;font-size:13px;font-weight:600;z-index:40;pointer-events:none;box-shadow:0 6px 20px rgba(0,0,0,.3)}#saveStatus[hidden]{display:none}#saveStatus.bad{background:#b3261e;color:#fff}
 .toast{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--fg);color:var(--bg);padding:9px 16px;border-radius:8px;font-size:13px;font-weight:600;z-index:30;max-width:calc(100% - 32px);box-shadow:0 6px 20px rgba(0,0,0,.3)}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 /* v17: hover info, notifications, phone apps, to-do, origins */
@@ -447,6 +448,7 @@ h2.hero{font-size:34px;background:linear-gradient(90deg,var(--sweblue),#3a86ff 4
   </div>
 </aside>
 <div id="modalRoot"></div>
+<div id="saveStatus" role="status" hidden></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
@@ -1177,6 +1179,7 @@ function newGame(name,bg,look,pref,asp,skin){
   if(S.docs.permit===0)log('First stop: Migrationsverket in Sundbyberg for your residence permit card. Then Skatteverket for a personnummer.');
   if(S.home==='none')log('You have nowhere to live. Tonight: a night shelter, a friend, or outside. Socialtjänsten can help with money and an emergency flat.','minus');else log(`Home: ${HOMES[S.home].name}, ${addrText()}. ${kr(HOMES[S.home].rent)}/month, due on the 1st.`);
   if(W){W.placeAvatar(S.pos.x,S.pos.z,true);W.setCoat(b.coat);if(W.setLook)W.setLook(S.look);W.setHome();W.syncCar()}
+  if(SV.mode==='pending'){SV.mode='active';saveMsg()}
   save();render();
 }
 function migrate(s){if(!s)return s;
@@ -1187,8 +1190,46 @@ function migrate(s){if(!s)return s;
   if(!s.weather){s.weather='clear';s.temp=6}
   s.v=4;return s}
 function log(t,cls){S.log.unshift({d:S.day,h:S.hour,t,cls:cls||''});S.log=S.log.slice(0,70)}
-function save(){try{localStorage.setItem('stockholm-life-v4',JSON.stringify(S))}catch(e){}}
-function load(){try{const r=localStorage.getItem('stockholm-life-v4')||localStorage.getItem('stockholm-life-v3');return r?migrate(JSON.parse(r)):null}catch(e){return null}}
+/* ---------- saving: the whole of S as JSON under one key. Rules and known limits: KNOWN_ISSUES H3, H5, M6, M19, M20 ----------
+   mode: pending (no life yet), active, blocked (an unreadable save has no copy, or storage cannot be read: nothing may be written), ended (deported), superseded (the save changed outside this tab).
+   expected: what this tab last read or wrote. A write goes ahead only while storage still holds it, so a stale tab that can see a newer life or an ended one stops. This is not atomic across tabs: KNOWN_ISSUES M20 (2).
+   Not saved: time held in CS.pend (the station clock flushes it about every 20 s of real time) and the place you are in (M7). */
+const SAVE_KEY='stockholm-life-v4',SAVE_OLD='stockholm-life-v3',SAVE_ENDED='ENDED:';
+const SV={mode:'pending',expected:null,bad:null,failing:false,timer:0,hideT:0,endChecked:false,ended:null,on:false};
+const SAVE_MSG={fail:'Your progress could not be saved. Your browser\'s storage may be full or blocked. Trying again.',back:'Saving works again. Your progress is saved.',
+  kept:'Your saved life could not be read. A copy was kept in this browser and has not been deleted.',stuck:'Your saved life could not be read or copied. It will not be overwritten, so this life cannot be saved yet.',
+  unread:'Your browser\'s storage cannot be read, so nothing can be loaded or saved right now.',other:'This life was changed in another tab, so saving has stopped here. Reload to continue.'};
+function saveMsg(t,bad,ms){const el=$('saveStatus');clearTimeout(SV.hideT);if(!el)return;el.textContent=t||'';el.hidden=!t;el.classList.toggle('bad',!!bad);if(t&&ms)SV.hideT=setTimeout(()=>{el.hidden=true},ms)}
+function saveRetry(){if(!SV.timer)SV.timer=setTimeout(()=>{SV.timer=0;save()},30000)}
+function saveFail(e){console.warn('save',e);if(!SV.failing){SV.failing=true;saveMsg(SAVE_MSG.fail,true)}saveRetry()}
+function saveOk(){if(SV.failing){SV.failing=false;saveMsg(SAVE_MSG.back,false,4000)}}
+function saveOther(){SV.mode='superseded';SV.failing=false;clearTimeout(SV.timer);SV.timer=0;saveMsg(SAVE_MSG.other,true)}
+// a copy of an unreadable save, read back to prove it is there; earlier copies are never replaced
+function saveKeep(key,raw){try{const pre=key+'-corrupt-';for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&k.startsWith(pre)&&localStorage.getItem(k)===raw)return true}
+  let k=pre+Date.now();while(localStorage.getItem(k)!==null)k+='x';localStorage.setItem(k,raw);return localStorage.getItem(k)===raw}catch(e){console.warn('save copy',e);return false}}
+function saveBad(key,raw){if(saveKeep(key,raw)){SV.mode='pending';saveMsg(SAVE_MSG.kept,true)}else{SV.mode='blocked';SV.bad={key,raw};saveMsg(SAVE_MSG.stuck,true)}return null}
+function saveUnblock(){const b=SV.bad;if(b.unread){let cur;try{cur=localStorage.getItem(SAVE_KEY)}catch(e){return false}if(cur!==null){saveOther();return false}SV.expected=null}else if(!saveKeep(b.key,b.raw))return false;
+  SV.bad=null;SV.mode='active';SV.failing=true;return true}// saveOk() then replaces the warning, even if no save has failed yet
+function save(){if(!S||!S.flags||!S.flags.started||SV.mode==='pending'||SV.mode==='ended'||SV.mode==='superseded')return;
+  // the state is half-way through a journey, an arrest or a driving lesson: the next save after it writes the result
+  if(busy||(W&&W.inLesson&&W.inLesson())){if(SV.failing)saveRetry();return}
+  if(SV.mode==='blocked'&&!saveUnblock()){if(SV.mode==='blocked'){SV.failing=true;saveRetry()}return}
+  try{const cur=localStorage.getItem(SAVE_KEY);if(cur!==SV.expected){saveOther();return}const json=JSON.stringify(S);if(json!==cur){localStorage.setItem(SAVE_KEY,json);SV.expected=json}saveOk()}catch(e){saveFail(e)}}
+function saveParse(r){try{const s=JSON.parse(r);return s&&typeof s==='object'&&!Array.isArray(s)&&Number.isFinite(s.day)&&Number.isFinite(s.hour)?s:null}catch(e){return null}}
+function saveLoad(key,raw){const s=saveParse(raw);if(!s)return saveBad(key,raw);try{const m=migrate(s);SV.mode='active';return m}catch(e){console.warn('migrate',e);return saveBad(key,raw)}}
+function load(){let r4,r3;try{r4=localStorage.getItem(SAVE_KEY);r3=localStorage.getItem(SAVE_OLD)}catch(e){console.warn('load',e);SV.mode='blocked';SV.bad={unread:true};saveMsg(SAVE_MSG.unread,true);return null}
+  SV.expected=r4;
+  if(r4!==null){if(r4.startsWith(SAVE_ENDED))return null;const s=saveParse(r4);
+    // only a real life has flags.started; day 1 without it is the placeholder an older version saved before character creation
+    if(s&&!(s.flags&&s.flags.started)&&s.day<=1){}else if(s&&s.flags&&s.flags.started)return saveLoad(SAVE_KEY,r4);else return saveBad(SAVE_KEY,r4)}
+  return r3===null||r3.startsWith(SAVE_ENDED)?null:saveLoad(SAVE_OLD,r3)}
+// deportation ends the life for good: this tab stops saving first, then v4 and v3 go, or are overwritten if they cannot be removed. Returns 'done', 'other' (the stored save is not this life) or 'failed'.
+function endLife(){if(SV.mode!=='ended'){if(SV.mode==='blocked'||SV.mode==='superseded')SV.ended='other';SV.mode='ended';SV.failing=false;clearTimeout(SV.timer);SV.timer=0;saveMsg()}
+  if(SV.ended==='other')return 'other';
+  try{if(!SV.endChecked){if(localStorage.getItem(SAVE_KEY)!==SV.expected){SV.ended='other';return 'other'}SV.endChecked=true}
+    let ok=true;for(const k of [SAVE_KEY,SAVE_OLD]){try{localStorage.removeItem(k)}catch(e){console.warn('save remove',e)}
+      if(localStorage.getItem(k)!==null){try{localStorage.setItem(k,SAVE_ENDED+Date.now())}catch(e){console.warn('save end',e)}const v=localStorage.getItem(k);if(v!==null&&!v.startsWith(SAVE_ENDED))ok=false}}
+    return ok?'done':'failed'}catch(e){console.warn('save end',e);return 'failed'}}
 function toast(t){const el=document.createElement('div');el.className='toast';el.textContent=t;document.body.appendChild(el);setTimeout(()=>el.remove(),2400)}
 function apply(e){for(const k in e){if(k==='money')S.money+=e[k];else S[k]=clamp(S[k]+e[k],0,k==='energy'&&S.sick>S.day?60:100)}}
 function spendTime(h){needsTick(h);S.hour+=h;if(S.hour>=24){log('You stayed out past midnight and nodded off on the night bus.','minus');sleep(true)}}
@@ -1372,7 +1413,7 @@ function doCrime(type,p){const C=S.crime;const x=S.pos.x,z=S.pos.z;const caught=
       const seized=Math.min(S.money,C.gains);S.money-=seized;C.gains=0;sleep(false,'cell');C.pending.push({c:'deal',day:S.day+5});C.heat=0;
       log(`Anhållen overnight at the police station, then released while the case goes to åklagaren. ${seized?kr(seized)+' in cash was seized as drug money. ':''}Trial at Stockholms tingsrätt in 5 days.`,'minus');apply({mood:-25});save();render();after()})},2500)})}}
 function plankCheck(){crimeInit(S);if(Math.random()<0.12){addBill('SL tilläggsavgift (no valid ticket)',1500);log('Biljettkontroll! No valid ticket: SL charges a 1 500 kr tilläggsavgift. Unpaid, it goes to inkasso.','minus');apply({mood:-8});return true}return false}
-function sentence(item){const C=S.crime;const prior=C.rec.filter(r=>r.c==='deal').length;let pen,days=0,txt;
+function sentence(item){if(SV.mode==='ended')return;const C=S.crime;const prior=C.rec.filter(r=>r.c==='deal').length;let pen,days=0,txt;
   if(item.c==='deal'){if(prior===0){pen='villkorlig dom och dagsböter';const ds=dagsbot();addBill('Tingsrätten: dagsböter (narkotikabrott)',60*ds);txt=`Stockholms tingsrätt: narkotikabrott (selling). First offence: villkorlig dom (probation for 2 years) and 60 dagsböter × ${kr(ds)}.`}
     else{const months=4+prior*4;pen='fängelse';days=Math.min(20,months*2);txt=`Stockholms tingsrätt: narkotikabrott again. Fängelse i ${months} månader. (In the game you lose ${days} days.)`}
     C.rec.push({c:'deal',until:S.day+(pen==='fängelse'?10:5)*365,pen})}
@@ -1382,11 +1423,13 @@ function sentence(item){const C=S.crime;const prior=C.rec.filter(r=>r.c==='deal'
   if(pen!=='böter'&&!citizen()){const risk=S.bg==='student'?0.25:0.6;if(Math.random()<risk){deported();return}log('The court considered utvisning (deportation) but did not order it this time. One more conviction could change that.','minus')}
   if(days){if(S.job){log(`You lost your job as ${JOBS[S.job].name}.`,'minus');S.job=null}if(HOMES[S.home]&&HOMES[S.home].type==='andrahand'){log('Your sublet was given to someone else while you were inside.','minus');S.home='none'}
     for(let i=0;i<days;i++)sleep(false,'jail');log('Released from prison. Frivården will check on you. Starting again is hard, but possible.','plus')}}
-function deported(){closeModal();busy=true;modal(`<h2>Utvisning</h2><p>The court ordered you deported from Sweden (utvisning på grund av brott) with a ban on returning. Migrationsverket and Polisen carry it out.</p><p class="note">Your life in Stockholm ends here. Crime has consequences.</p><div class="row2"><button class="btn" id="again">Start a new life</button></div>`,
-  m=>{m.querySelector('#again').onclick=()=>{try{localStorage.removeItem('stockholm-life-v4')}catch(e){}location.reload()}})}
+function deported(){closeModal();busy=true;const stuck=endLife()==='failed';modal(`<h2>Utvisning</h2><p>The court ordered you deported from Sweden (utvisning på grund av brott) with a ban on returning. Migrationsverket and Polisen carry it out.</p><p class="note">Your life in Stockholm ends here. Crime has consequences.</p><p class="note" id="endNote"${stuck?'':' hidden'}>Your save could not be removed from this browser. Reloading could bring this life back. Clear this site's data, or try again.</p><div class="row2"><button class="btn" id="again">${stuck?'Try again':'Start a new life'}</button></div>`,
+  m=>{m.querySelector('#again').onclick=()=>{if(endLife()!=='failed')location.reload();else m.querySelector('#endNote').textContent='The save still could not be removed. Reloading could bring this life back. Clear this site\'s data, or try again.'}})}
+const SENTENCING=new WeakSet();
 function crimeDaily(){if(!S)return;crimeInit(S);const C=S.crime;C.heat=Math.max(0,C.heat-3);
   if(S.flags.tfcomp&&S.day>=S.flags.tfcomp.day){S.money+=S.flags.tfcomp.amt;log(`Trafikförsäkring compensation paid: ${kr(S.flags.tfcomp.amt)}.`,'plus');S.flags.tfcomp=null}
-  const due=C.pending.filter(p=>S.day>=p.day);C.pending=C.pending.filter(p=>S.day<p.day);due.forEach(it=>setTimeout(()=>sentence(it),50))}
+  // a case stays pending until its sentence runs, so a save in between cannot lose it; SENTENCING stops a second night in the same loop sentencing it twice
+  C.pending.filter(p=>S.day>=p.day&&!SENTENCING.has(p)).forEach(it=>{SENTENCING.add(it);setTimeout(()=>{C.pending=C.pending.filter(p=>p!==it);sentence(it)},50)})}
 /* ---------- meeting new people on the street ---------- */
 const OPENERS=[
   {l:'Small talk about the weather',s:'The classic Swedish ice-breaker',base:0.45,stat:'svenska'},
@@ -5307,7 +5350,7 @@ const POSTERS_CITY=[['#f2b705','#1b1b1b','KANELBULLE','Färskt varje morgon','Ba
     whereT-=dt;if(whereT<0){whereT=0.6;const sn=streetName();const nh=S.loc?D[S.loc].name:(S.nearHub?'near '+D[S.nearHub].name:'');$('where').textContent=CS.mode==='ride'&&JR?`Pendeltåg ${JR.d0.ref} · ${JR.phase==='run'?'to '+(JR.stops[JR.si+1]||{}).disp:JR.stops[JR.si].disp}`:S.flags&&S.flags.arlanda?'Arlanda Airport · Terminal 5':[sn,nh,rushNow()?'🚦 Rush hour':''].filter(Boolean).join(' · ')||'Stockholm'}
   }
   tick();
-  const API={startLesson,lookAtFlight,placeAvatar,landAt:info=>{if(IN.on)exitInterior(true);playLanding(info,()=>enterInterior('arlanda',{name:'Stockholm Arlanda Airport · Terminal 5 · Arrivals'},{}))},openGate:k=>{const gt=IN.gates&&IN.gates[k];if(!gt)return;IN.col=IN.col.filter(c=>!gt.c.includes(c));gt.m.forEach(m=>m.visible=false)},leaveAirportBy:(mode,dst,cb)=>{exitInterior(true);arriveBy(mode,dst,cb)},enterAirport:()=>{if(IN.on)exitInterior(true);enterInterior('arlanda',{name:'Stockholm Arlanda Airport · Terminal 5 · Arrivals'},{})},leaveAirport:(x,z)=>{exitInterior(true);const f=freeSpot(x,z)||[x,z];placeAvatar(f[0],f[1],true)},stationPos:k=>{const ll=k==='cityterminal'?[59.3318,18.0560]:[59.3303,18.0581];const [x,z]=P(ll[0],ll[1]);const f=freeSpot(x,z)||[x,z];return {x:f[0],z:f[1]}},avPos:()=>({x:av.position.x,z:av.position.z}),lieDown,hideAv:h=>{avHidden=h;av.visible=!h},emergency,leaveScene,isDriving:()=>DR.on,busLinesAt,busRide,hospitalNear:(x,z)=>{const L=[['Karolinska Universitetssjukhuset Solna',59.3488,18.0307],['Södersjukhuset',59.3106,18.0521],['S:t Görans sjukhus',59.3376,18.0221],['Danderyds sjukhus',59.3919,18.0412]].map(([n,a,b])=>{const [hx,hz]=P(a,b);const f=freeSpot(hx,hz)||[hx,hz];return {name:n,x:f[0],z:f[1]}});return L.sort((a,b)=>Math.hypot(a.x-x,a.z-z)-Math.hypot(b.x-x,b.z-z))[0]},setCoat,walkPath,ride,emote,refresh,season:()=>{lastSeason=''},snapTime,aurora:()=>{auroraT=1.2},route,streetName,isMoving:()=>inputVec().mag>0.08,setLook:n=>setLook(n),applyOutfit,setHome,syncCar,startDrive,stopDrive,nearPlaces,kindFor,poi:i=>POIS[i],
+  const API={startLesson,inLesson:()=>!!COACH.mode,lookAtFlight,placeAvatar,landAt:info=>{if(IN.on)exitInterior(true);playLanding(info,()=>enterInterior('arlanda',{name:'Stockholm Arlanda Airport · Terminal 5 · Arrivals'},{}))},openGate:k=>{const gt=IN.gates&&IN.gates[k];if(!gt)return;IN.col=IN.col.filter(c=>!gt.c.includes(c));gt.m.forEach(m=>m.visible=false)},leaveAirportBy:(mode,dst,cb)=>{exitInterior(true);arriveBy(mode,dst,cb)},enterAirport:()=>{if(IN.on)exitInterior(true);enterInterior('arlanda',{name:'Stockholm Arlanda Airport · Terminal 5 · Arrivals'},{})},leaveAirport:(x,z)=>{exitInterior(true);const f=freeSpot(x,z)||[x,z];placeAvatar(f[0],f[1],true)},stationPos:k=>{const ll=k==='cityterminal'?[59.3318,18.0560]:[59.3303,18.0581];const [x,z]=P(ll[0],ll[1]);const f=freeSpot(x,z)||[x,z];return {x:f[0],z:f[1]}},avPos:()=>({x:av.position.x,z:av.position.z}),lieDown,hideAv:h=>{avHidden=h;av.visible=!h},emergency,leaveScene,isDriving:()=>DR.on,busLinesAt,busRide,hospitalNear:(x,z)=>{const L=[['Karolinska Universitetssjukhuset Solna',59.3488,18.0307],['Södersjukhuset',59.3106,18.0521],['S:t Görans sjukhus',59.3376,18.0221],['Danderyds sjukhus',59.3919,18.0412]].map(([n,a,b])=>{const [hx,hz]=P(a,b);const f=freeSpot(hx,hz)||[hx,hz];return {name:n,x:f[0],z:f[1]}});return L.sort((a,b)=>Math.hypot(a.x-x,a.z-z)-Math.hypot(b.x-x,b.z-z))[0]},setCoat,walkPath,ride,emote,refresh,season:()=>{lastSeason=''},snapTime,aurora:()=>{auroraT=1.2},route,streetName,isMoving:()=>inputVec().mag>0.08,setLook:n=>setLook(n),applyOutfit,setHome,syncCar,startDrive,stopDrive,nearPlaces,kindFor,poi:i=>POIS[i],
     enterPlace:(p,o)=>{const k=kindFor(p);if(!k){showPoi(p);return}if(k==='club'&&!(S.hour>=21.5||S.hour<2)){toast('The club opens late in the evening');return}if(k==='club'&&!S.flags['club'+S.day]){if(S.money<200){toast('Entry is 200 kr');return}S.money-=200;S.flags['club'+S.day]=1;log('Paid 200 kr entry at '+p.name+'.');render()}enterInterior(k,p,o)},
     enterHome:()=>enterInterior('home',null,{}),showCrowd,exitInterior,setQueue:n=>{IN.queue=n},inside:()=>IN.on,driving:()=>DR.on,
     centralEntrance:()=>{csDoorsWorld();return CS_DOORS[0].w},inStation:()=>CS.mode,leaveStation:csForceOut};
@@ -5327,9 +5370,12 @@ function matchServices(){if(!CITY)return;const pois=CITY.m.pois.map((p,i)=>({i,c
   for(const k in SVC){const s=SVC[k];let best=null,bd=1e9;for(const p of pois){if(!s.find(p))continue;const d=Math.hypot(p.x-s.near[0],p.z-s.near[1]);if(d<bd){bd=d;best=p}}
     if(best&&bd<25){s.poi=best;s.oh=parseHours(best.hours)}}}
 async function start(data){uiInit();
-  S=migrate(data&&data.S)||load();let fresh=false;
+  const hot=data&&data.S&&data.S.flags&&data.S.flags.started?data.S:null;
+  if(hot){S=migrate(hot);SV.mode='active';try{SV.expected=localStorage.getItem(SAVE_KEY)}catch(e){}}else S=load();
+  let fresh=false;
   if(!S){fresh=true;const b=BG.newcomer,a=D[b.start];S={v:4,name:'Alex',bg:'newcomer',day:1,hour:8,money:b.s.money,energy:90,mood:b.s.mood,social:b.s.social,svenska:b.s.svenska,skill:b.s.skill,queue:0,home:b.home,pos:{x:a.x+0.3,z:a.z+0.3},loc:b.start,job:null,jobDays:0,pay:0,slUntil:0,vitD:0,coat:false,sunToday:false,sick:0,applied:{},flags:{},docs:{...b.docs},log:[],won:false,weather:'clear',temp:7};log('Welcome to Stockholm. Pick who you are to begin.')}
   lifeInit(S);updateLoc();render();
+  if(!SV.on){SV.on=true;addEventListener('pagehide',()=>save());document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')save()})}
   try{CITY=await loadCity();matchServices()}catch(e){console.error(e);CITY=null;$('loadtxt').textContent='Could not load the real city data, so you get a simplified Stockholm. ('+e.message+')'}
   try{W=buildWorld()}catch(e){console.error(e);W=null}
   const L=$('loading');setTimeout(()=>{L.style.opacity=0;setTimeout(()=>L.remove(),700)},CITY?200:2500);

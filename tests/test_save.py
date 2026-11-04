@@ -1,5 +1,5 @@
-"""Save and load: reload restores the life, a corrupted save starts fresh, an old v3 save migrates to v4.
-These check today's behaviour, including the known silent overwrite of a corrupted save (KNOWN_ISSUES H5)."""
+"""Save and load: reload restores the life, an old v3 save migrates to v4.
+What happens to unreadable saves, failed saves and ended lives is in test_save_safety.py."""
 import json
 import pytest
 import game
@@ -28,16 +28,6 @@ def test_reload_restores_life(browser):
 
 # set the save only on the first page load of the context, so the game's own rewrite is not undone
 ONCE = "try {{ if (!sessionStorage.getItem('t')) {{ localStorage.setItem({k}, {v}); sessionStorage.setItem('t', 1) }} }} catch (e) {{}}"
-
-
-def test_corrupted_save_starts_fresh(browser):
-    ctx, page, err = game.new_page(browser, init_script=ONCE.format(k=json.dumps(game.SAVE_KEY), v=json.dumps('{not json')))
-    try:
-        game.boot(page)
-        assert game.intro_shown(page), 'a corrupted save should lead to character creation'
-        assert err.uncaught == []
-    finally:
-        ctx.close()
 
 
 def test_legacy_v3_save_migrates(browser):

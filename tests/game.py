@@ -26,6 +26,10 @@ HOOK_NAMES = ['csEnter', 'CS_DOORS', 'ptNext', 'csClk', 'csLine', 'promptSet',
               'jrStart', 'jrSit', 'jrStand', 'jrCam', 'jrArm', 'jrBlockers', 'jrAlight', 'jrSkipNext', 'jrSkipStop',
               'icam', 'av', 'camera', 'controls', 'scene', 'ring', 'IW', 'IH', 'HALF', 'CARM', 'zcOf', 'DOORZ', 'JRC']
 HOOK_LIVE = ['CS', 'JR', 'JRS', 'avHidden']  # reassigned during play, so read through getters
+# The rules layer for tests/test_save_safety.py. Names missing from an older index.html read as null, so the
+# negative control (SL_INDEX_HTML=<baseline>) still boots and the tests fail on behaviour, not on the hook.
+SAVE_HOOK = ("window.__TS={get S(){return S},get busy(){return busy},set busy(v){busy=v},COACH,save,deported,sentence,crimeDaily,"
+             "get SV(){return typeof SV==='undefined'?null:SV}};")
 
 
 def hooked_html():
@@ -33,7 +37,7 @@ def hooked_html():
     html = Path(os.environ.get('SL_INDEX_HTML') or ROOT / 'index.html').read_text(encoding='utf-8')
     n = html.count('return API;')
     assert n == 1, f'test hook: expected one "return API;" in index.html, found {n}'
-    hook = 'window.__T={' + ','.join(HOOK_NAMES + [f'get {k}(){{return {k}}}' for k in HOOK_LIVE]) + '};return API;'
+    hook = 'window.__T={' + ','.join(HOOK_NAMES + [f'get {k}(){{return {k}}}' for k in HOOK_LIVE]) + '};' + SAVE_HOOK + 'return API;'
     return html.replace('return API;', hook)
 
 

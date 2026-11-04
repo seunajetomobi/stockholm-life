@@ -139,3 +139,4 @@ State changes as recordable actions, seeded randomness and the explicit clock ma
 | 2026-10-31 | Publish via GitHub Actions with a manual, approval-gated deployment of an exact commit |
 | 2026-10-31 | Evolve the existing code; no rewrite |
 | 2026-11-01 | Foundations (M1 save/state, M2 time) before new gameplay |
+| 2026-11-04 | M1a save safety may go ahead before M0 closes, as a narrow exception; the save format stays as it is and the rest of M1 still waits for M0. Deportation takes effect when its screen appears and removes v4 and v3; a tab whose expected save has changed stops saving; restart takes effect at Go; a v4 save without `flags.started` is not a completed life |

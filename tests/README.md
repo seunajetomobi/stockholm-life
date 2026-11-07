@@ -75,6 +75,16 @@ git show df54793:index.html > /tmp/before-m14.html
 SL_INDEX_HTML=/tmp/before-m14.html python3 -m pytest tests/test_m14.py -k 390   # expected: 1 failed
 ```
 
+The prompt tests have negative controls too. `test_prompt_mouse.py` run against the `promptSet` from before the fix (`6e9ac76`) must fail: Sit down Yes and No, the buttons staying the same, changed content updating and a new seat (getting off usually fails too; entering the station can pass by luck). The keyboard does not use the buttons, so `test_prompt_keyboard.py` passes on that build; its controls are copies of the game with the keydown handler deliberately broken, one change per control:
+
+| Control | Broken copy | Tests that must fail |
+| --- | --- | --- |
+| K1 | keys typed in a text field are not ignored | `test_typing_in_a_field_does_not_answer` |
+| K2 | keys are not ignored while a dialog is open | `test_open_modal_blocks_the_keys` |
+| K3 | Y no longer answers Yes | `test_sit_yes_with_key[y]` |
+| K4 | N no longer answers No | `test_sit_no_with_key[n]` |
+| K5 | E answers Yes twice | `test_sit_yes_with_key[e]`, `test_get_off_with_key`, `test_enter_station_with_key`, `test_held_key_answers_once` |
+
 Because the hook jumps straight into the station and the train, a hooked test shows that the code works once you are there. It does not show that a player can walk there, buy a ticket or pass the gates.
 
 ## Live check (`tools/live_check.py`)

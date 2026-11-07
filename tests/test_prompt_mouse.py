@@ -2,7 +2,6 @@
 Other tests call the game's functions or element.click(), so they cannot see a press and a release landing on different
 elements. Run on an older index.html with SL_INDEX_HTML=<file> for the negative control."""
 import json
-import time
 import pytest
 import game
 
@@ -159,13 +158,10 @@ def test_get_off_with_mouse(city):
     page, err = city
     game.enter_station(page)
     game.board_train(page)
+    page.evaluate("() => { __T.JR.depAt = Infinity }")  # the train stays at the platform, as in the keyboard tests
     game.clear_overlays(page)
-    page.evaluate("() => { for (const s of __T.JRS.seats) s.taken = s.taken || 'test' }")
-    at_door = "() => { const T = __T; if (T.JR.phase === 'run') T.jrSkipNext(); T.av.position.set(T.JR.doorSide * (T.IW - 0.2), 0, T.zcOf(2) + T.DOORZ); return document.querySelector('#csPrompt b')?.textContent || '' }"
-    t0 = time.time()
-    while not page.evaluate(at_door).startswith('Get off') and time.time() - t0 < 150:
-        time.sleep(1)
-    assert page.evaluate(SHOWN).startswith('Get off'), 'no "Get off" prompt'
+    page.evaluate("() => { const T = __T; for (const s of T.JRS.seats) s.taken = s.taken || 'test'; T.av.position.set(T.JR.doorSide * (T.IW - 0.2), 0, T.zcOf(2) + T.DOORZ) }")
+    assert game.wait_for(page, f"() => ({SHOWN})().startsWith('Get off')", 60), 'no "Get off" prompt'
     page.evaluate(WATCH)
     press_and_release(page, '#csPrompt .y')
     off = game.wait_for(page, "() => __T.CS.mode !== 'ride'", 60)

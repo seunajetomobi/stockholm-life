@@ -4,7 +4,7 @@
 - **Agent:** Claude Code, with ChatGPT reviewing through the user
 - **Date:** 2026-11-05 to 2026-11-07
 - **Commits:** qualified and documented at `main` `6e9ac76ba8f07051fe96b620e0c3e03cec5343cc`; this report is added on the branch `docs/local-qualification`
-- **Branch and pull request:** `docs/local-qualification`, not yet pushed; no pull request yet. Nothing merged or deployed by this task
+- **Branch and pull request:** `docs/local-qualification`. At the time this report was written, the branch had not been pushed and no pull request existed. Nothing merged or deployed by this task
 - **Files changed:** `docs/TEST_PLAN.md`, `docs/PROJECT_STATUS.md`, `docs/FEATURE_INVENTORY.md`, `.agent/QUEUE.md`, and this report. No game code, tests, data, tools or workflows
 
 ## Summary
@@ -15,8 +15,8 @@ The qualification went in stages, each approved separately. Defects found on the
 
 | Stage | Purpose | Result |
 | --- | --- | --- |
-| Harnesses | The runner's logic against a simulated Docker, including adversarial cases | 135 of 135 and 74 of 74 |
-| D | Controls from GitHub: an injected runtime error and an injected syntax error are detected | Both detected; nothing else changed |
+| Harnesses | The runner's logic against a simulated Docker, including adversarial cases | 135 of 135; 74 of 74 as expected, including 3 known gaps that remain (see Known problems). One further gap, a results folder swapped during a run, was fixed in the runner |
+| D | Controls from GitHub: an injected runtime error and an injected syntax error are detected | Both detected; the checkout, earlier results and Docker state unchanged, and the protected worktree's fingerprint unchanged (the worktree registry was first compared in stage E) |
 | W | One verification worktree on its own branch at `6e9ac76`, the source for the local stages | Created; nothing else changed |
 | E | The same controls, cloning from that local worktree | Both detected; integrity check passed with no findings |
 | F | The full suite, cloning from that local worktree | Passed (below); integrity check passed with no findings |
@@ -31,7 +31,7 @@ Full run on `6e9ac76` (stage F, 2026-11-07, 56 minutes): `RESULT=PASS`.
 - The CPU set the container actually had (its cgroup's `cpuset.cpus.effective`) was 0–5, as requested.
 - The test IDs were the same 218 as an earlier full run of the same commit cloned from GitHub (2026-11-05: 217 passed, 1 xpassed).
 
-No CI ran as part of this task. CI runs on pull requests only and did not run on `main` `6e9ac76` itself.
+No CI ran as part of this task. The Tests workflow runs on pull requests and through `workflow_call` from the Deploy workflow; it did not run directly on `main` commit `6e9ac76`.
 
 ## Known problems and limitations
 

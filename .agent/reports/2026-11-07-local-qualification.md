@@ -16,7 +16,7 @@ The qualification went in stages, each approved separately. Defects found on the
 | Stage | Purpose | Result |
 | --- | --- | --- |
 | Harnesses | The runner's logic against a simulated Docker, including adversarial cases | 135 of 135; 74 of 74 as expected, including 3 known gaps that remain (see Known problems). One further gap, a results folder swapped during a run, was fixed in the runner |
-| D | Controls from GitHub: an injected runtime error and an injected syntax error are detected | Both detected; the checkout, earlier results and Docker state unchanged, and the protected worktree's fingerprint unchanged (the worktree registry was first compared in stage E) |
+| D | Controls from GitHub: an injected runtime error and an injected syntax error are detected | Both detected; the checkout, earlier results and Docker state unchanged, and the protected worktree's fingerprint unchanged (the worktree registry was not compared in stage D; it was first compared in stage W, which created the verification worktree, and then in stages E and F) |
 | W | One verification worktree on its own branch at `6e9ac76`, the source for the local stages | Created; nothing else changed |
 | E | The same controls, cloning from that local worktree | Both detected; integrity check passed with no findings |
 | F | The full suite, cloning from that local worktree | Passed (below); integrity check passed with no findings |

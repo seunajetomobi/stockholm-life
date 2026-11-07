@@ -2,16 +2,17 @@
 
 The single authoritative status of Stockholm Life. Other documents link here instead of keeping their own status summaries. The current task and the tasks after it are in [`.agent/QUEUE.md`](../.agent/QUEUE.md).
 
-**Verified 2026-11-04 at `main` `44c455d`** (GitHub API, `git ls-remote`, the live `version.txt`). Refreshed with the next meaningful project or documentation update, not after every merge, so check the date and SHA before relying on it.
+**Verified 2026-11-07 at `main` `6e9ac76`** (GitHub API, `git ls-remote`, the live `version.txt`). Refreshed with the next meaningful project or documentation update, not after every merge, so check the date and SHA before relying on it.
 
 ## Code and release
 
 | | Commit | Notes |
 | --- | --- | --- |
-| `main` | `44c455dc3565c683ab8bd9aa1ad1c29cf6f040d2` | Merge of PR #12 (M1a save safety), 2026-11-04 18:32 Z |
+| `main` | `6e9ac76ba8f07051fe96b620e0c3e03cec5343cc` | Merge of PR #13 (project status after PR #12), 2026-11-05 08:34 Z |
 | Live site | `870fe309543c6eb375e6e150423002a09763a3db` | `version.txt` on GitHub Pages; last successful deployment `7465401024` (run `41249126992`), 2026-10-31 22:58:50 Z |
-| Merged, **not deployed** | | PR #3 pendeltåg camera and phone message strip (`40d913e`); PR #4 strip clear of every control (`3d04635`); PR #6 strip follows layout changes (`d9b8882`); PR #12 M1a save safety (`44c455d`). PR #5 (documentation, `b0ad590`), PR #7 (agent workspace, `bb93709`), PR #8 (live verification tool, `d91a5d4`: `tools/`, `tests/` and documentation only), PR #9 (documentation, `3ac8b53`), PR #10 (documentation, `2d9d753`) and PR #11 (documentation, `492a8e5`) do not change the published files |
-| Open pull requests | | None when verified |
+| Locally qualified | `6e9ac76ba8f07051fe96b620e0c3e03cec5343cc` | The same commit as `main`: the full suite passed on the isolated local test runner on 2026-11-07 ([TEST_PLAN.md §7](TEST_PLAN.md)). The live site is 36 commits behind it and does not include the merged work below |
+| Merged, **not deployed** | | PR #3 pendeltåg camera and phone message strip (`40d913e`); PR #4 strip clear of every control (`3d04635`); PR #6 strip follows layout changes (`d9b8882`); PR #12 M1a save safety (`44c455d`). PR #5 (documentation, `b0ad590`), PR #7 (agent workspace, `bb93709`), PR #8 (live verification tool, `d91a5d4`: `tools/`, `tests/` and documentation only), PR #9 (documentation, `3ac8b53`), PR #10 (documentation, `2d9d753`), PR #11 (documentation, `492a8e5`) and PR #13 (documentation, `6e9ac76`) do not change the published files |
+| Open pull requests | | PR #14 (`ci/browser-timeout-60`, head `c456b8e`): its Tests run `41995856217` failed in `tests-syntax` within about 2 seconds and `tests-browser` was skipped; the cause has not been investigated |
 
 Publishing happens only through the manual "Deploy to GitHub Pages" workflow with the `github-pages` approval; merging into `main` does not change the live site ([TECHNICAL_ARCHITECTURE.md §4](TECHNICAL_ARCHITECTURE.md)).
 
@@ -33,6 +34,7 @@ Publishing happens only through the manual "Deploy to GitHub Pages" workflow wit
 ## Current task and next steps
 
 - **Current — paused; awaiting explicit owner approval to resume:** the remaining manual desktop checks (`m0-desktop-checks`), started and paused by the user. They resume from the recorded stopping point. No task is active until then.
+- **Finished:** qualification of an isolated local test runner (`local-qualification`), 2026-11-07, with the full suite passing on `6e9ac76`; the runner is kept outside this repository ([TEST_PLAN.md §7](TEST_PLAN.md)).
 - **Finished:** M1a save safety (`m1a-save-safety`), which the user approved on 2026-11-04 as a narrow exception to "M1 after M0". Merged in PR #12 and not deployed. It does not change the save format. Its limits are KNOWN_ISSUES M19 and M20; in particular, multi-tab saving is not race-free. Deploying `main` now also publishes M1a.
 - **Next:** see [`.agent/QUEUE.md`](../.agent/QUEUE.md). In short: finish M0 (remaining manual desktop checks, physical-device checks, deploying `main` and checking it with the tool, the relay), each with the user's approval, then the rest of M1 (save and state).
 
@@ -40,6 +42,7 @@ Publishing happens only through the manual "Deploy to GitHub Pages" workflow wit
 
 | What | Result |
 | --- | --- |
+| Isolated local test runner, full suite on `6e9ac76` cloned from a local worktree (2026-11-07) | `RESULT=PASS`: syntax 3 passed; browser stage 218 collected, 217 passed, 1 xpassed (L10), 0 failed, in 56 minutes. The runner also detected an injected runtime error and an injected syntax error, and the checkouts and earlier results were unchanged afterwards. This qualifies the runner; it does not show that the game works beyond what the suite tests. Details and limitations: [TEST_PLAN.md §7](TEST_PLAN.md); report: [`.agent/reports/2026-11-07-local-qualification.md`](../.agent/reports/2026-11-07-local-qualification.md) |
 | M15 seated-train frame-rate comparison, 2026-11-03 (`870fe30` against `3ac8b53`, one Intel UHD 620 laptop; not an M7 test) | **Comparison complete; M15 overall not complete.** All 18 required results exist; 22 sessions ran, and 4 are preserved as invalid and excluded. Same camera: no meaningful difference in any tested scene, Rich or Fast. Above ground, You camera against Eyes: −5 fps on Fast, −3 fps on Rich. Each arm's lowest 1-second window is below 30 fps in every scene; typical fps is above 30 only on Fast above ground in the first-person arms. Rich above ground, `870fe30` against You: inconclusive. Evidence is private and outside this repository. Details and limitations: [TEST_PLAN.md §6](TEST_PLAN.md) |
 | PR #12 CI on `c5eb610` (run `41879069686`) | `tests-syntax` 3 passed; `tests-browser` 217 passed, 1 xpassed (L10) in about 31 min; GitGuardian passed. `main` `44c455d` merges exactly this head, with the same file tree; CI did not run separately on the merge commit |
 | M1a, local with system Chrome (2026-11-04), before the final commit corrected two comments | Full suite 217 passed, 1 xpassed (L10) in 58 min, pytest exit code 0. Negative control on `492a8e5`: 40 of 47 new tests fail. After the correction, only the syntax checks were rerun locally (3 passed). Hidden tab and back/forward cache are simulated; no manual check has run |
@@ -67,3 +70,4 @@ Publishing happens only through the manual "Deploy to GitHub Pages" workflow wit
 | `docs/m15-three-arm` | `dcb8521` | PR #10, `2d9d753` |
 | `docs/status-after-pr10` | `75dc8cc` | PR #11, `492a8e5` |
 | `feat/m1-save-safety` | `c5eb610` | PR #12, `44c455d` |
+| `docs/status-after-pr12` | `1662a78` | PR #13, `6e9ac76` |

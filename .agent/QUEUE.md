@@ -4,7 +4,7 @@ The single source of the current task and the tasks after it. Project status (co
 
 How to use it: one task is **Current**. The coordinator (ChatGPT, through the user) adds and orders tasks; the user approves them. An agent starts only the current task, moves it to **Done** with a link to its pull request or report when the user has accepted it, and does not start the next one without approval. A task that needs more than a few lines gets a spec in `.agent/tasks/<task-id>.md`.
 
-Updated 2026-11-04.
+Updated 2026-11-07.
 
 ## Current
 
@@ -31,6 +31,7 @@ Follow-ups from the seated-train comparison ([TEST_PLAN.md §6](../docs/TEST_PLA
 
 | ID | Result |
 | --- | --- |
+| local-qualification | An isolated local test runner qualified, 2026-11-05 to 2026-11-07: injected runtime and syntax errors detected, and the full suite passed on `6e9ac76` (syntax 3 passed; 218 collected, 217 passed, 1 xpassed for L10), with the checkouts and earlier results unchanged. The runner is kept outside this repository; adding it is an open decision. [Report](reports/2026-11-07-local-qualification.md); [TEST_PLAN.md §7](../docs/TEST_PLAN.md). Not a game change, so M0 is unaffected |
 | m1a-save-safety | PR #12, merged as `44c455d` (head `c5eb610`; not deployed). First slice of M1, approved on 2026-11-04 as a narrow exception to "M1 after M0"; no change to the save format. Limits are in KNOWN_ISSUES M19 and M20. The rest of M1 still waits for M0 |
 | status-after-pr10 | PR #11, merged as `492a8e5` |
 | m15-docs | PR #10, merged as `2d9d753` (documentation only, not deployed), with the L15 row. M15 overall stays open |

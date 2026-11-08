@@ -44,6 +44,7 @@ Recorded as future work; none has an approved start. Each starts only with the o
 
 | ID | Result |
 | --- | --- |
+| local-qualification | An isolated local test runner qualified, 2026-11-05 to 2026-11-07: injected runtime and syntax errors detected, and the full suite passed on `6e9ac76` (syntax 3 passed; 218 collected, 217 passed, 1 xpassed for L10), with the checkouts and earlier results unchanged. The runner is kept outside this repository; adding it is an open decision. [Report](reports/2026-11-07-local-qualification.md); [TEST_PLAN.md §7](../docs/TEST_PLAN.md). Not a game change, so M0 is unaffected |
 | m1b-save | PR #16, merged as `ff95989` (head `7d5643e`; not deployed). Save version 5: a reload restores the place (Stockholm Central, the pendeltåg, interiors), and a life can be exported to a file and imported. Went ahead before M0 closed with the owner's approval, like M1a. Slots and the state module remain in `m1-save` |
 | ci-browser-timeout-60 | PR #14, merged as `40fe29f` (the browser test limit raised from 45 to 60 minutes) |
 | status-after-pr12 | PR #13, merged as `6e9ac76` |

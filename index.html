@@ -4492,9 +4492,10 @@ const POSTERS_CITY=[['#f2b705','#1b1b1b','KANELBULLE','Färskt varje morgon','Ba
     let best=null,bd=1e9;for(const s of list){const d=Math.hypot(s.x-x,s.z-z)+(y!==undefined&&s.y!==undefined?Math.abs(s.y-y)*4:0);
       if(d>s.r){if(d>s.r*1.5+0.3)PRM.dis.delete(s.id);continue}if(PRM.dis.has(s.id)||(s.ok&&!s.ok()))continue;if(d<bd){bd=d;best=s}}
     promptSet(best)}
-  function promptSet(s){const q=s?pv(s.q):'',sub=s?pv(s.sub)||'':'',ex=s?pv(s.extra)||[]:[],key=s?[s.id,q,sub,ex.length].join('\n'):'';
-    if(s===PRM.cur&&key===PRM.key)return;PRM.cur=s;PRM.key=key;const el=PRM.el;if(!s){el.style.display='none';el.innerHTML='';csLineFit();return}
-    el.innerHTML=`<b>${esc2(q)}</b>${sub?`<small>${esc2(sub)}</small>`:''}<div class="cspbtns"><button class="y">${esc2(pv(s.yesL)||'Yes')}</button>${ex.map((e,i)=>`<button class="x" data-i="${i}">${esc2(e.l)}</button>`).join('')}<button class="n">${esc2(s.noL||'No')}</button></div>`;
+  // the train and street prompts are new objects each time they are asked for, so unchanged content keeps its buttons: replacing them between a press and a release loses the click
+  function promptSet(s){const q=s?pv(s.q):'',sub=s?pv(s.sub)||'':'',ex=s?pv(s.extra)||[]:[],yesL=s?pv(s.yesL)||'Yes':'',noL=s?s.noL||'No':'',key=s?[s.id,q,sub,yesL,noL,...ex.map(e=>e.l)].join('\n'):'';
+    PRM.cur=s;if(key===PRM.key)return;PRM.key=key;const el=PRM.el;if(!s){el.style.display='none';el.innerHTML='';csLineFit();return}
+    el.innerHTML=`<b>${esc2(q)}</b>${sub?`<small>${esc2(sub)}</small>`:''}<div class="cspbtns"><button class="y">${esc2(yesL)}</button>${ex.map((e,i)=>`<button class="x" data-i="${i}">${esc2(e.l)}</button>`).join('')}<button class="n">${esc2(noL)}</button></div>`;
     el.style.display='grid';el.querySelector('.y').onclick=()=>promptAnswer(1);el.querySelector('.n').onclick=()=>promptAnswer(0);el.querySelectorAll('.x').forEach(b=>b.onclick=()=>promptAnswer(2,+b.dataset.i));csLineFit()}
   function promptAnswer(a,i){const s=PRM.cur;if(!s)return;const ex=pv(s.extra)||[];PRM.dis.add(s.id);promptSet(null);audInit();if(a===1)s.yes();else if(a===2&&ex[i])ex[i].fn();else if(s.no)s.no()}
   addEventListener('keydown',e=>{const t=e.target&&e.target.tagName;if(t==='INPUT'||t==='TEXTAREA'||t==='SELECT')return;const k=e.key.toLowerCase();

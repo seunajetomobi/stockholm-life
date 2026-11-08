@@ -9,6 +9,8 @@ Automated checks for the game, preserved from the 2026-10-31 audit and the two f
 | `test_syntax.py` | `node --check` on the inline `<script>` of `index.html` and on `tools/flights-worker.js` (as an ES module); the Python tools compile | No | No |
 | `test_smoke.py` | Desktop 1366×768: city loads, WebGL canvas, no game file fails to load, character creation shown; "Go" starts a life and writes a save; each dock tab renders; every phone app opens without an uncaught error (at least 39 tiles); every places-bar button responds, Centralen opens its travel card | Yes | No |
 | `test_save.py` | Reload restores name, day, hour, money and position; an old `stockholm-life-v3` save migrates (HUD 10:00, 1 200 kr, v4 written) | Yes | No |
+| `test_prompt_mouse.py` | Station and train prompts answered with a real mouse (`page.mouse`: press, at least two frames, release): "Sit down?" Yes and No, another seat, getting off, entering the station; unchanged prompts keep their buttons, changed ones update | Yes | Yes |
+| `test_prompt_keyboard.py` | The same prompts answered with the real keyboard (`page.keyboard`): E, Enter and Y for Yes, Escape and N for No, each counted so an answer given twice fails; a held key answers once; typing in a field and an open modal do not answer | Yes | Yes |
 | `test_save_safety.py` | Save safety with faults injected into `localStorage`: failure and recovery messages; unreadable saves kept; the placeholder never saved; deportation (including refused deletion) and restart; lifecycle saves; nothing saved during journeys and lessons; court cases; several tabs. A hidden tab and the back/forward cache are simulated | Yes | Yes |
 | `test_save_place.py` | Carry on where you left off (KNOWN_ISSUES M7, M19): a reload returns to the same place in Stockholm Central, to the train (at the platform, or arriving at the next stop if it was moving) and inside a café; station time is in the save; a place saved by an older version that played on is ignored; a v4 save loads as v5. Export and import of a life: bad files refused (not readable, wrong format, newer version, changed, incomplete); full storage changes nothing; the life before an import is kept; a file exported in one browser carries on in a fresh one | Yes | Yes |
 | `test_layout.py` | 390×844 and 520×900 (touch) and 1366×768: no horizontal overflow on the intro or while playing; dock, joystick, Run, zoom and places bar inside the viewport | Yes | No |
@@ -73,6 +75,16 @@ To run the hooked tests on another version of the game, point `SL_INDEX_HTML` at
 git show df54793:index.html > /tmp/before-m14.html
 SL_INDEX_HTML=/tmp/before-m14.html python3 -m pytest tests/test_m14.py -k 390   # expected: 1 failed
 ```
+
+The prompt tests have negative controls too. `test_prompt_mouse.py` run against the `promptSet` from before the fix (`6e9ac76`) must fail: Sit down Yes and No, the buttons staying the same, changed content updating and a new seat (getting off usually fails too; entering the station can pass by luck). The keyboard does not use the buttons, so `test_prompt_keyboard.py` passes on that build; its controls are copies of the game with the keydown handler deliberately broken, one change per control:
+
+| Control | Broken copy | Tests that must fail |
+| --- | --- | --- |
+| K1 | keys typed in a text field are not ignored | `test_typing_in_a_field_does_not_answer` |
+| K2 | keys are not ignored while a dialog is open | `test_open_modal_blocks_the_keys` |
+| K3 | Y no longer answers Yes | `test_sit_yes_with_key[y]` |
+| K4 | N no longer answers No | `test_sit_no_with_key[n]` |
+| K5 | E answers Yes twice | `test_sit_yes_with_key[e]`, `test_get_off_with_key`, `test_enter_station_with_key`, `test_held_key_answers_once` |
 
 Because the hook jumps straight into the station and the train, a hooked test shows that the code works once you are there. It does not show that a player can walk there, buy a ticket or pass the gates.
 

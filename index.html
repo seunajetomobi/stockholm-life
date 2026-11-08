@@ -1034,7 +1034,7 @@ const PHONE_APPS=[["Phone","txt:☎","#23824f",()=>openCalls()],['Chatt','chat',
   ['To-do','check','#e07a1f',()=>openTodo(),'todo'],['Bag','bag','#8a5a2b',()=>openBag(),'bag'],['Find','search','#3b4a57',()=>{const b=$('zfind');b&&b.click()}],
   ['Contacts','people','#2a8a52',()=>openPeople()],['Dating','heart','#d6336c',()=>openDating()],['Jobs','brief','#0b5fa5',()=>openJobs()],['Courses','cap','#6c3fb5',()=>openCourses()],
   ['Housing','house','#a84b32',()=>S.docs.bankid?openHousing():toast('Bostadsförmedlingen needs BankID')],['Bills','card','#a86400',()=>openBills()],
-  ['Election','ballot','#1f3f7a',()=>setTab('civic')],['Movement','fist','#c8342c',()=>{if(S.civ.move)setTab('civic');else startMovement()}],['Rights','scale','#566573',()=>setTab('civic')],['Wait 1 h','clock','#23824f',()=>{if(busy)return;spendTime(1);apply({energy:2});log('You took an hour off.');after()}]];
+  ['Election','ballot','#1f3f7a',()=>setTab('civic')],['Movement','fist','#c8342c',()=>{if(S.civ.move)setTab('civic');else startMovement()}],['Rights','scale','#566573',()=>setTab('civic')],['Wait 1 h','clock','#23824f',()=>{if(busy)return;spendTime(1);apply({energy:2});log('You took an hour off.');after()}],['Save file','txt:⇅','#3b4a57',()=>openSaveFile()]];
 function openTravelPicker(){const ks=Object.keys(D);modal(`<h2>Go somewhere</h2><div class="choices">${S.addr&&S.home!=='none'?`<button class="choice" data-k="${homeD()}"><b>⌂ Home</b><small>${addrText()}</small></button>`:''}${ks.map(k=>`<button class="choice" data-k="${k}"><b>${D[k].name}</b><small>${D[k].blurb.slice(0,90)}…</small></button>`).join('')}</div><div class="row2"><button class="btn ghost" id="no">Close</button></div>`,m=>{
   m.querySelector('#no').onclick=closeModal;m.querySelectorAll('.choice').forEach(b=>b.onclick=()=>{closeModal();openTravel(b.dataset.k)})})}
 // ---------- need gauges on the board
@@ -1172,7 +1172,7 @@ function updateLoc(){let best=null,bd=1e9;for(const k in D){const d=Math.hypot(S
 const LOOKS=[['Casual_Male','Casual (man)'],['Casual_Female','Casual (woman)'],['Suit_Male','Suit (man)'],['Suit_Female','Suit (woman)'],['Worker_Male','Work clothes (man)'],['Worker_Female','Work clothes (woman)'],['Doctor_Male_Young','Doctor (man)'],['OldClassy_Female','Classic (woman)']];
 function newGame(name,bg,look,pref,asp,skin){
   const b=BG[bg];const a=D[b.start];
-  S={v:4,name:name||'Alex',bg,day:1,hour:8,money:b.s.money,energy:90,mood:b.s.mood,social:b.s.social,svenska:b.s.svenska,skill:b.s.skill,
+  S={v:5,name:name||'Alex',bg,day:1,hour:8,money:b.s.money,energy:90,mood:b.s.mood,social:b.s.social,svenska:b.s.svenska,skill:b.s.skill,
      queue:b.s.queue,home:b.home,pos:{x:a.x+0.3,z:a.z+0.3},loc:b.start,job:null,jobDays:0,pay:0,slUntil:0,vitD:0,coat:false,sunToday:false,sick:0,applied:{},flags:{},docs:{...b.docs},log:[],won:false,look:look||'Casual_Male'};lifeInit(S);S.flags.started=1;S.pref=pref||'any';S.aspiration=asp||'stockholmer';if(skin!==undefined&&skin!=='')S.outfit.skin=+skin;if(bg==='over')S.remark=1;assignAddress();rollWants();
   updateLoc();rollWeather();
   log(`Welcome, ${S.name}. Day one in Stockholm.`);
@@ -1188,12 +1188,14 @@ function migrate(s){if(!s)return s;
   if(s.sick===undefined)s.sick=0;if(!s.bills)s.bills=[];lifeInit(s);s.flags.started=1;if(!s.look)s.look='Casual_Male';if(!BG[s.bg])s.bg='newcomer';
   if(!s.pos){const a=D[s.loc]||D.tc;s.pos={x:a.x+0.3,z:a.z+0.3}}
   if(!s.weather){s.weather='clear';s.temp=6}
-  s.v=4;return s}
+  s.v=5;return s}// v5 = v4 plus the optional `place`; an older version sets v back to 4, so this step must stay safe to run again
 function log(t,cls){S.log.unshift({d:S.day,h:S.hour,t,cls:cls||''});S.log=S.log.slice(0,70)}
 /* ---------- saving: the whole of S as JSON under one key. Rules and known limits: KNOWN_ISSUES H3, H5, M6, M19, M20 ----------
    mode: pending (no life yet), active, blocked (an unreadable save has no copy, or storage cannot be read: nothing may be written), ended (deported), superseded (the save changed outside this tab).
    expected: what this tab last read or wrote. A write goes ahead only while storage still holds it, so a stale tab that can see a newer life or an ended one stops. This is not atomic across tabs: KNOWN_ISSUES M20 (2).
-   Not saved: time held in CS.pend (the station clock flushes it about every 20 s of real time) and the place you are in (M7). */
+   place: where you are (street, interior, station, train), with a stamp of the life it was saved with (placeSave). An older version keeps the field
+   but never updates it, so a place whose stamp no longer matches the life is ignored and you start on the street. Station and train time (CS.pend)
+   is flushed into the save while you are there (M19); on the street it is not. */
 const SAVE_KEY='stockholm-life-v4',SAVE_OLD='stockholm-life-v3',SAVE_ENDED='ENDED:';
 const SV={mode:'pending',expected:null,bad:null,failing:false,timer:0,hideT:0,endChecked:false,ended:null,on:false};
 const SAVE_MSG={fail:'Your progress could not be saved. Your browser\'s storage may be full or blocked. Trying again.',back:'Saving works again. Your progress is saved.',
@@ -1214,7 +1216,7 @@ function save(){if(!S||!S.flags||!S.flags.started||SV.mode==='pending'||SV.mode=
   // the state is half-way through a journey, an arrest or a driving lesson: the next save after it writes the result
   if(busy||(W&&W.inLesson&&W.inLesson())){if(SV.failing)saveRetry();return}
   if(SV.mode==='blocked'&&!saveUnblock()){if(SV.mode==='blocked'){SV.failing=true;saveRetry()}return}
-  try{const cur=localStorage.getItem(SAVE_KEY);if(cur!==SV.expected){saveOther();return}const json=JSON.stringify(S);if(json!==cur){localStorage.setItem(SAVE_KEY,json);SV.expected=json}saveOk()}catch(e){saveFail(e)}}
+  try{const cur=localStorage.getItem(SAVE_KEY);if(cur!==SV.expected){saveOther();return}placeSave();const json=JSON.stringify(S);if(json!==cur){localStorage.setItem(SAVE_KEY,json);SV.expected=json}saveOk()}catch(e){saveFail(e)}}
 function saveParse(r){try{const s=JSON.parse(r);return s&&typeof s==='object'&&!Array.isArray(s)&&Number.isFinite(s.day)&&Number.isFinite(s.hour)?s:null}catch(e){return null}}
 function saveLoad(key,raw){const s=saveParse(raw);if(!s)return saveBad(key,raw);try{const m=migrate(s);SV.mode='active';return m}catch(e){console.warn('migrate',e);return saveBad(key,raw)}}
 function load(){let r4,r3;try{r4=localStorage.getItem(SAVE_KEY);r3=localStorage.getItem(SAVE_OLD)}catch(e){console.warn('load',e);SV.mode='blocked';SV.bad={unread:true};saveMsg(SAVE_MSG.unread,true);return null}
@@ -1230,6 +1232,48 @@ function endLife(){if(SV.mode!=='ended'){if(SV.mode==='blocked'||SV.mode==='supe
     let ok=true;for(const k of [SAVE_KEY,SAVE_OLD]){try{localStorage.removeItem(k)}catch(e){console.warn('save remove',e)}
       if(localStorage.getItem(k)!==null){try{localStorage.setItem(k,SAVE_ENDED+Date.now())}catch(e){console.warn('save end',e)}const v=localStorage.getItem(k);if(v!==null&&!v.startsWith(SAVE_ENDED))ok=false}}
     return ok?'done':'failed'}catch(e){console.warn('save end',e);return 'failed'}}
+// ---------- the place you are in, saved with the life it belongs to (M7) ----------
+function placeStamp(s){return [s.day,s.hour,s.money,s.pos&&s.pos.x,s.pos&&s.pos.z].join('|')}
+function placeSave(){let p={kind:'street'};try{if(W&&W.placeState)p=W.placeState()||p}catch(e){console.warn('place',e)}p.stamp=placeStamp(S);S.place=p}
+function placeValid(s){const p=s&&s.place;return !!(p&&typeof p==='object'&&p.kind&&p.kind!=='street'&&p.stamp===placeStamp(s))}
+// ---------- a life as a file: export, and import with checks that change nothing unless they all pass ----------
+const SAVE_FILE='stockholmsliv-save',SAVE_FILE_MAX=2*1024*1024;
+async function saveHash(o){const h=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(JSON.stringify(o)));return [...new Uint8Array(h)].map(x=>x.toString(16).padStart(2,'0')).join('')}
+async function exportLife(){if(!S||!S.flags||!S.flags.started){toast('Start a life first');return false}if(!(window.crypto&&crypto.subtle)){toast('Export needs a secure page (https or localhost)');return false}
+  placeSave();const game=JSON.parse(JSON.stringify(S)),env={format:SAVE_FILE,v:5,savedAt:new Date().toISOString(),game,sha256:await saveHash(game)};
+  const nm=String(S.name||'life').replace(/[^\p{L}\p{N}_-]+/gu,'-').slice(0,40)||'life',a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([JSON.stringify(env)],{type:'application/json'}));a.download=`stockholmsliv-${nm}-day${S.day}-${new Date().toISOString().slice(0,10)}.json`;
+  document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1000);log('Saved a copy of this life to a file.');return true}
+// returns {game} ready to write, or {err} saying why the file was refused
+async function importCheck(text){let e;try{e=JSON.parse(text)}catch(x){return {err:'This file is not a saved life (it is not readable data).'}}
+  if(!e||typeof e!=='object'||e.format!==SAVE_FILE)return {err:'This file is not a Stockholmsliv saved life.'};
+  if(!Number.isInteger(e.v)||e.v<1)return {err:'This file has no valid version.'};if(e.v>5)return {err:'This life was saved by a newer version of the game. Update the game first.'};
+  const g=e.game;if(!g||typeof g!=='object'||Array.isArray(g))return {err:'This file has no life in it.'};
+  if(!(window.crypto&&crypto.subtle))return {err:'Import needs a secure page (https or localhost).'};
+  if(typeof e.sha256!=='string'||e.sha256!==await saveHash(g))return {err:'This file was changed or is incomplete: its check does not match.'};
+  if(!(Number.isFinite(g.day)&&Number.isFinite(g.hour)&&Number.isFinite(g.money)&&g.flags&&g.flags.started&&g.pos&&Number.isFinite(g.pos.x)&&Number.isFinite(g.pos.z)))return {err:'The life in this file is incomplete.'};
+  let m;try{m=migrate(JSON.parse(JSON.stringify(g)))}catch(x){console.warn('import',x);return {err:'The life in this file could not be read by this version.'}}
+  return {game:m}}
+// the current save is copied first; returns null when the imported life is in storage, else why nothing was changed
+function importApply(g){const json=JSON.stringify(g);let cur;try{cur=localStorage.getItem(SAVE_KEY)}catch(x){return 'Your browser\'s storage cannot be read, so nothing was changed.'}
+  if(cur!==null&&!cur.startsWith(SAVE_ENDED)){const k=SAVE_KEY+'-before-import-'+Date.now();let ok=false;try{localStorage.setItem(k,cur);ok=localStorage.getItem(k)===cur}catch(x){console.warn('import backup',x)}
+    if(!ok){try{localStorage.removeItem(k)}catch(x){}return 'Storage is full, so your current life could not be backed up first. Nothing was changed.'}}
+  const was=SV.mode;SV.mode='superseded';clearTimeout(SV.timer);SV.timer=0;// this tab must not write over the imported life before it reloads
+  try{localStorage.setItem(SAVE_KEY,json);if(localStorage.getItem(SAVE_KEY)===json)return null}catch(x){console.warn('import',x)}
+  SV.mode=was;return 'Storage is full, so the life could not be imported. Nothing was changed.'}
+function openSaveFile(fromIntro){const back=()=>{closeModal();if(fromIntro)intro()};
+  modal(`<h2>Save file</h2><p>Keep a copy of this life as a file, or carry on a life saved in another browser, on another device or at another web address.</p>
+    <div class="row2">${S&&S.flags&&S.flags.started?'<button class="btn" id="exp">Export this life</button>':''}<button class="btn ghost" id="imp">Import a life from a file…</button></div>
+    <input type="file" id="impf" accept=".json,application/json" hidden><p class="note" id="impmsg"></p><div class="row2"><button class="btn ghost" id="no">Close</button></div>`,m=>{
+    const msg=t=>{m.querySelector('#impmsg').textContent=t},f=m.querySelector('#impf');m.querySelector('#no').onclick=back;
+    const ex=m.querySelector('#exp');if(ex)ex.onclick=async()=>{if(await exportLife())msg('The file is in your downloads. Keep it somewhere safe.')};
+    m.querySelector('#imp').onclick=()=>f.click();
+    f.onchange=async()=>{const file=f.files&&f.files[0];f.value='';if(!file)return;if(file.size>SAVE_FILE_MAX){msg('This file is too large to be a saved life.');return}
+      let r;try{r=await importCheck(await file.text())}catch(x){r={err:'This file could not be read.'}}if(r.err){msg(r.err);return}const g=r.game;
+      modal(`<h2>Carry on this life?</h2><p><b>${esc2(g.name)}</b> · day ${g.day} · ${kr(g.money)}</p><p>${S&&S.flags&&S.flags.started?'This replaces the life in this browser. A copy of it is kept first.':'This life will be loaded in this browser.'}</p>
+        <p class="note" id="impmsg"></p><div class="row2"><button class="btn" id="yes">Carry on this life</button><button class="btn ghost" id="no">Cancel</button></div>`,c=>{
+        c.querySelector('#no').onclick=()=>openSaveFile(fromIntro);
+        c.querySelector('#yes').onclick=()=>{const e=importApply(g);if(e){c.querySelector('#impmsg').textContent=e;return}location.reload()}})}})}
 function toast(t){const el=document.createElement('div');el.className='toast';el.textContent=t;document.body.appendChild(el);setTimeout(()=>el.remove(),2400)}
 function apply(e){for(const k in e){if(k==='money')S.money+=e[k];else S[k]=clamp(S[k]+e[k],0,k==='energy'&&S.sick>S.day?60:100)}}
 function spendTime(h){needsTick(h);S.hour+=h;if(S.hour>=24){log('You stayed out past midnight and nodded off on the night bus.','minus');sleep(true)}}
@@ -1997,7 +2041,9 @@ function intro(){const F={kind:'stockholm',over:false,city:SWE_CITIES[0][0],nat:
       <label class="f">Glasses<select data-f="glasses"><option value="no" ${F.glasses==='no'?'selected':''}>No</option><option value="yes" ${F.glasses==='yes'?'selected':''}>Yes</option></select></label></div>
     <div class="two"><label class="f">Interested in dating<select data-f="pref"><option value="f" ${F.pref==='f'?'selected':''}>Women</option><option value="m" ${F.pref==='m'?'selected':''}>Men</option><option value="any" ${F.pref==='any'?'selected':''}>Anyone</option></select></label>
       <label class="f">Life goal<select data-f="asp">${Object.entries(ASPIRATIONS).map(([k,a])=>`<option value="${k}" ${F.asp===k?'selected':''}>${a.l}</option>`).join('')}</select></label></div>
-    <button class="btn big" id="go">${F.kind==='abroad'?'✈ Fly to Stockholm':F.kind==='sweden'?'🚆 Travel to Stockholm':'Start in Stockholm'}</button>`,m=>{
+    <button class="btn big" id="go">${F.kind==='abroad'?'✈ Fly to Stockholm':F.kind==='sweden'?'🚆 Travel to Stockholm':'Start in Stockholm'}</button>
+    <button class="btn ghost" id="impLife" style="margin-top:8px">Carry on a life saved in a file…</button>`,m=>{
+      m.querySelector('#impLife').onclick=()=>openSaveFile(true);
       {const md=document.querySelector?document.querySelector('.modal'):null;if(md&&window.__introScroll)md.scrollTop=window.__introScroll;if(md)md.onscroll=()=>{window.__introScroll=md.scrollTop}}
       const sync=()=>m.querySelectorAll('[data-f]').forEach(el=>{const k=el.dataset.f;let v=el.value;if(k==='over')v=!!v;if(k==='age')v=clamp(+v||27,18,75);if(k==='kids'||k==='route')v=+v;F[k]=v});
       m.querySelectorAll('.orig').forEach(b=>b.onclick=()=>{sync();F.kind=b.dataset.o;draw()});
@@ -4446,9 +4492,10 @@ const POSTERS_CITY=[['#f2b705','#1b1b1b','KANELBULLE','Färskt varje morgon','Ba
     let best=null,bd=1e9;for(const s of list){const d=Math.hypot(s.x-x,s.z-z)+(y!==undefined&&s.y!==undefined?Math.abs(s.y-y)*4:0);
       if(d>s.r){if(d>s.r*1.5+0.3)PRM.dis.delete(s.id);continue}if(PRM.dis.has(s.id)||(s.ok&&!s.ok()))continue;if(d<bd){bd=d;best=s}}
     promptSet(best)}
-  function promptSet(s){const q=s?pv(s.q):'',sub=s?pv(s.sub)||'':'',ex=s?pv(s.extra)||[]:[],key=s?[s.id,q,sub,ex.length].join('\n'):'';
-    if(s===PRM.cur&&key===PRM.key)return;PRM.cur=s;PRM.key=key;const el=PRM.el;if(!s){el.style.display='none';el.innerHTML='';csLineFit();return}
-    el.innerHTML=`<b>${esc2(q)}</b>${sub?`<small>${esc2(sub)}</small>`:''}<div class="cspbtns"><button class="y">${esc2(pv(s.yesL)||'Yes')}</button>${ex.map((e,i)=>`<button class="x" data-i="${i}">${esc2(e.l)}</button>`).join('')}<button class="n">${esc2(s.noL||'No')}</button></div>`;
+  // the train and street prompts are new objects each time they are asked for, so unchanged content keeps its buttons: replacing them between a press and a release loses the click
+  function promptSet(s){const q=s?pv(s.q):'',sub=s?pv(s.sub)||'':'',ex=s?pv(s.extra)||[]:[],yesL=s?pv(s.yesL)||'Yes':'',noL=s?s.noL||'No':'',key=s?[s.id,q,sub,yesL,noL,...ex.map(e=>e.l)].join('\n'):'';
+    PRM.cur=s;if(key===PRM.key)return;PRM.key=key;const el=PRM.el;if(!s){el.style.display='none';el.innerHTML='';csLineFit();return}
+    el.innerHTML=`<b>${esc2(q)}</b>${sub?`<small>${esc2(sub)}</small>`:''}<div class="cspbtns"><button class="y">${esc2(yesL)}</button>${ex.map((e,i)=>`<button class="x" data-i="${i}">${esc2(e.l)}</button>`).join('')}<button class="n">${esc2(noL)}</button></div>`;
     el.style.display='grid';el.querySelector('.y').onclick=()=>promptAnswer(1);el.querySelector('.n').onclick=()=>promptAnswer(0);el.querySelectorAll('.x').forEach(b=>b.onclick=()=>promptAnswer(2,+b.dataset.i));csLineFit()}
   function promptAnswer(a,i){const s=PRM.cur;if(!s)return;const ex=pv(s.extra)||[];PRM.dis.add(s.id);promptSet(null);audInit();if(a===1)s.yes();else if(a===2&&ex[i])ex[i].fn();else if(s.no)s.no()}
   addEventListener('keydown',e=>{const t=e.target&&e.target.tagName;if(t==='INPUT'||t==='TEXTAREA'||t==='SELECT')return;const k=e.key.toLowerCase();
@@ -4825,11 +4872,11 @@ const POSTERS_CITY=[['#f2b705','#1b1b1b','KANELBULLE','Färskt varje morgon','Ba
   function csControls(on){if(on){if(!csSaved)csSaved={min:controls.minDistance,max:controls.maxDistance,minP:controls.minPolarAngle,maxP:controls.maxPolarAngle};controls.minDistance=1.6;controls.maxDistance=16;controls.minPolarAngle=0.2;controls.maxPolarAngle=1.62;controls.enabled=true}
     else if(csSaved){controls.minDistance=csSaved.min;controls.maxDistance=csSaved.max;controls.minPolarAngle=csSaved.minP;controls.maxPolarAngle=csSaved.maxP;controls.enabled=true;csSaved=null}}
   function csPlace(x,y,z,yaw){av.position.set(x,y,z);av.rotation.y=yaw;CS.reg=csWhere(x,z,y,null);controls.target.set(x,y+1.45,z);camera.position.set(x-Math.sin(yaw)*3.6,y+2.6,z-Math.cos(yaw)*3.6);controls.update()}
-  function csEnter(d){if(CS.mode||IN.on||DR.on||rideState||CUT.on)return;walk=null;promptSet(null);audInit();
+  function csEnter(d,after){if(CS.mode||IN.on||DR.on||rideState||CUT.on)return;walk=null;promptSet(null);audInit();
     fadeDo(()=>{if(!CS.B)CS.B=csBuild();csPeople();const B=CS.B;CS.mode='station';CS.pend=0;CS.flushT=0;CS.auto=null;CS.sit=null;CS.lastMin=-1;S.tix=S.tix||[];S.fx=S.fx||{EUR:0,USD:0};
       const wy=av.rotation.y;scene.remove(av);B.sc.add(av);CS.avS=av.scale.x;av.scale.setScalar(AV_M);ring.visible=false;av.visible=true;if(avHidden)av.visible=false;
       csControls(true);csPlace(d.in[0],d.in[1],d.in[2],d.in[3]);PRM.dis.add('x'+d.id);// you walked in here: no "exit?" until you have moved away
-      $('inhud').style.display='none';$('inAct').style.display='none';$('labels').style.display='none';csHudMode('station');log(`Entered Stockholm Central (${d.name}).`);csLine('Welcome to Stockholm Central · Guide shows the way to tickets, trains and food',7)})}
+      $('inhud').style.display='none';$('inAct').style.display='none';$('labels').style.display='none';csHudMode('station');log(`Entered Stockholm Central (${d.name}).`);csLine('Welcome to Stockholm Central · Guide shows the way to tickets, trains and food',7);if(after)after()})}
   function csExitNow(d){const B=CS.B;B.sc.remove(av);scene.add(av);av.scale.setScalar(CS.avS);ring.visible=true;if(CS.sit)csStand(true);csControls(false);const yaw=yawS2W(av.rotation.y);CS.mode=null;CS.auto=null;csDoorsWorld();
     placeAvatar(d.w.x,d.w.z,true);av.rotation.y=yaw;PRM.dis.add('w'+d.id);promptSet(null);csHudMode(null);csGuideOff();['crowd','rumble','wind'].forEach(n=>audSet(n,0));csFlush(true);if(CS.late){CS.late=0;spendTime(0.05)}save();render()}
   function csExit(d){fadeDo(()=>{csExitNow(d);log(`Left Stockholm Central by the ${d.name.toLowerCase()}.`)})}
@@ -5085,12 +5132,12 @@ const POSTERS_CITY=[['#f2b705','#1b1b1b','KANELBULLE','Färskt varje morgon','Ba
     if(Object.keys(MODELS.chars||{}).length){const lo2=Q==='low',n=lo2?12:22,free=X.seats.slice();for(let i=0;i<n&&free.length;i++){const s=free.splice(Math.floor(Math.random()*free.length),1)[0];s.taken='npc';const p=cPerson();npcSit(p,s.x,0,s.z,s.yaw);dyn.add(p);X.ppl.push(p)}
       for(let i=0;i<(lo2?2:4);i++){const z=DOORS[Math.floor(Math.random()*DOORS.length)]+(Math.random()-0.5)*1.4,p=cPerson();p.userData.mx.update(Math.random()*2);p.position.set(0.25+(Math.random()-0.5)*1.6,0,z);p.rotation.y=Math.random()*6;dyn.add(p);X.ppl.push(p)}}}
   function jrCarsWorld(on){if(JR.cars){JR.cars.forEach(c=>scene.remove(c));JR.cars=null}if(!on)return;JR.cars=[];for(let i=0;i<6;i++){const c=railCar({...FLEET.X60},CL*0.97,i===0?1:i===5?2:0,true);c.visible=false;scene.add(c);JR.cars.push(c)}}
-  function jrStart(d,lz){const P=pRoutes()[d.ref+d.k]||pRoutes()['41'+d.k];if(!P){toast('The line data for this train is missing, so it cannot be ridden here');return}
+  function jrStart(d,lz,after){const P=pRoutes()[d.ref+d.k]||pRoutes()['41'+d.k];if(!P){toast('The line data for this train is missing, so it cannot be ridden here');return}
     fadeDo(()=>{const X=jrScene();promptSet(null);csGuideOff();if(CS.sit)csStand(true);CS.B.sc.remove(av);X.sc.add(av);CS.mode='ride';CS.auto=null;
       const R=P.R,stops=P.stops.map(s=>jrStopInfo(R,s));JR={d0:d,P,R,stops,si:0,d:stops[0].d+HALF*CM,v:0,phase:'dwell',arrAt:d.arr,depAt:d.dep,doors:ptDoor(d,csClk()),doorSide:-1,view:'in',cineDone:new Set(),lastCine:-1e9,yaw:Math.PI/2,pitch:-0.04,exits:[],final:false,clackD:0,tvT:0};
       for(const [a,b] of R.tun)if(b<R.L-0.02&&b-a>4&&b>JR.d&&b<stops[stops.length-1].d)JR.exits.push(b);
       jrDress();jrCarsWorld(true);av.position.set(-0.85,0,lz);av.rotation.y=Math.PI/2;JR.yaw=lz>0?Math.PI:0;controls.enabled=false;csHudMode('ride');jrScreen();
-      log(`Boarded pendeltåg ${d.ref} to ${d.to} at Stockholm City (spår ${d.track}).`);csLine(`Pendeltåg ${d.ref} to ${d.to} · departs ${hmm(d.dep)} · find a seat (walk to one) or stay by the doors`,6)})}
+      log(`Boarded pendeltåg ${d.ref} to ${d.to} at Stockholm City (spår ${d.track}).`);csLine(`Pendeltåg ${d.ref} to ${d.to} · departs ${hmm(d.dep)} · find a seat (walk to one) or stay by the doors`,6);if(after)after()})}
   function jrDepart(){JR.phase='run';JR.closing=0;const nx=JR.stops[JR.si+1];sfx.chime();setTimeout(()=>say('Nästa: '+nx.disp+'.'),1500);jrScreen();csHudSync(true)}
   function jrArrive(){JR.si++;const s=JR.stops[JR.si];JR.phase='dwell';JR.arrAt=csClk();JR.final=JR.si>=JR.stops.length-1;JR.depAt=JR.final?Infinity:JR.arrAt+0.75;JR.doorSide=s.side;JR.closing=0;JR.finalAsked=0;
     sfx.chime();setTimeout(()=>say(s.disp+'. '+(s.conn?s.conn+'. ':'')+(JR.final?'Tåget fortsätter utanför kartan. ':'')+'Dörrarna öppnas på '+(s.side<0?'höger':'vänster')+' sida.'),1500);jrScreen();csLine(`${s.disp}${s.conn?' · '+s.conn:''} · doors open on the ${s.side<0?'right':'left'}`,6);csHudSync(true)}
@@ -5349,11 +5396,30 @@ const POSTERS_CITY=[['#f2b705','#1b1b1b','KANELBULLE','Färskt varje morgon','Ba
     if(av.visible&&!CS.mode){v.set(av.position.x,0.12,av.position.z).project(camera);meLbl.style.display='';meLbl.style.transform=`translate(${(v.x*0.5+0.5)*r.width}px,${(-v.y*0.5+0.5)*r.height}px) translate(-50%,calc(-100% - 6px))`}else meLbl.style.display='none';
     whereT-=dt;if(whereT<0){whereT=0.6;const sn=streetName();const nh=S.loc?D[S.loc].name:(S.nearHub?'near '+D[S.nearHub].name:'');$('where').textContent=CS.mode==='ride'&&JR?`Pendeltåg ${JR.d0.ref} · ${JR.phase==='run'?'to '+(JR.stops[JR.si+1]||{}).disp:JR.stops[JR.si].disp}`:S.flags&&S.flags.arlanda?'Arlanda Airport · Terminal 5':[sn,nh,rushNow()?'🚦 Rush hour':''].filter(Boolean).join(' · ')||'Stockholm'}
   }
+  // ---------- where you are, for the save (M7), and putting you back there after a reload ----------
+  function placeState(){if(CS.mode)csFlush(false);// station and train time goes into the save (M19)
+    if(CS.mode==='ride'&&JR&&JR.d0){const d0={};for(const k in JR.d0){const v=JR.d0[k];if(v===null||typeof v!=='object')d0[k]=v}return {kind:'train',d0,si:JR.si,phase:JR.phase==='dwell'?'dwell':'run'}}
+    if(CS.mode==='station'){const p=av.position;return {kind:'station',x:p.x,y:p.y,z:p.z,yaw:av.rotation.y}}
+    if(IN.on&&IN.kind==='home')return {kind:'interior',ik:'home'};
+    if(IN.on&&IN.kind!=='arlanda'&&IN.p&&Number.isInteger(IN.p.i))return {kind:'interior',ik:IN.kind,poi:IN.p.i,name:IN.p.name};
+    return {kind:'street'}}
+  function restorePlace(pl){if(!pl||IN.on||CS.mode||DR.on)return;const miss=()=>toast('Back on the street: the place you saved in could not be found');
+    if(pl.kind==='interior'){if(pl.ik==='home'){if(S.home!=='none')enterInterior('home',null,{});else miss();return}
+      const p=Number.isInteger(pl.poi)?POIS[pl.poi]:null;if(p&&p.name===pl.name&&kindFor(p)===pl.ik)enterInterior(pl.ik,p,{});else miss();return}
+    if(pl.kind==='station'||pl.kind==='train'){csDoorsWorld();csEnter(CS_DOORS[0],()=>{
+      if(pl.kind==='train'){if(!jrResume(pl))csLine('Back in Stockholm Central: the train you were on could not be found',6);return}
+      if([pl.x,pl.y,pl.z].every(Number.isFinite)&&csWhere(pl.x,pl.z,pl.y,null))csPlace(pl.x,pl.y,pl.z,Number.isFinite(pl.yaw)?pl.yaw:0);else csLine('Back in Stockholm Central, at the main entrance',5)});return}
+    miss()}
+  // the same train: at the stop it was standing at, or arriving at the next one
+  function jrResume(pl){const d=pl.d0;if(!d||(d.k!=='S'&&d.k!=='N')||!(pRoutes()[d.ref+d.k]||pRoutes()['41'+d.k]))return false;
+    jrStart(d,(d.k==='S'?1:-1)*DOORS[DOORS.length>>1],()=>{const n=JR.stops.length,t=Math.min(n-1,Math.max(0,(pl.phase==='dwell'?pl.si:pl.si+1)|0));
+      if(t===0)JR.depAt=Math.max(JR.depAt,csClk()+1);else{JR.si=t-1;JR.d=JR.stops[t].d+HALF*CM;JR.v=0;JR.doors=0;jrArrive()}
+      csLine(`Back on pendeltåg ${d.ref} to ${d.to} · ${JR.stops[JR.si].disp}`,6)});return true}
   tick();
   const API={startLesson,inLesson:()=>!!COACH.mode,lookAtFlight,placeAvatar,landAt:info=>{if(IN.on)exitInterior(true);playLanding(info,()=>enterInterior('arlanda',{name:'Stockholm Arlanda Airport · Terminal 5 · Arrivals'},{}))},openGate:k=>{const gt=IN.gates&&IN.gates[k];if(!gt)return;IN.col=IN.col.filter(c=>!gt.c.includes(c));gt.m.forEach(m=>m.visible=false)},leaveAirportBy:(mode,dst,cb)=>{exitInterior(true);arriveBy(mode,dst,cb)},enterAirport:()=>{if(IN.on)exitInterior(true);enterInterior('arlanda',{name:'Stockholm Arlanda Airport · Terminal 5 · Arrivals'},{})},leaveAirport:(x,z)=>{exitInterior(true);const f=freeSpot(x,z)||[x,z];placeAvatar(f[0],f[1],true)},stationPos:k=>{const ll=k==='cityterminal'?[59.3318,18.0560]:[59.3303,18.0581];const [x,z]=P(ll[0],ll[1]);const f=freeSpot(x,z)||[x,z];return {x:f[0],z:f[1]}},avPos:()=>({x:av.position.x,z:av.position.z}),lieDown,hideAv:h=>{avHidden=h;av.visible=!h},emergency,leaveScene,isDriving:()=>DR.on,busLinesAt,busRide,hospitalNear:(x,z)=>{const L=[['Karolinska Universitetssjukhuset Solna',59.3488,18.0307],['Södersjukhuset',59.3106,18.0521],['S:t Görans sjukhus',59.3376,18.0221],['Danderyds sjukhus',59.3919,18.0412]].map(([n,a,b])=>{const [hx,hz]=P(a,b);const f=freeSpot(hx,hz)||[hx,hz];return {name:n,x:f[0],z:f[1]}});return L.sort((a,b)=>Math.hypot(a.x-x,a.z-z)-Math.hypot(b.x-x,b.z-z))[0]},setCoat,walkPath,ride,emote,refresh,season:()=>{lastSeason=''},snapTime,aurora:()=>{auroraT=1.2},route,streetName,isMoving:()=>inputVec().mag>0.08,setLook:n=>setLook(n),applyOutfit,setHome,syncCar,startDrive,stopDrive,nearPlaces,kindFor,poi:i=>POIS[i],
     enterPlace:(p,o)=>{const k=kindFor(p);if(!k){showPoi(p);return}if(k==='club'&&!(S.hour>=21.5||S.hour<2)){toast('The club opens late in the evening');return}if(k==='club'&&!S.flags['club'+S.day]){if(S.money<200){toast('Entry is 200 kr');return}S.money-=200;S.flags['club'+S.day]=1;log('Paid 200 kr entry at '+p.name+'.');render()}enterInterior(k,p,o)},
     enterHome:()=>enterInterior('home',null,{}),showCrowd,exitInterior,setQueue:n=>{IN.queue=n},inside:()=>IN.on,driving:()=>DR.on,
-    centralEntrance:()=>{csDoorsWorld();return CS_DOORS[0].w},inStation:()=>CS.mode,leaveStation:csForceOut};
+    centralEntrance:()=>{csDoorsWorld();return CS_DOORS[0].w},inStation:()=>CS.mode,leaveStation:csForceOut,placeState,restorePlace};
   for(const k of ['walkPath','ride','placeAvatar','busRide','startDrive','enterPlace','enterHome','landAt','leaveScene','leaveAirport','leaveAirportBy','lieDown','emergency','enterAirport','startLesson']){const f=API[k];if(typeof f==='function')API[k]=(...a)=>{csForceOut();return f(...a)}}
   return API;
 }
@@ -5372,8 +5438,8 @@ function matchServices(){if(!CITY)return;const pois=CITY.m.pois.map((p,i)=>({i,c
 async function start(data){uiInit();
   const hot=data&&data.S&&data.S.flags&&data.S.flags.started?data.S:null;
   if(hot){S=migrate(hot);SV.mode='active';try{SV.expected=localStorage.getItem(SAVE_KEY)}catch(e){}}else S=load();
-  let fresh=false;
-  if(!S){fresh=true;const b=BG.newcomer,a=D[b.start];S={v:4,name:'Alex',bg:'newcomer',day:1,hour:8,money:b.s.money,energy:90,mood:b.s.mood,social:b.s.social,svenska:b.s.svenska,skill:b.s.skill,queue:0,home:b.home,pos:{x:a.x+0.3,z:a.z+0.3},loc:b.start,job:null,jobDays:0,pay:0,slUntil:0,vitD:0,coat:false,sunToday:false,sick:0,applied:{},flags:{},docs:{...b.docs},log:[],won:false,weather:'clear',temp:7};log('Welcome to Stockholm. Pick who you are to begin.')}
+  let fresh=false;const resume=placeValid(S)?S.place:null;// read now: saves made while the city loads record the street
+  if(!S){fresh=true;const b=BG.newcomer,a=D[b.start];S={v:5,name:'Alex',bg:'newcomer',day:1,hour:8,money:b.s.money,energy:90,mood:b.s.mood,social:b.s.social,svenska:b.s.svenska,skill:b.s.skill,queue:0,home:b.home,pos:{x:a.x+0.3,z:a.z+0.3},loc:b.start,job:null,jobDays:0,pay:0,slUntil:0,vitD:0,coat:false,sunToday:false,sick:0,applied:{},flags:{},docs:{...b.docs},log:[],won:false,weather:'clear',temp:7};log('Welcome to Stockholm. Pick who you are to begin.')}
   lifeInit(S);updateLoc();render();
   if(!SV.on){SV.on=true;addEventListener('pagehide',()=>save());document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')save()})}
   try{CITY=await loadCity();matchServices()}catch(e){console.error(e);CITY=null;$('loadtxt').textContent='Could not load the real city data, so you get a simplified Stockholm. ('+e.message+')'}
@@ -5381,7 +5447,7 @@ async function start(data){uiInit();
   const L=$('loading');setTimeout(()=>{L.style.opacity=0;setTimeout(()=>L.remove(),700)},CITY?200:2500);
   if(!CITY){const n=document.createElement('div');n.className='nogl';n.style.cssText='inset:auto;top:160px;left:50%;transform:translateX(-50%);width:min(440px,calc(100% - 32px));background:var(--glass);border-radius:12px;z-index:5;line-height:1.45';n.textContent=location.protocol==='file:'?'The city cannot load when index.html is opened from disk. Run ./start.sh in this folder and open http://localhost:8000 instead.':'Could not load the city data from the data/ folder, so the map is empty. Check that ./start.sh is running in the game folder, then reload.';$('stage').appendChild(n)}
   if(!W){const n=document.createElement('div');n.className='nogl';n.style.cssText='inset:auto;top:160px;left:50%;transform:translateX(-50%);width:min(440px,calc(100% - 32px));background:var(--glass);border-radius:12px;z-index:5;line-height:1.45';n.textContent='Your browser could not start 3D graphics (WebGL), so the city cannot be drawn. The game still works from the panels. Fix: quit the browser completely and reopen it (after a graphics crash Chrome blocks 3D until restart), and check that "Use graphics acceleration" is on in its settings.';$('stage').appendChild(n)}
-  else{W.placeAvatar(S.pos.x,S.pos.z,true);if(!S.addr&&S.home!=='none'){assignAddress();save()}W.setHome();W.syncCar();if(!S.wants.length)rollWants();if(S.flags&&S.flags.arlanda&&W.enterAirport)setTimeout(()=>W.enterAirport(),600)}
+  else{W.placeAvatar(S.pos.x,S.pos.z,true);if(!S.addr&&S.home!=='none'){assignAddress();save()}W.setHome();W.syncCar();if(!S.wants.length)rollWants();if(S.flags&&S.flags.arlanda&&W.enterAirport)setTimeout(()=>W.enterAirport(),600);else if(resume&&W.restorePlace)setTimeout(()=>W.restorePlace(resume),600)}
   render();if(fresh)intro();
   fetchLiveWeather().then(ok=>{if(ok)setTimeout(()=>wearTip(true),fresh?20000:2500)});setInterval(fetchLiveWeather,10*60e3);if(FLIGHT_RELAY){fetchFlights();setInterval(fetchFlights,10000)}setInterval(()=>{if(Math.random()<0.35)incomingCall()},150000);
 }

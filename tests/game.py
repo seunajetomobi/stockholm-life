@@ -22,14 +22,16 @@ def chrome_path():
 # window.__T. The copy exists only in the test browser (Playwright's route()); index.html on disk and the
 # published game are never changed. A name that no longer exists makes buildWorld throw, and the tests fail
 # at boot with a ReferenceError naming it.
-HOOK_NAMES = ['csEnter', 'CS_DOORS', 'ptNext', 'csClk', 'csLine', 'promptSet',
+HOOK_NAMES = ['csEnter', 'CS_DOORS', 'ptNext', 'csClk', 'csLine', 'promptSet', 'PRM',
               'jrStart', 'jrSit', 'jrStand', 'jrCam', 'jrArm', 'jrBlockers', 'jrAlight', 'jrSkipNext', 'jrSkipStop',
               'icam', 'av', 'camera', 'controls', 'scene', 'ring', 'IW', 'IH', 'HALF', 'CARM', 'zcOf', 'DOORZ', 'JRC']
 HOOK_LIVE = ['CS', 'JR', 'JRS', 'avHidden']  # reassigned during play, so read through getters
 # The rules layer for tests/test_save_safety.py. Names missing from an older index.html read as null, so the
 # negative control (SL_INDEX_HTML=<baseline>) still boots and the tests fail on behaviour, not on the hook.
 SAVE_HOOK = ("window.__TS={get S(){return S},get busy(){return busy},set busy(v){busy=v},COACH,save,deported,sentence,crimeDaily,"
-             "get SV(){return typeof SV==='undefined'?null:SV}};")
+             "get SV(){return typeof SV==='undefined'?null:SV},get W(){return W},"
+             + ','.join(f"{n}:typeof {n}==='undefined'?null:{n}" for n in ('placeStamp', 'placeValid', 'importCheck', 'importApply', 'saveHash', 'SAVE_FILE'))
+             + "};")
 
 
 def hooked_html():

@@ -457,15 +457,16 @@ h2.hero{font-size:34px;background:linear-gradient(90deg,var(--sweblue),#3a86ff 4
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/utils/BufferGeometryUtils.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/modifiers/SimplifyModifier.js"></script>
 <script src="src/geography.js"></script>
+<script src="src/util/format.js"></script>
 <script>
 (function(){
 /* =================== GEOGRAPHY =================== */
 // The projection, districts, stations, lines and route finding live in src/geography.js, loaded before this script.
-// useModule() returns a module from window.StockholmLife; a module that did not load stops the game here with a
-// message on the loading screen, not a blank page. docs/MODULES.md
-function useModule(name){const m=window.StockholmLife&&window.StockholmLife[name];if(m)return m;
-  const t=document.getElementById('loadtxt');if(t)t.textContent=`The game could not load src/${name}.js. Reload the page. If this keeps happening, a file is missing from the site.`;
-  throw new Error(`src/${name}.js did not load`)}
+// useModule(name, file) returns a module from window.StockholmLife (file: its path under src/, default <name>.js); a module
+// that did not load stops the game here with a message on the loading screen, not a blank page. docs/MODULES.md
+function useModule(name,file=name+'.js'){const m=window.StockholmLife&&window.StockholmLife[name];if(m)return m;
+  const t=document.getElementById('loadtxt');if(t)t.textContent=`The game could not load src/${file}. Reload the page. If this keeps happening, a file is missing from the site.`;
+  throw new Error(`src/${file} did not load`)}
 const {O_LAT,O_LON,P,PP,WATER_FALLBACK,AREAS,HUB_R,ST,STP,LINES,transitRoute,nearestStation}=useModule('geography');
 const D=AREAS;
 
@@ -1046,10 +1047,7 @@ function renderCivic(){if(!S||!S.civ)return;const c=S.civ,sh=pollShares(),v=canV
 /* =================== STATE & HELPERS =================== */
 let S=null,busy=false;
 const $=id=>document.getElementById(id);
-const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
-const kr=n=>(n<0?'−':'')+Math.abs(Math.round(n)).toString().replace(/\B(?=(\d{3})+(?!\d))/g,' ')+' kr';
-const hhmm=h=>{h=((h%24)+24)%24;let hh=Math.floor(h),mm=Math.round((h-hh)*60);if(mm===60){hh=(hh+1)%24;mm=0}return String(hh).padStart(2,'0')+':'+String(mm).padStart(2,'0')};
-const fmtDur=min=>min<60?Math.max(1,Math.round(min))+' min':Math.floor(min/60)+' h '+String(Math.round(min%60)).padStart(2,'0')+' min';
+const {clamp,kr,hhmm,fmtDur}=useModule('format','util/format.js');
 const dateOf=d=>{const x=new Date(START);x.setDate(x.getDate()+d-1);return x};
 const today=()=>dateOf(S.day);
 const RAD=Math.PI/180,LAT=59.33;

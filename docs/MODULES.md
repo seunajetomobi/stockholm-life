@@ -10,15 +10,18 @@ Written with the first move (`refactor/modules-first-extraction`, from `main` `3
 index.html        markup, CSS, and the game script (one inline classic <script>, a single IIFE)
 src/
   geography.js    the map projection, districts, stations, lines and route finding
+  util/
+    format.js     number, money and time formatting: clamp, kr, hhmm, fmtDur
 data/             city data, unchanged
-tests/            test_geography.py tests the module; test_syntax.py checks every file in src/
+tests/            test_geography.py and test_format.py test the modules; test_syntax.py checks every file under src/
 ```
 
-| Module | Owns | Public interface (`window.StockholmLife.geography`) | Depends on |
+| Module | Owns | Public interface (an object on `window.StockholmLife`, named after the module) | Depends on |
 | --- | --- | --- | --- |
 | `src/geography.js` | The projection (1 unit = 50 m, origin T-Centralen, x east, z south); the fallback water outlines; the ten districts; the 45 T-bana and tram stations; the six lines; route finding with transfer penalties; the nearest station to a point | `O_LAT`, `O_LON`, `P`, `PP`, `WATER_FALLBACK`, `AREAS`, `HUB_R`, `ST`, `STP`, `LINES`, `transitRoute`, `nearestStation` | Nothing: no DOM, no game state, no three.js, no network |
+| `src/util/format.js` | `clamp`; `kr` (kronor with a space between thousands and a real minus sign); `hhmm` (a clock time from hours, wrapping at 24); `fmtDur` (a duration from minutes). The original bodies, moved unchanged | `window.StockholmLife.format`: `clamp`, `kr`, `hhmm`, `fmtDur` | Nothing: no DOM, no game state, no three.js, no network |
 
-The game script reads the module once, at its first statement, under the names it always used (`D` stays an alias of `AREAS`). No function, variable or save key changed name, and no other line of the game script changed.
+The game script reads each module once, at the place where the code used to be, under the names it always used (`D` stays an alias of `AREAS`; `clamp`, `kr`, `hhmm` and `fmtDur` are read at their old lines). No function, variable or save key changed name. The game script's other `hhmm` is a local variable inside a function and stays local. `dateOf`, `today`, `esc0`, `esc2` and the local `escH` stayed where they were: they are not pure or not identical, and merging them would change behaviour.
 
 ## 2. How a module works
 
@@ -28,10 +31,15 @@ A module is a **classic script** in `src/`, loaded by its own `<script src>` tag
 
 ```html
 <script src="src/geography.js"></script>
+<script src="src/util/format.js"></script>
 <script>
 (function(){
 const {O_LAT, …, nearestStation}=useModule('geography');
+// …later, where the code used to be:
+const {clamp,kr,hhmm,fmtDur}=useModule('format','util/format.js');
 ```
+
+`useModule(name, file)` takes the module's name on `window.StockholmLife` and, when the file is not `src/<name>.js`, its path under `src/`. A module in a subfolder passes it, so that a missing file is reported under its real path.
 
 Each module wraps its code in a function with `'use strict'`. It registers one object on `window.StockholmLife`, or on `module.exports` when Node loads it for tests:
 
@@ -63,13 +71,13 @@ A classic script runs in order and keeps the game script exactly as it was. Conv
    It never reads the game script's variables (`S`, `W`, `CITY`). Those are not visible to it anyway, because they live inside the game script's function.
 3. **State stays with its owner.** Data modules are read-only in practice. Nothing in the game writes to `AREAS`, `ST`, `STP` or `LINES` (checked when `geography.js` moved). The life state `S` is owned by the game script until the state module exists (§4.2).
 4. **The same names.** Moved code keeps its names, comments and behaviour. A move and a change never share a pull request.
-5. **Fail loudly at startup.** The game script reads every module through `useModule(name)`. If a module did not load (a missing file, a network failure, a syntax error), `useModule` writes *"The game could not load src/<name>.js…"* on the loading screen and stops the script, instead of leaving a blank page.
+5. **Fail loudly at startup.** The game script reads every module through `useModule(name, file)`. If a module did not load (a missing file, a network failure, a syntax error), `useModule` writes *"The game could not load src/<file>…"* (the real path, e.g. `src/util/format.js`) on the loading screen and stops the script, instead of leaving a blank page.
 
 ### 2.3 Adding a module
 
 1. Choose a section from the sequence in §6, and check that its names are not reassigned outside it. Use an AST pass: a plain text search is misleading, because many names are shadowed by local variables (`P` and `D` are reused as local arrays in `buildWorld`).
 2. Copy the code verbatim into `src/<name>.js` inside the wrapper of §2.1, and list its public names in the registered object.
-3. In `index.html`, replace the section with `const {…}=useModule('<name>');`, and add `<script src="src/<name>.js"></script>` after the modules it depends on and before the game script.
+3. In `index.html`, replace the section with `const {…}=useModule('<name>');` (or `useModule('<name>','<folder>/<name>.js')` for a module in a subfolder, with the same path in the script tag), and add `<script src="src/<name>.js"></script>` after the modules it depends on and before the game script.
 4. Write `tests/test_<name>.py` (§2.4).
 5. Run `python3 tests/test_syntax.py` and the full suite (`tests/README.md`).
 6. Document it here, in §1.
@@ -103,7 +111,7 @@ The Deploy workflow (`.github/workflows/deploy.yml`, step "Collect the game file
 
 1. **HTML parse.** The CSS and the markup are read, and the loading screen is visible.
 2. **three.js r128 and its add-ons**, classic scripts from cdnjs and jsdelivr.
-3. **The `src/` modules**, in order. Today that is only `geography.js`.
+3. **The `src/` modules**, in order. Today: `geography.js`, then `util/format.js`.
 4. **The game script, top level.** The constants and tables are defined, plus about 600 functions. Five core functions are wrapped by later reassignments, so their behaviour depends on file order: `log` and `addBill`, `spendTime` and `sleep` in the phone section, and `newGame` in the origins section. No geography name is used at this stage outside a function.
 5. **`start()`**, called directly, or through `window.claude.hot` when that is present:
    1. `uiInit()`;
@@ -190,7 +198,7 @@ Foundations first; one module per pull request; each pull request is a move only
 | --- | --- | --- | --- |
 | 0 | Publishing `src/` (§3) | Without it no module can go live | Owner approval of the workflow change |
 | 1 | `src/geography.js` | **Done** (the first move). Pure, used throughout the game script and the world, never written outside its section | Step 0 |
-| 2 | `src/util/format.js`: `clamp`, `kr`, `hhmm`, `fmtDur`, `esc0`/`esc2`/`escH`, `pickA` | Pure helpers used everywhere; makes the later rules modules testable | — |
+| 2 | `src/util/format.js`: `clamp`, `kr`, `hhmm`, `fmtDur` | **Done** (the second move). Pure helpers used everywhere; makes the later rules modules testable. `esc0`/`esc2`/`escH` (they differ in how they treat `null`) and `pickA` (not checked) did not move | Step 1 |
 | 3 | `src/rules/sun.js`: `sunInfo`, `daylight`, `sunrise`, `sunset`, `isLight`, WMO tables | Pure maths, tested against published sun times | — |
 | 4 | `src/city-data.js`: `gunzipFetch`, `parseHours` | Small, loads assets, testable with stubbed `fetch` | — |
 | 5 | Data tables: `JOBS`, `HOMES`, `ACTS`, `COURSES`, `ITEMS`, `COUNTRIES`, prices (with their dates) | Data only; check each for functions that close over `S` first | After step 2 |

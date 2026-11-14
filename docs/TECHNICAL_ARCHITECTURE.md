@@ -23,7 +23,7 @@ How Stockholm Life is built today, its known weaknesses, and the target architec
 | `data/b.json`, `r.json`, `m.json`, `t.json` | 7.3, 8.1, 3.2, 2.1 MB | Buildings in 1,101 tiles; street graph; green areas, water, POIs; transit routes |
 | `data/x.json`, `o.json`, `e.json` | 0.4 MB | Signals, one-way and lanes, station entrances |
 | `data/people.json`, `vehicles.json`, `trees.json` | 14.7 MB | GLB models as base64 inside JSON |
-| `src/geography.js` | | The first module moved out of `index.html`: projection, districts, stations, lines, route finding. How modules work: [MODULES.md](MODULES.md) |
+| `src/geography.js`, `src/util/format.js` | | The first two modules moved out of `index.html`: projection, districts, stations, lines and route finding; `clamp`, `kr`, `hhmm`, `fmtDur`. How modules work: [MODULES.md](MODULES.md) |
 | `tools/osm_lanes.py`, `tools/osm_stations.py` | | Build `o.json` and `e.json` from Overpass exports (inputs not in the repo) |
 | `tools/flights-worker.js` | | The relay |
 | `.github/workflows/tests.yml`, `deploy.yml` | | CI tests and the manual deployment |

@@ -4,7 +4,7 @@ The single source of the current task and the tasks after it. Project status (co
 
 How to use it: one task is **Current**. The coordinator (ChatGPT, through the user) adds and orders tasks; the user approves them. An agent starts only the current task, moves it to **Done** with a link to its pull request or report when the user has accepted it, and does not start the next one without approval. A task that needs more than a few lines gets a spec in `.agent/tasks/<task-id>.md`.
 
-Updated 2026-11-07.
+Updated 2026-11-14.
 
 ## Current
 
@@ -14,10 +14,11 @@ Updated 2026-11-07.
 
 ## Up next
 
-In order. Apart from the part of `m0-devices` noted below, none of these has started. `m1-save` depends on M0 being closed; `m1a-save-safety` went ahead before that as an approved exception.
+In order. Apart from `m3-modules-first` (implemented, awaiting review) and the part of `m0-devices` noted below, none of these has started. `m1-save` depends on M0 being closed; `m1a-save-safety` went ahead before that as an approved exception.
 
 | ID | Task | Owner | Notes | Needs approval for |
 | --- | --- | --- | --- | --- |
+| m3-modules-first | The first two steps of M3, gradual modularisation ([MODULES.md](../docs/MODULES.md)): `src/geography.js` and `src/util/format.js` moved out of `index.html` as classic scripts, with no change to behaviour or saves; the Deploy workflow and `tools/live_check.py` publish and verify `src/`; new tests `tests/test_geography.py`, `tests/test_format.py` and the module checks in `tests/test_syntax.py`. **Status: implemented and tested locally (2026-11-14); awaiting pull-request review. Not merged, not deployed, not verified by CI.** Branch `refactor/modules-first-extraction` from `main` `3eb5711`. See [PROJECT_STATUS.md](../docs/PROJECT_STATUS.md) for the local results | Claude Code | Does not replace `m0-desktop-checks`, which stays Current and paused. Published only after `src/` is in the Deploy workflow (part of this task). Next candidates, none approved: `save-fixtures` before the rest of M1; the sun maths (`MODULES.md` §6) | Pushing, the pull request, merging (it changes `deploy.yml`) and any deployment |
 | m0-devices | Real-device checks of the pendeltåg camera and the message strip ([TEST_PLAN.md §4](../docs/TEST_PLAN.md)), results recorded | User, with Claude Code recording | Follows `m0-desktop-checks`. Needs a real iPhone, Android phone and tablet. Seated-train comparison done on one laptop ([TEST_PLAN.md §6](../docs/TEST_PLAN.md)). A manual desktop session took place on 2026-11-02. Remaining manual desktop checks and physical-device checks have not yet been completed. No physical iPhone, Android or tablet test has run; M15 stays open | — |
 | m0-deploy | Deploy `main` with the "Deploy to GitHub Pages" workflow and verify it live with `tools/live_check.py` (before: against the live commit; after: against the deployed one, over at least the 10-minute cache window) | User approves; Claude Code verifies | Live is still `870fe30`. `main` now includes M1a, so deploying it publishes M1a too. Should not go ahead until the "Sit down?" mouse failure from `m0-desktop-checks` is resolved | Deploying |
 | m0-relay | Redeploy the flights relay (`tools/flights-worker.js`) with `/waittime` and the `SWEDAVIA_KEY` secret | User | Needs Cloudflare access; KNOWN_ISSUES M1. Independent of the other M0 tasks, so it can be done at any point | Deploying the Worker |

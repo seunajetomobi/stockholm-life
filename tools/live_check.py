@@ -328,7 +328,7 @@ def git_ro(repo, *args):
 
 
 def published(path):
-    return path == 'index.html' or path.startswith('data/')
+    return path == 'index.html' or path.startswith('data/') or path.startswith('src/')
 
 
 def check_entry(path, mode, typ):
@@ -360,7 +360,7 @@ def expected_from_git(repo, sha):
     if git_ro(repo, 'cat-file', '-e', f'{sha}^{{commit}}').returncode:
         raise UsageError(f'commit {sha} is not in {repo}. Run `git fetch origin` there yourself (this tool never fetches), '
                          'or use --source github')
-    r = git_ro(repo, 'ls-tree', '-r', '-l', '-z', sha, '--', 'index.html', 'data')
+    r = git_ro(repo, 'ls-tree', '-r', '-l', '-z', sha, '--', 'index.html', 'data', 'src')
     if r.returncode:
         raise UsageError(f'git ls-tree failed: {r.stderr.decode(errors="replace").strip()}')
     files = {}
@@ -437,7 +437,7 @@ def expected_from_github(policy, api, slug, sha, simulated):
                 for e in t['tree']:
                     p = prefix + e['path']
                     if e.get('type') == 'tree':
-                        if p == 'data' or p.startswith('data/'):
+                        if p in ('data', 'src') or p.startswith(('data/', 'src/')):
                             walk(e['sha'], p + '/')
                     else:
                         add(p, e)

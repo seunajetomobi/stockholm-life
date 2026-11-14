@@ -67,7 +67,7 @@ What is done and what is open in M0: [PROJECT_STATUS.md](PROJECT_STATUS.md#miles
 | | |
 | --- | --- |
 | Objective | Code that can be changed and tested in parts |
-| Scope | Move data tables, rules, saving, live-data clients, phone apps and the sections of the 3D world into native ES modules (no build step); replace the five reassigned core functions (`newGame`, `sleep`, `spendTime`, `addBill`, `log`) with explicit hooks |
+| Scope | Move data tables, rules, saving, live-data clients, phone apps and the sections of the 3D world into native ES modules (no build step); replace the five reassigned core functions (`newGame`, `sleep`, `spendTime`, `addBill`, `log`) with explicit hooks. Classic scripts on one namespace (`window.StockholmLife`) are the approved transitional architecture ([MODULES.md](MODULES.md)); native ES modules remain the intended end state, after compatibility and strict-mode audits |
 | Dependencies | M1 (can run in parallel with M2) |
 | Risks | Breakage from moves |
 | Deliverables | `index.html` reduced to markup plus a module loader; one module per area (see TECHNICAL_ARCHITECTURE.md §3) |

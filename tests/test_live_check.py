@@ -309,11 +309,13 @@ def test_targets_follow_the_commit(tmp_path):                                   
     s2 = commit(repo, game_files({**GOOD, 'data/extra.json': b'{}'}))
     assert len(lc.expected_from_git(repo, s1)['targets']) == 5
     assert len(lc.expected_from_git(repo, s2)['targets']) == 6
+    s3 = commit(repo, {**game_files(), 'src/geography.js': b'// module', 'src/util/format.js': b'// nested', 'docs/x.md': b'not published'})
+    assert sorted(lc.expected_from_git(repo, s3)['targets']) == sorted(['version.txt', *game_files(), 'src/geography.js', 'src/util/format.js'])
 
 
 def test_targets_of_this_repository():                                                          # T2
     sha = subprocess.run(['git', '-C', str(ROOT), 'rev-parse', 'HEAD'], capture_output=True, text=True).stdout.strip()
-    n = len(subprocess.run(['git', '-C', str(ROOT), 'ls-tree', '-r', '--name-only', sha, '--', 'index.html', 'data'],
+    n = len(subprocess.run(['git', '-C', str(ROOT), 'ls-tree', '-r', '--name-only', sha, '--', 'index.html', 'data', 'src'],
                            capture_output=True, text=True).stdout.split())
     exp = lc.expected_from_git(ROOT, sha)
     assert len(exp['targets']) == n + 1 and exp['targets']['version.txt']['blob'] == lc.blob_id(f'{sha}\n'.encode())
@@ -399,7 +401,7 @@ def loop_policy(api_url='http://127.0.0.1:9', **kw):
 @pytest.mark.parametrize('truncate', [False, True])
 def test_github_source_equals_local_git(tmp_path, truncate):                                     # G1, G2''
     repo = tmp_path / 'repo'
-    sha = commit(repo, game_files({**GOOD, 'data/sub/deep.json': b'{}'}))
+    sha = commit(repo, {**game_files({**GOOD, 'data/sub/deep.json': b'{}'}), 'src/geography.js': b'// module', 'src/util/format.js': b'// nested', 'docs/x.md': b'not published'})
     api = FakeAPI(repo, truncate=truncate)
     try:
         exp = lc.expected_from_github(loop_policy(api.api), api.api, 'o/r', sha, True)
@@ -664,7 +666,7 @@ def test_rules_match_deploy_workflow(tmp_path):                                 
                 return ('error', type(e).__name__)
         assert outcome(lc.parse_data, raw) == outcome(ns['parse'], str(f)), raw
     collect = text.split('- name: Collect the game files only', 1)[1].split('- uses:', 1)[0]
-    assert 'cp -R index.html data _site/' in collect, 'deploy.yml publishes other files now: update live_check.published()'
+    assert 'cp -R index.html data src _site/' in collect, 'deploy.yml publishes other files now: update live_check.published()'
     assert """printf '%s\\n' "$SHA" > _site/version.txt""" in collect, 'version.txt format changed: update finish_expected()'
 
 

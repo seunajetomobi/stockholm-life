@@ -6,7 +6,7 @@ Automated checks for the game, preserved from the 2026-10-31 audit and the two f
 
 | File | What it checks | Browser | Test hook |
 | --- | --- | --- | --- |
-| `test_syntax.py` | `node --check` on the inline `<script>` of `index.html` and on `tools/flights-worker.js` (as an ES module); the Python tools compile | No | No |
+| `test_syntax.py` | `node --check` on the inline `<script>` of `index.html`, on every module under `src/` (nested folders too; each is loaded by `index.html` and read with the same path) and on `tools/flights-worker.js` (as an ES module); every local script `index.html` loads exists and is published by the Deploy workflow and verified by `tools/live_check.py`; the Python tools compile | No | No |
 | `test_smoke.py` | Desktop 1366×768: city loads, WebGL canvas, no game file fails to load, character creation shown; "Go" starts a life and writes a save; each dock tab renders; every phone app opens without an uncaught error (at least 39 tiles); every places-bar button responds, Centralen opens its travel card | Yes | No |
 | `test_save.py` | Reload restores name, day, hour, money and position; an old `stockholm-life-v3` save migrates (HUD 10:00, 1 200 kr, v4 written) | Yes | No |
 | `test_prompt_mouse.py` | Station and train prompts answered with a real mouse (`page.mouse`: press, at least two frames, release): "Sit down?" Yes and No, another seat, getting off, entering the station; unchanged prompts keep their buttons, changed ones update | Yes | Yes |

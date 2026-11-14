@@ -23,6 +23,7 @@ How Stockholm Life is built today, its known weaknesses, and the target architec
 | `data/b.json`, `r.json`, `m.json`, `t.json` | 7.3, 8.1, 3.2, 2.1 MB | Buildings in 1,101 tiles; street graph; green areas, water, POIs; transit routes |
 | `data/x.json`, `o.json`, `e.json` | 0.4 MB | Signals, one-way and lanes, station entrances |
 | `data/people.json`, `vehicles.json`, `trees.json` | 14.7 MB | GLB models as base64 inside JSON |
+| `src/geography.js` | | The first module moved out of `index.html`: projection, districts, stations, lines, route finding. How modules work: [MODULES.md](MODULES.md) |
 | `tools/osm_lanes.py`, `tools/osm_stations.py` | | Build `o.json` and `e.json` from Overpass exports (inputs not in the repo) |
 | `tools/flights-worker.js` | | The relay |
 | `.github/workflows/tests.yml`, `deploy.yml` | | CI tests and the manual deployment |
@@ -100,6 +101,8 @@ src/
   data/   JOBS, HOMES, BG, ACTS, ITEMS, COUNTRIES, ...
 ```
 
+Until the game script itself is a module, modules are classic scripts on one namespace (`window.StockholmLife`), loaded before it; the reasons, the rules, the start-up sequence, the module inventory and the order of the moves are in [MODULES.md](MODULES.md).
+
 ### 3.2 State, time and saving (M1, M2)
 
 - One owner for `S`, with mutation helpers (`addMoney`, `advanceTime`, `setDoc`) emitting events; UI and world subscribe instead of calling `render()` everywhere.
@@ -140,3 +143,4 @@ State changes as recordable actions, seeded randomness and the explicit clock ma
 | 2026-10-31 | Evolve the existing code; no rewrite |
 | 2026-11-01 | Foundations (M1 save/state, M2 time) before new gameplay |
 | 2026-11-04 | M1a save safety may go ahead before M0 closes, as a narrow exception; the save format stays as it is and the rest of M1 still waits for M0. Deportation takes effect when its screen appears and removes v4 and v3; a tab whose expected save has changed stops saving; restart takes effect at Go; a v4 save without `flags.started` is not a completed life |
+| 2026-11-14 | Owner: keep three.js as the 3D foundation and divide the game progressively into modules, starting now (first move: geography). Modules are classic scripts until the game script can become a native ES module ([MODULES.md](MODULES.md) §2.1, proposed) |

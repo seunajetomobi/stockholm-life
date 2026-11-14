@@ -1,6 +1,6 @@
 # Stockholm Life — shared instructions for AI coding agents
 
-Stockholm Life is a single-file browser game: `index.html` holds CSS, HTML and all JavaScript (three.js r128 from CDN).
+Stockholm Life is a browser game: `index.html` holds CSS, HTML and the game script (three.js r128 from CDN); code moved out of it lives in `src/` as classic scripts loaded before the game script ([`docs/MODULES.md`](docs/MODULES.md)).
 Run with `./start.sh` and open http://localhost:8000. There is no build step and no package.json. How to run the tests: [`tests/README.md`](tests/README.md).
 
 These instructions apply to every agent working in this repository. Agent-specific notes live in that agent's own file (for Claude Code, `CLAUDE.md`, which imports this file).
@@ -93,7 +93,7 @@ Every task ends with a report (in the pull request description, or to the user w
 
 ## Coordinates and data
 
-- 1 world unit = 50 m. Origin = T-Centralen (59.3313 N, 18.0603 E). x = east, z = south. `P(lat, lon)` converts.
+- 1 world unit = 50 m. Origin = T-Centralen (59.3313 N, 18.0603 E). x = east, z = south. `P(lat, lon)` converts. Districts (`AREAS`, alias `D`), stations (`ST`, `STP`), lines (`LINES`), `transitRoute` and `nearestStation` are in `src/geography.js`.
 - Tiles are 10 units (500 m), keyed "i,j". Integer coordinates in the JSON files are units × 100.
 - `data/e.json` (T-bana entrances and rail/tram stations with their SL lines and colours) is built by `tools/osm_stations.py` from two Overpass exports.
 - `data/o.json` (one-way directions + lane counts per street edge, from OpenStreetMap tags) is built by `tools/osm_lanes.py` from an Overpass export; vehicles use it in `mayEnter`, `nextEdge`, `lanesOf` and `agentEdge`.

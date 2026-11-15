@@ -48,7 +48,7 @@ What is done and what is open in M0: [PROJECT_STATUS.md](PROJECT_STATUS.md#miles
 | Risks | Migration bugs that lose existing lives |
 | Deliverables | Save module, migrations for v3 → v4 → v5, slot UI |
 | Acceptance | Reloading in every place restores the same place and state; v3 and v4 saves migrate; a full storage shows an error; a corrupted save is not overwritten silently |
-| Testing | Unit tests for every migration and for the envelope; browser tests that save and reload in each place type |
+| Testing | Unit tests for every migration and for the envelope; browser tests that save and reload in each place type. Fixtures of saves from earlier builds (`tests/fixtures/saves/`, task `save-fixtures`) are the compatibility gate for any change to the save format; Node unit tests of the migrations need the save module (M3) |
 
 ## M2 — Independent, consistent game-time model
 

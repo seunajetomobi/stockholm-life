@@ -458,6 +458,7 @@ h2.hero{font-size:34px;background:linear-gradient(90deg,var(--sweblue),#3a86ff 4
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/modifiers/SimplifyModifier.js"></script>
 <script src="src/geography.js"></script>
 <script src="src/util/format.js"></script>
+<script src="src/rules/sun.js"></script>
 <script>
 (function(){
 /* =================== GEOGRAPHY =================== */
@@ -1050,27 +1051,18 @@ const $=id=>document.getElementById(id);
 const {clamp,kr,hhmm,fmtDur}=useModule('format','util/format.js');
 const dateOf=d=>{const x=new Date(START);x.setDate(x.getDate()+d-1);return x};
 const today=()=>dateOf(S.day);
-const RAD=Math.PI/180,LAT=59.33;
-function lastSun(y,m){const d=new Date(y,m+1,0);d.setDate(d.getDate()-d.getDay());return d}
-function sunInfo(){const d=today(),y=d.getFullYear(),N=Math.round((d-new Date(y,0,0))/864e5);
-  const dec=23.44*Math.sin(2*Math.PI*(284+N)/365)*RAD;const cosH=(Math.sin(-0.833*RAD)-Math.sin(LAT*RAD)*Math.sin(dec))/(Math.cos(LAT*RAD)*Math.cos(dec));
-  const H=Math.acos(clamp(cosH,-1,1))/RAD;const B=2*Math.PI*(N-81)/364,eot=9.87*Math.sin(2*B)-7.53*Math.cos(B)-1.5*Math.sin(B);
-  const dst=d>=lastSun(y,2)&&d<lastSun(y,9);const noon=12-(18.06-15)*4/60-eot/60+(dst?1:0);
-  return {dl:2*H/15,noon,maxEl:90-LAT+dec/RAD}}
-const daylight=()=>sunInfo().dl;
-const sunrise=()=>{const s=sunInfo();return s.noon-s.dl/2},sunset=()=>{const s=sunInfo();return s.noon+s.dl/2};
-const isLight=h=>h>=sunrise()&&h<=sunset();
+const SUN=useModule('sun','rules/sun.js');// the sun and daylight rules; the date is passed in, so the game keeps today() and nothing else changes
+function sunInfo(){return SUN.sunInfo(today())}
+const daylight=()=>SUN.daylight(today());
+const sunrise=()=>SUN.sunrise(today()),sunset=()=>SUN.sunset(today());
+const isLight=h=>SUN.isLight(h,today());
 const homeD=()=>(HOMES[S.home]||HOMES.none).d;
 const queueYears=()=>S.queue/365;
 const winter=()=>{const m=today().getMonth();return [11,0,1,2].includes(m)||(m===10&&S.flags.snow)};
 const TEMP=[-1,-1,2,7,12,17,20,19,14,8,4,0],WICON={clear:'☀',cloud:'☁',rain:'🌧',snow:'❄'};
 // ---------- live weather for Stockholm (Open-Meteo, no key): conditions now, the next 24 hours and 7 days ----------
 const LIVEWX={now:null,hours:[],days:[],at:0,err:''};
-const WMO={0:['Clear sky','clear'],1:['Mainly clear','clear'],2:['Partly cloudy','cloud'],3:['Overcast','cloud'],45:['Fog','cloud'],48:['Freezing fog','cloud'],51:['Light drizzle','rain'],53:['Drizzle','rain'],55:['Heavy drizzle','rain'],56:['Freezing drizzle','rain'],57:['Freezing drizzle','rain'],
-  61:['Light rain','rain'],63:['Rain','rain'],65:['Heavy rain','rain'],66:['Freezing rain','rain'],67:['Freezing rain','rain'],71:['Light snow','snow'],73:['Snow','snow'],75:['Heavy snow','snow'],77:['Snow grains','snow'],
-  80:['Rain showers','rain'],81:['Rain showers','rain'],82:['Violent rain showers','rain'],85:['Snow showers','snow'],86:['Heavy snow showers','snow'],95:['Thunderstorm','rain'],96:['Thunderstorm with hail','rain'],99:['Thunderstorm with hail','rain']};
-const wmo=c=>WMO[c]||['Unknown','cloud'];
-const WXICON=c=>c<=1?'☀':c===2?'⛅':c<=3?'☁':c<=48?'🌫':c>=95?'⛈':wmo(c)[1]==='snow'?'❄':'🌧';
+const {wmo,WXICON}=SUN;// the WMO weather-code tables (WMO, wmo, WXICON) live in src/rules/sun.js
 async function fetchLiveWeather(){
   const u='https://api.open-meteo.com/v1/forecast?latitude=59.3293&longitude=18.0686&timezone=Europe%2FStockholm&wind_speed_unit=ms&forecast_days=7'+
     '&current=temperature_2m,apparent_temperature,relative_humidity_2m,precipitation,snowfall,weather_code,cloud_cover,wind_speed_10m,wind_direction_10m,wind_gusts_10m,visibility,is_day'+

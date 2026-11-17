@@ -12,16 +12,19 @@ src/
   geography.js    the map projection, districts, stations, lines and route finding
   util/
     format.js     number, money and time formatting: clamp, kr, hhmm, fmtDur
+  rules/
+    sun.js        the sun and daylight for a date, and the WMO weather-code tables
 data/             city data, unchanged
-tests/            test_geography.py and test_format.py test the modules; test_syntax.py checks every file under src/
+tests/            test_geography.py, test_format.py and test_sun.py test the modules; test_syntax.py checks every file under src/
 ```
 
 | Module | Owns | Public interface (an object on `window.StockholmLife`, named after the module) | Depends on |
 | --- | --- | --- | --- |
 | `src/geography.js` | The projection (1 unit = 50 m, origin T-Centralen, x east, z south); the fallback water outlines; the ten districts; the 45 T-bana and tram stations; the six lines; route finding with transfer penalties; the nearest station to a point | `O_LAT`, `O_LON`, `P`, `PP`, `WATER_FALLBACK`, `AREAS`, `HUB_R`, `ST`, `STP`, `LINES`, `transitRoute`, `nearestStation` | Nothing: no DOM, no game state, no three.js, no network |
+| `src/rules/sun.js` | `sunInfo(date)` (day length, solar noon and the highest sun for a date at the fixed latitude of Stockholm, 59.33 N), `daylight`, `sunrise`, `sunset` and `isLight(hour, date)`; the WMO weather-code tables `WMO`, `wmo` and `WXICON`. The original bodies, moved unchanged: only `today()` became the argument `date`, so the game script keeps `today()` and its `sunInfo`, `daylight`, `sunrise`, `sunset` and `isLight` are one-line wrappers that pass it | `window.StockholmLife.sun`: `RAD`, `LAT`, `lastSun`, `sunInfo`, `daylight`, `sunrise`, `sunset`, `isLight`, `WMO`, `wmo`, `WXICON` | `src/util/format.js` (`clamp`), which must load first, read through `window.StockholmLife.format` (or `require` in Node). The first module with a dependency. No DOM, no game state, no three.js, no network |
 | `src/util/format.js` | `clamp`; `kr` (kronor with a space between thousands and a real minus sign); `hhmm` (a clock time from hours, wrapping at 24); `fmtDur` (a duration from minutes). The original bodies, moved unchanged | `window.StockholmLife.format`: `clamp`, `kr`, `hhmm`, `fmtDur` | Nothing: no DOM, no game state, no three.js, no network |
 
-The game script reads each module once, at the place where the code used to be, under the names it always used (`D` stays an alias of `AREAS`; `clamp`, `kr`, `hhmm` and `fmtDur` are read at their old lines). No function, variable or save key changed name. The game script's other `hhmm` is a local variable inside a function and stays local. `dateOf`, `today`, `esc0`, `esc2` and the local `escH` stayed where they were: they are not pure or not identical, and merging them would change behaviour.
+The game script reads each module once, at the place where the code used to be, under the names it always used (`D` stays an alias of `AREAS`; `clamp`, `kr`, `hhmm` and `fmtDur` are read at their old lines; `wmo` and `WXICON` at the old line of the WMO table). No function, variable or save key changed name. The game script's other `hhmm` is a local variable inside a function and stays local. `dateOf`, `today`, `esc0`, `esc2` and the local `escH` stayed where they were: they are not pure or not identical, and merging them would change behaviour.
 
 ## 2. How a module works
 
@@ -32,6 +35,7 @@ A module is a **classic script** in `src/`, loaded by its own `<script src>` tag
 ```html
 <script src="src/geography.js"></script>
 <script src="src/util/format.js"></script>
+<script src="src/rules/sun.js"></script>
 <script>
 (function(){
 const {O_LAT, …, nearestStation}=useModule('geography');
@@ -199,7 +203,7 @@ Foundations first; one module per pull request; each pull request is a move only
 | 0 | Publishing `src/` (§3) | Without it no module can go live | Owner approval of the workflow change |
 | 1 | `src/geography.js` | **Done** (the first move). Pure, used throughout the game script and the world, never written outside its section | Step 0 |
 | 2 | `src/util/format.js`: `clamp`, `kr`, `hhmm`, `fmtDur` | **Done** (the second move). Pure helpers used everywhere; makes the later rules modules testable. `esc0`/`esc2`/`escH` (they differ in how they treat `null`) and `pickA` (not checked) did not move | Step 1 |
-| 3 | `src/rules/sun.js`: `sunInfo`, `daylight`, `sunrise`, `sunset`, `isLight`, WMO tables | Pure maths, tested against published sun times | — |
+| 3 | `src/rules/sun.js`: `sunInfo`, `daylight`, `sunrise`, `sunset`, `isLight`, WMO tables | **Done** (the third move; on its pull request). Pure maths, tested against published sun times (sunrise-sunset.org, checked 2026-11-17, tolerance 10 minutes) and against a hash of the original outputs. The latitude is fixed, so polar day and night are not supported and not tested | Step 2 |
 | 4 | `src/city-data.js`: `gunzipFetch`, `parseHours` | Small, loads assets, testable with stubbed `fetch` | — |
 | 5 | Data tables: `JOBS`, `HOMES`, `ACTS`, `COURSES`, `ITEMS`, `COUNTRIES`, prices (with their dates) | Data only; check each for functions that close over `S` first | After step 2 |
 | 6 | Live-data clients: weather, SL, flights, news, exchange rates | Each degrades on its own; `fetch` can be stubbed | After step 2 |

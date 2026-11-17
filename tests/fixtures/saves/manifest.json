@@ -1,0 +1,157 @@
+{
+ "fixtures": [
+  {
+   "id": "v3-legacy",
+   "file": "v3-legacy.json",
+   "storage_key": "stockholm-life-v3",
+   "save_version": null,
+   "sha256": "b9620854b1e0f97d13c29dcce2df5bf839901d40ab44f6f998ed0c679394b048",
+   "bytes": 204,
+   "keys": 17,
+   "name": "Old",
+   "authenticity": "synthetic",
+   "source": "none: written by hand from the shape migrate() expects; no build wrote the v3 key",
+   "generator": "tests/fixtures/generate_saves.py (V3_LEGACY)",
+   "place": null
+  },
+  {
+   "id": "v4-55c196b",
+   "file": "v4-55c196b.json",
+   "storage_key": "stockholm-life-v4",
+   "save_version": 4,
+   "sha256": "d93019b9a397d0a3bf4a5e683dc7ba6eb889ada3a72c97555752efe1241c05f1",
+   "bytes": 2867,
+   "keys": 61,
+   "name": "Fixture Anna",
+   "authenticity": "authentic: written by the real game at the source commit; the life and its actions through the game's UI, place entry and the save trigger through test hooks (see README)",
+   "source_commit": "55c196b9a474344fd3bed10477183205f8efb05a",
+   "source_date": "2026-10-25",
+   "generator": "tests/fixtures/generate_saves.py",
+   "generator_commit": "b3305d32846d7e3c524cd9cf05e0be943fb6c119",
+   "actions": [
+    "civic / Request public documents",
+    "civic / Request public documents",
+    "civic / Request public documents",
+    "here / + Find a job",
+    "civic / Bostadslistan"
+   ],
+   "place": "none"
+  },
+  {
+   "id": "v4-870fe30",
+   "file": "v4-870fe30.json",
+   "storage_key": "stockholm-life-v4",
+   "save_version": 4,
+   "sha256": "69ce16c7ad0d2e5f9238ce4aea50fd7cd2d1706da171ffb41af56ad072f1e551",
+   "bytes": 3587,
+   "keys": 64,
+   "name": "Fixture Anna",
+   "authenticity": "authentic: written by the real game at the source commit; the life and its actions through the game's UI, place entry and the save trigger through test hooks (see README)",
+   "source_commit": "870fe309543c6eb375e6e150423002a09763a3db",
+   "source_date": "2026-10-26",
+   "generator": "tests/fixtures/generate_saves.py",
+   "generator_commit": "b3305d32846d7e3c524cd9cf05e0be943fb6c119",
+   "actions": [
+    "civic / Request public documents",
+    "civic / Request public documents",
+    "civic / Request public documents",
+    "here / + Find a job",
+    "civic / Bostadslistan"
+   ],
+   "place": "none"
+  },
+  {
+   "id": "v5-3eb5711-street",
+   "file": "v5-3eb5711-street.json",
+   "storage_key": "stockholm-life-v4",
+   "save_version": 5,
+   "sha256": "027a56b169b25ff87355c761db8353c28e64ce7641630aa72ea279e064337f24",
+   "bytes": 3578,
+   "keys": 65,
+   "name": "Fixture Anna",
+   "authenticity": "authentic: written by the real game at the source commit; the life and its actions through the game's UI, place entry and the save trigger through test hooks (see README)",
+   "source_commit": "3eb5711bdb55ad6aa02276eec8d73193092be5b3",
+   "source_date": "2026-11-08",
+   "generator": "tests/fixtures/generate_saves.py",
+   "generator_commit": "b3305d32846d7e3c524cd9cf05e0be943fb6c119",
+   "actions": [
+    "civic / Request public documents",
+    "civic / Request public documents",
+    "civic / Request public documents",
+    "here / + Find a job",
+    "civic / Bostadslistan"
+   ],
+   "place": "street"
+  },
+  {
+   "id": "v5-3eb5711-station",
+   "file": "v5-3eb5711-station.json",
+   "storage_key": "stockholm-life-v4",
+   "save_version": 5,
+   "sha256": "783de66b9f97bc2931fbe91e59382ae955e7d30e2b655e2cd43b0430864e8c70",
+   "bytes": 3872,
+   "keys": 67,
+   "name": "Fixture Anna",
+   "authenticity": "authentic: written by the real game at the source commit; the life and its actions through the game's UI, place entry and the save trigger through test hooks (see README)",
+   "source_commit": "3eb5711bdb55ad6aa02276eec8d73193092be5b3",
+   "source_date": "2026-11-08",
+   "generator": "tests/fixtures/generate_saves.py",
+   "generator_commit": "b3305d32846d7e3c524cd9cf05e0be943fb6c119",
+   "actions": [
+    "civic / Request public documents",
+    "civic / Request public documents",
+    "civic / Request public documents",
+    "here / + Find a job",
+    "civic / Bostadslistan"
+   ],
+   "place": "station"
+  },
+  {
+   "id": "v5-3eb5711-train",
+   "file": "v5-3eb5711-train.json",
+   "storage_key": "stockholm-life-v4",
+   "save_version": 5,
+   "sha256": "f2aac6d042ecff582be6e6caaac6d60ea691a6241df685bb7090be487bf9f780",
+   "bytes": 3653,
+   "keys": 67,
+   "name": "Fixture Anna",
+   "authenticity": "authentic: written by the real game at the source commit; the life and its actions through the game's UI, place entry and the save trigger through test hooks (see README)",
+   "source_commit": "3eb5711bdb55ad6aa02276eec8d73193092be5b3",
+   "source_date": "2026-11-08",
+   "generator": "tests/fixtures/generate_saves.py",
+   "generator_commit": "b3305d32846d7e3c524cd9cf05e0be943fb6c119",
+   "actions": [
+    "civic / Request public documents",
+    "civic / Request public documents",
+    "civic / Request public documents",
+    "here / + Find a job",
+    "civic / Bostadslistan"
+   ],
+   "place": "train"
+  },
+  {
+   "id": "v5-3eb5711-interior",
+   "file": "v5-3eb5711-interior.json",
+   "storage_key": "stockholm-life-v4",
+   "save_version": 5,
+   "sha256": "f2fc159e2dfa63ca20c751ffe5daa1a7373a773bd6b57144050317a63006e3ff",
+   "bytes": 3690,
+   "keys": 65,
+   "name": "Fixture Anna",
+   "authenticity": "authentic: written by the real game at the source commit; the life and its actions through the game's UI, place entry and the save trigger through test hooks (see README)",
+   "source_commit": "3eb5711bdb55ad6aa02276eec8d73193092be5b3",
+   "source_date": "2026-11-08",
+   "generator": "tests/fixtures/generate_saves.py",
+   "generator_commit": "b3305d32846d7e3c524cd9cf05e0be943fb6c119",
+   "actions": [
+    "civic / Request public documents",
+    "civic / Request public documents",
+    "civic / Request public documents",
+    "here / + Find a job",
+    "civic / Bostadslistan"
+   ],
+   "place": "interior"
+  }
+ ],
+ "note": "Synthetic lives named \"Fixture Anna\" (v3-legacy: \"Old\"), made by the game or by hand; no real player data. See tests/fixtures/saves/README.md."
+}

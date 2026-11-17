@@ -6,7 +6,8 @@ outside the street (measured in Vasastan: a bus 3.7 m outside the carriageway, o
 line has inside the carriageway, less the bus's half width (`busKerb`, `BUS_HALF` in index.html).
 
 test_bus_keeps_inside_the_street is geometry on the loaded city, without randomness: it walks the bus routes near a place where the old rule put
-a bus outside, applies the game's rule and checks the result, and it shows that the old rule (the uncapped shift) does leave the street there.
+a bus outside, calls the game's own busPlace (the function updateTransit calls) on each point and checks the result, and it shows that the old rule (the uncapped
+shift) does leave the street there. Taking the cap out of busPlace, or out of busKerb, makes it fail.
 test_traffic_stays_on_carriageways is a guard: cars driving on the ordinary road classes (4 to 9) stay inside the carriageway. Neither test changes
 anything in the game. Run alone with: python3 -m pytest tests/test_vehicle_lanes.py"""
 import time
@@ -15,18 +16,20 @@ import game
 
 # a place in Vasastan (world units, 1 unit = 50 m) where a bus route line runs along the edge of a carriageway
 SPOT = (-11.37, -25.59)
-EXPOSE = 'window.__V={busKerb,roadDepth,TRANSIT,agents,get G(){return G}};return API;'
+EXPOSE = 'window.__V={busKerb,busPlace,roadDepth,TRANSIT,agents,get G(){return G}};return API;'
 
-# every bus route line within 8 units of the spot, in steps of 0.02 units (1 m): the shift the game would apply, and where that puts the bus
-WALK = """([sx, sz]) => { const V = window.__V, out = {points: 0, inside: 0, newOut: [], oldOut: [], routes: 0};
+# every bus route line within 8 units of the spot, in steps of 0.02 units (1 m): where the game's own busPlace puts a bus (the same function updateTransit calls) and,
+# for the old rule, where the uncapped shift would have put it. A bus is given a large smoothed shift (v.lo = 1) first, as one that has just come from a wide
+# street would have, so that the cap, not the smoothing, has to keep it in the street.
+WALK = """([sx, sz]) => { const V = window.__V, out = {points: 0, newOut: [], oldOut: [], routes: 0};
   for (const R of V.TRANSIT) { if (R.m !== 'bus') continue; const P = R.pts; let used = false;
     for (let i = 1; i < P.length; i++) { const ax = P[i-1][0], az = P[i-1][1], bx = P[i][0], bz = P[i][1], L = Math.hypot(bx - ax, bz - az); if (L < 1e-6) continue;
       const dx = (bx - ax) / L, dz = (bz - az) / L;
       for (let s = 0; s < L; s += 0.02) { const x = ax + dx * s, z = az + dz * s; if (Math.hypot(x - sx, z - sz) > 8) continue;
         const k = V.busKerb(x, z), pre = V.roadDepth(x, z)[0]; if (!k || pre < 0) continue; used = true; out.points++;
-        const post = (o) => V.roadDepth(x - dz * o, z + dx * o)[0];
-        if (post(Math.min(k.lo, k.cap)) < 0) out.newOut.push([x, z, k.lo, k.cap]);
-        if (post(k.lo) < 0) out.oldOut.push([x, z, k.lo]) } }
+        const q = {x, z, dx, dz}, v = {lo: 1}; V.busPlace(v, q);
+        if (V.roadDepth(q.x, q.z)[0] < 0) out.newOut.push([x, z, k.lo, k.cap]);
+        if (V.roadDepth(x - dz * k.lo, z + dx * k.lo)[0] < 0) out.oldOut.push([x, z, k.lo]) } }
     if (used) out.routes++ }
   return out }"""
 

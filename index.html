@@ -3357,6 +3357,11 @@ const POSTERS_CITY=[['#f2b705','#1b1b1b','KANELBULLE','Färskt varje morgon','Ba
     {const tr=m==='train'||m==='subway'||m==='tram'||m==='ferry';const txt=tr?`${look.kind}${R.r.ref&&!/[;X]/.test(R.r.ref)&&look.kind!=='Arlanda Express'?' '+R.r.ref:''} → ${R.dest||''}`:(R.r.ref?R.r.ref+' ':'')+(R.dest||look.kind);v.label=textSprite(txt,{fs:28,bg:look.label,fg:'#fff',scale:0.00034});v.label.visible=false;scene.add(v.label)}
     return v}
   let lastTV=0;
+  // how far a bus keeps to the kerb side of its route line: half way to the edge on a two-way street, near the kerb on a one-way one. The line comes from the route
+  // data and can run close to the edge of the carriageway, so the shift is capped at the depth the line has inside it, less the bus's half width (BUS_HALF): a bus
+  // is moved over inside the street, never out of it onto the pavement. {lo: the wanted shift, cap: the most it may be}, or null where no carriageway is near
+  const BUS_HALF=0.03;
+  function busKerb(x,z){const rd=roadDepth(x,z),sg=rd[1];if(!sg)return null;return {lo:G.ow[sg[6]]?Math.max(0,sg[4]-0.045):sg[4]*0.5,cap:Math.max(0,rd[0]-BUS_HALF)}}
   function updateTransit(dt,fx,fz,T){if(!transitOn)return;const now=performance.now();
     if(now-lastTV>900){lastTV=now;
       for(let i=tveh.length-1;i>=0;i--){const v=tveh[i];const p=posOnR(v.R,v.d);if(v.d>=v.R.L-0.02||Math.hypot(p.x-fx,p.z-fz)>20){v.parts.forEach(q=>scene.remove(q));if(v.label)scene.remove(v.label);tveh.splice(i,1)}}
@@ -3383,7 +3388,7 @@ const POSTERS_CITY=[['#f2b705','#1b1b1b','KANELBULLE','Färskt varje morgon','Ba
         v.d=Math.min(R.L,v.d+Math.min(v.v*dt,Math.max(0,stopAt)))}
       let back=0;const hid=inTunnel(R,v.d);
       v.parts.forEach((p,i)=>{const dd=Math.max(0,v.d-back-v.carL[i]/2);back+=v.carL[i]+0.01;const q=posOnR(R,dd);p.visible=tunDepth(R,dd)<0.26;
-        if(v.m==='bus'){const sg=roadDepth(q.x,q.z)[1],L=Math.hypot(q.dx,q.dz)||1;if(sg){const lo=G.ow[sg[6]]?Math.max(0,sg[4]-0.045):sg[4]*0.5;v.lo=(v.lo===undefined?lo:v.lo+(lo-v.lo)*0.1);q.x-=q.dz/L*v.lo;q.z+=q.dx/L*v.lo}}
+        if(v.m==='bus'){const k=busKerb(q.x,q.z),L=Math.hypot(q.dx,q.dz)||1;if(k){v.lo=(v.lo===undefined?k.lo:v.lo+(k.lo-v.lo)*0.1);const off=Math.min(v.lo,k.cap);q.x-=q.dz/L*off;q.z+=q.dx/L*off}}
         p.position.set(q.x,v.m==='ferry'?0.008:0.012+deckAt(q.x,q.z),q.z);
         p.rotation.y=Math.atan2(q.dx,q.dz)-(p.userData.boat?Math.PI/2:0)});
       if(v.label){const q=v.parts[0].position;v.label.position.set(q.x,v.m==='ferry'?0.22:0.15,q.z);v.label.visible=!hid&&Math.hypot(q.x-fx,q.z-fz)<4.5}}}

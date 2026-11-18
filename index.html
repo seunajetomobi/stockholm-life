@@ -459,6 +459,7 @@ h2.hero{font-size:34px;background:linear-gradient(90deg,var(--sweblue),#3a86ff 4
 <script src="src/geography.js"></script>
 <script src="src/util/format.js"></script>
 <script src="src/rules/sun.js"></script>
+<script src="src/city-data.js"></script>
 <script>
 (function(){
 /* =================== GEOGRAPHY =================== */
@@ -473,28 +474,7 @@ const D=AREAS;
 
 /* =================== CITY DATA (OpenStreetMap) =================== */
 let CITY=null; // filled after loading data/*.json.gz
-async function gunzipFetch(url){
-  const r=await fetch(url);if(!r.ok)throw new Error(url+' '+r.status);
-  const buf=await r.arrayBuffer();const u8=new Uint8Array(buf);
-  if(u8[0]===0x1f&&u8[1]===0x8b){
-    if(typeof DecompressionStream==='undefined')throw new Error('This browser cannot unpack the map data');
-    const s=new Blob([buf]).stream().pipeThrough(new DecompressionStream('gzip'));return JSON.parse(await new Response(s).text())}
-  return JSON.parse(new TextDecoder().decode(u8));
-}
-function parseHours(s){
-  // OpenStreetMap opening_hours, common forms: "Mo-Fr 10:00-16:00; Sa 10:00-15:00", "10:00-20:00", "Mo-Su 08:30-18:00"
-  if(!s||/closed|PH|week|\|\|/i.test(s))return null;
-  const DAY=['Su','Mo','Tu','We','Th','Fr','Sa'],map={};
-  for(const rule of s.split(';').map(x=>x.trim()).filter(Boolean)){
-    const m=rule.match(/^((?:[A-Z][a-z](?:-[A-Z][a-z])?,?)+)?\s*(.*)$/);if(!m)return null;
-    let days=[];if(m[1]){for(const part of m[1].split(',').filter(Boolean)){const [a,b]=part.split('-');const ia=DAY.indexOf(a),ib=DAY.indexOf(b||a);if(ia<0||ib<0)return null;let i=ia;for(let n=0;n<7;n++){days.push(i);if(i===ib)break;i=(i+1)%7}}}else days=[0,1,2,3,4,5,6];
-    const t=m[2].trim();
-    if(/^(off|closed)$/i.test(t)){days.forEach(d=>map[d]=[]);continue}
-    const ranges=[];for(const tr of t.split(',')){const mm=tr.trim().match(/^(\d{1,2}):(\d{2})-(\d{1,2}):(\d{2})/);if(!mm)return null;ranges.push([+mm[1]+mm[2]/60,+mm[3]+mm[4]/60])}
-    days.forEach(d=>map[d]=ranges);
-  }
-  return map;
-}
+const {gunzipFetch,parseHours}=useModule('city-data');// src/city-data.js: loading the city data and reading opening hours
 
 /* =================== GAME DATA =================== */
 const START=new Date(2026,9,24);

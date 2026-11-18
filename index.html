@@ -2197,9 +2197,8 @@ function sleep(passedOut,mode){if(S.home==='none'&&!mode)mode='out';
   if(S.docs.pn==='wait'&&S.day>=S.docs.pnDay){S.docs.pn=1;log('Brev från Skatteverket: your personnummer has arrived. SFI, bank and vårdcentral are now possible.','plus');apply({mood:6})}
   if(S.docs.id==='wait'&&S.day>=S.docs.idDay){S.docs.id='ready';log('SMS: your ID card is ready to collect at the Skatteverket office.','plus')}
   const dt=today();
-  if(dt.getDate()===25&&S.pay>0){if(S.docs.bank){const net=Math.round(S.pay*(1-TAX));log(`Lönedag! ${kr(S.pay)} gross, ${kr(net)} after Stockholm's ~30% tax.`,'plus');S.money+=net;S.pay=0;apply({mood:5});garnish(net)}
-  if(dt.getDate()===25&&S.course&&S.flags.csn){S.money+=CSN4W;S.csnLoan=(S.csnLoan||0)+Math.round(CSN4W*0.7);log(`CSN studiemedel paid: +${kr(CSN4W)} (most of it is a loan you pay back later).`,'plus')}
-    else log('Lönedag, but your lön can\'t be paid: you have no bank account.','minus')}
+  if(dt.getDate()===25&&S.pay>0){if(S.docs.bank){const net=Math.round(S.pay*(1-TAX));log(`Lönedag! ${kr(S.pay)} gross, ${kr(net)} after Stockholm's ~30% tax.`,'plus');S.money+=net;S.pay=0;apply({mood:5});garnish(net)}else log('Lönedag, but your lön can\'t be paid: you have no bank account.','minus')
+  if(dt.getDate()===25&&S.course&&S.flags.csn){S.money+=CSN4W;S.csnLoan=(S.csnLoan||0)+Math.round(CSN4W*0.7);log(`CSN studiemedel paid: +${kr(CSN4W)} (most of it is a loan you pay back later).`,'plus')}}
   if(dt.getDate()===1){if(S.car&&S.car.kind==='own'){S.money-=1100;log('Car insurance and vehicle tax: −1 100 kr.','minus')}const r=Math.round(HOMES[S.home].rent*(S.flags.sambo?0.5:1));if(r>0)if(S.money>=r){S.money-=r;log(`Rent paid for ${MONTHS[dt.getMonth()]}: −${kr(r)}.`,'minus')}
     else{addBill('rent for '+MONTHS[dt.getMonth()],r);apply({mood:-6});log(`Not enough money for rent (${kr(r)}). The landlord sent an invoice: pay within 10 days or it goes to inkasso.`,'minus')}}
   if(dt.getMonth()===0&&dt.getDate()===2&&S.docs.queue){S.money-=QUEUE_FEE;log(`Bostadsförmedlingen yearly queue fee: −${kr(QUEUE_FEE)}.`)}

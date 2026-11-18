@@ -31,7 +31,7 @@ def city(browser):
 SETUP = """(over) => { const S = window.__TS.S, V = window.__V; Math.random = () => 0.999;
   Object.assign(S, {money: 50000, day: 3, hour: 12, hunger: 80, hygiene: 80, fun: 70, mood: 50, energy: 70, social: 50, sick: 0, job: null, jobDays: 0, pay: 0, bills: [],
     home: 'soderRoom', addr: {x: 10, z: 10}, pos: {x: 10, z: 10}, weather: 'clear', sunToday: false, coat: 0, kids: [], preg: null, course: null, car: null, applied: {}});
-  S.docs.bank = 1; S.docs.queue = 0; S.docs.pn = 1; S.flags.sambo = 0; S.flags.karens = 0; S.flags.csn = 0; S.vitD = 1e9; S.flags.jourDay = 0;
+  S.log = []; S.docs.bank = 1; S.docs.queue = 0; S.docs.pn = 1; S.flags.sambo = 0; S.flags.karens = 0; S.flags.csn = 0; S.vitD = 1e9; S.flags.jourDay = 0;
   Object.assign(S, over || {}); return true }"""
 SNAP = "() => { const S = window.__TS.S; return {money: S.money, day: S.day, hour: S.hour, hunger: S.hunger, hygiene: S.hygiene, fun: S.fun, mood: S.mood, energy: S.energy, social: S.social, pay: S.pay, home: S.home, bills: JSON.parse(JSON.stringify(S.bills || [])), log: S.log.slice(0, 6).map(l => l.t)} }"
 
@@ -54,6 +54,10 @@ def check(got, **want):
 
 def logged(got, text):
     assert any(text in l for l in got['log']), (text, got['log'])
+
+
+def not_logged(got, text):
+    assert not any(text in l for l in got['log']), (text, got['log'])
 
 
 # ---------- the calendar: day 1 is Saturday 24 October 2026; `sleep` moves to the next day and reads the date of the new day ----------
@@ -165,21 +169,36 @@ def test_payday_on_the_25th(city):
     g = run(city, {'day': 32, 'pay': 10000}, 'window.__V.sleep(false)')    # day 33 is Wednesday 25 November
     check(g, day=33, money=50000 + 7000, pay=0, mood=55)
     logged(g, 'Lönedag! 10 000 kr gross, 7 000 kr after')
+    not_logged(g, "can't be paid")                                          # M26: no failure warning after a successful payment
     g = run(city, {'day': 32, 'pay': 10000}, 'window.__TS.S.docs.bank = 0; window.__V.sleep(false)')
     check(g, money=50000, pay=10000, mood=50)
+    logged(g, "Lönedag, but your lön can't be paid: you have no bank account.")
+    not_logged(g, 'Lönedag! ')
     g = run(city, {'day': 31, 'pay': 10000}, 'window.__V.sleep(false)')    # the 24th: nothing
     check(g, money=50000, pay=10000)
     g = run(city, {'day': 32, 'pay': 0}, 'window.__V.sleep(false)')
     check(g, money=50000, mood=50)
     # CSN study money (13 592 kr, 70% of it a loan) is paid on the 25th too, but today only when the player also has lön to be paid (the code sits inside the lön block;
-    # M2 spec §6 lists this for the owner), and the "no bank account" line is printed whenever CSN is not paid, bank account or not
+    # M2 spec §6 lists this for the owner), and with no bank account check at payout. M26's second part (independence from lön, a bank account at payout) is a separate decision.
     g = run(city, {'day': 32, 'pay': 10000, 'course': 'x'}, "window.__TS.S.flags.csn = 1; window.__V.sleep(false)")
     check(g, money=50000 + 7000 + 13592)
     logged(g, 'CSN studiemedel paid: +13 592 kr')
+    logged(g, 'Lönedag! 10 000 kr gross')
+    not_logged(g, "can't be paid")                                          # CSN does not decide the warning
     g = run(city, {'day': 32, 'pay': 0, 'course': 'x'}, "window.__TS.S.flags.csn = 1; window.__V.sleep(false)")
-    check(g, money=50000)
-    g = run(city, {'day': 32, 'pay': 10000}, 'window.__V.sleep(false)')
-    logged(g, "Lönedag, but your lön can't be paid: you have no bank account.")   # printed although the pay was paid (the else belongs to the CSN test)
+    check(g, money=50000)                                                   # no lön due: today no CSN either (pinned, undecided)
+    not_logged(g, "can't be paid")                                          # and no failure warning for an unemployed student
+    # no bank account with lön due and CSN: the pay waits and the warning shows; CSN is still paid today (pinned, undecided)
+    g = run(city, {'day': 32, 'pay': 10000, 'course': 'x'}, "window.__TS.S.flags.csn = 1; window.__TS.S.docs.bank = 0; window.__V.sleep(false)")
+    check(g, money=50000 + 13592, pay=10000)
+    logged(g, "Lönedag, but your lön can't be paid: you have no bank account.")
+    logged(g, 'CSN studiemedel paid')
+    # no CSN flag: no CSN; no lön and no bank account: no warning (nothing is due)
+    g = run(city, {'day': 32, 'pay': 10000, 'course': 'x'}, 'window.__V.sleep(false)')
+    check(g, money=50000 + 7000)
+    not_logged(g, 'CSN studiemedel')
+    g = run(city, {'day': 32, 'pay': 0}, 'window.__TS.S.docs.bank = 0; window.__V.sleep(false)')
+    not_logged(g, "can't be paid")
 
 
 def test_garnishing_takes_30_percent_of_the_net_pay(city):

@@ -9,7 +9,7 @@ import hashlib, json, re, time
 import pytest
 import game
 
-EXPOSE = 'window.__V={pickBusStop,poiActions,TICKET,TRANSIT,busTick};return API;'
+EXPOSE = 'window.__V={pickBusStop,poiActions,TICKET,TRANSIT,busTick,ridePath,rideShift,posOnR,get rideState(){return rideState}};return API;'
 
 # every 7th bus stop of the city data, in data order: the lines the game offers there (route index, number, destination, colour, kind,
 # where the stop is on the route, and the next stops with their positions), as one JSON string
@@ -48,14 +48,14 @@ def test_bus_lines_at_stops_unchanged(city):
 
 # ---------- a complete journey ----------
 # the first stop with lines that has at least three stops after it: [poi index, line index in the list]
-FIND_STOP = """(type) => { const W = window.__TS.W, mode = type === 'tram_stop' ? 'tram' : 'bus';
+FIND_STOP = """(type) => { const W = window.__TS.W, mode = type === 'bus_stop' ? 'bus' : 'tram';
   for (let i = 0; i < 200000; i++) { const p = W.poi(i); if (!p) break; if (p.type !== type) continue;
     const L = mode === 'tram' ? W.transitLinesAt(p.x, p.z, ['tram']) : W.busLinesAt(p.x, p.z);
     for (let j = 0; j < L.length; j++) if (L[j].next.length >= 3) return [i, j] } return null }"""
 # start a journey the way the game does: pickBusStop(line), then the first destination in the list; returns what the game showed
 START = """([pi, j, type, setup]) => { const T = window.__TS, W = T.W, V = window.__V, S = T.S, p = W.poi(pi);
   Object.assign(S, setup.life); S.flags.snow = false;
-  const mode = type === 'tram_stop' ? 'tram' : 'bus';
+  const mode = type === 'bus_stop' ? 'bus' : 'tram';
   const L = (mode === 'tram' ? W.transitLinesAt(p.x, p.z, ['tram']) : W.busLinesAt(p.x, p.z))[j];
   W.placeAvatar(p.x, p.z, true); S.pos = {x: p.x, z: p.z};
   const before = {money: S.money, hour: S.hour, mood: S.mood, log: S.log.length};
@@ -63,11 +63,12 @@ START = """([pi, j, type, setup]) => { const T = window.__TS, W = T.W, V = windo
   const to = L.next[0], km = (to.d - L.d0) * 0.05, min = km / 20 * 60 + 4;
   if (setup.dodge) { const c = document.querySelector('#modalRoot #dodge'); if (!c) return {err: 'no fare-dodge box'}; c.checked = true }
   document.querySelector('#modalRoot .choice[data-i="0"]').click();
-  return {before, L: {ref: L.ref, kind: L.kind, dest: L.dest}, to: {name: to.name, x: to.x, z: to.z}, min, hasCard: S.slUntil >= S.day, ticket: V.TICKET} }"""
+  const chip = document.getElementById('ride').innerText;
+  return {before, chip, L: {ref: L.ref, kind: L.kind, dest: L.dest}, to: {name: to.name, x: to.x, z: to.z}, min, hasCard: S.slUntil >= S.day, ticket: V.TICKET} }"""
 FINISH = """() => { const T = window.__TS, S = T.S, W = T.W; return {busy: T.busy, money: S.money, hour: S.hour, mood: S.mood, log: S.log.slice(0, 3).map(l => l.t), at: W.avPos(), pos: S.pos} }"""
 
 
-def journey(page, type, setup):
+def journey(page, type, setup, midcheck=None):
     found = page.evaluate(FIND_STOP, type)
     assert found, f'no {type} with lines and three stops after it'
     st = page.evaluate(START, [found[0], found[1], type, setup])
@@ -75,6 +76,8 @@ def journey(page, type, setup):
     assert game.wait_for(page, "() => window.__TS.busy === true", 20), 'the journey did not start'
     # the test browser draws a frame a second or less, and the game caps a frame at 0.05 s, so a journey would take minutes of real time:
     # step the game's own busTick instead, 0.05 s at a time (what 20 frames a second would do), until the journey ends
+    if midcheck:
+        midcheck(st)
     steps = page.evaluate("() => { let n = 0; while (window.__TS.busy && n < 8000) { window.__V.busTick(0.05); n++ } return n }")
     assert 20 < steps < 8000, f'the journey took {steps} steps'
     time.sleep(0.5)
@@ -99,4 +102,89 @@ def test_bus_journey_fare_time_arrival(city):
     assert st['hasCard'] and fin['money'] == 1000 and fin['mood'] == 49 and 'kr)' not in fin['log'][0], (st, fin)
     # 3. fare dodging: nothing is paid, and the log says so
     st, fin = journey(city, 'bus_stop', {'life': LIFE, 'dodge': True})
+    assert fin['money'] == 1000 and 'without a ticket' in fin['log'][0], (st, fin)
+
+
+# ---------- trams ----------
+TRAM_LINES = """() => { const W = window.__TS.W, V = window.__V, out = {found: [], none: [], overlap: [], bad: []};
+  for (let i = 0; i < 200000; i++) { const p = W.poi(i); if (!p) break; if (p.type !== 'tram_stop' && p.type !== 'station') continue;
+    const L = W.transitLinesAt(p.x, p.z, ['tram']), B = W.busLinesAt(p.x, p.z);
+    if (L.some(l => l.m !== 'tram') || B.some(l => l.m !== 'bus')) out.overlap.push([i, p.name]);
+    for (const l of L) { const R = V.TRANSIT[l.i]; const ds = l.next.map(n => n.d);
+      if (!l.ref || !(l.next.length >= 1) || ds.some((d, k) => k && d <= ds[k-1]) || ds[0] <= l.d0 + 0.2 || ds.some(d => d > R.L)) out.bad.push([i, p.name, l.ref, l.dest]) }
+    if (L.length) out.found.push([i, p.type, p.name, L.map(l => l.ref)]); else if (p.type === 'tram_stop') out.none.push([i, p.name]) }
+  return out }"""
+
+
+@pytest.mark.browser
+@pytest.mark.hook
+def test_tram_lines_at_stops(city):
+    r = city.evaluate(TRAM_LINES)
+    assert r['overlap'] == [] and r['bad'] == [], r
+    refs = {ref for _, _, _, rs in r['found'] for ref in rs}
+    assert refs >= {'7', '7N', '12', '21', '30', '31'}, f'tram lines not found at any stop: {sorted(refs)}'
+    by_type = {ty: sum(1 for f in r['found'] if f[1] == ty) for ty in ('tram_stop', 'station')}
+    assert by_type['tram_stop'] >= 30 and by_type['station'] >= 30, by_type   # Tvärbanan and Lidingöbanan stops are mapped as stations
+    # a tram_stop without a tram line to ride is the last stop of its line
+    assert {n for _, n in r['none']} <= {'Nockeby', 'Skansenslingan', 'T-Centralen'}, r['none']
+
+
+@pytest.mark.browser
+@pytest.mark.hook
+def test_tram_and_bus_actions_at_stops(city):
+    r = city.evaluate("""() => { const W = window.__TS.W, V = window.__V, out = {};
+      for (const [k, type, name] of [['tram', 'tram_stop', 'Liljevalchs/Gröna Lund'], ['station', 'station', 'Sickla'], ['bus', 'bus_stop', null]]) {
+        for (let i = 0; i < 200000; i++) { const p = W.poi(i); if (!p) break; if (p.type !== type || (name && p.name !== name)) continue;
+          const a = V.poiActions(p).map(x => x.l).filter(l => /^(Take|No )/.test(l)); if (a.length) { out[k] = a; break } } }
+      return out }""")
+    assert any(re.fullmatch(r'Take tram 7 towards Waldemarsudde', a) for a in r['tram']), r['tram']
+    assert all(re.fullmatch(r'Take tram \S+ towards \S.*', a) and '  ' not in a for a in r['tram']), r['tram']
+    assert any(re.fullmatch(r'Take tram 30 towards (Solna station|Sickla)', a) for a in r['station']), r['station']
+    assert r['bus'] and all(re.fullmatch(r'Take bus \S+ towards \S.*', a) for a in r['bus']), r['bus']   # the bus wording is as it was
+
+
+@pytest.mark.browser
+@pytest.mark.hook
+def test_ride_path_follows_the_route(city):
+    """A tram journey runs on its track (the points lie on the route line, a point every 0.04 units); a bus journey keeps its 0.028 units to the kerb side, point for
+    point as the original code computed it (the shifted line is not at 0.028 from the route line at its bends, so it is compared with that formula, not with the line)."""
+    r = city.evaluate("""() => { const V = window.__V, out = {tram: {routes: 0, pts: 0, worst: 0, shift: new Set()}, bus: {routes: 0, pts: 0, worst: 0, shift: new Set()}};
+      const dist = (R, q) => { let best = 1e9; for (let i = 1; i < R.pts.length; i++) { const ax = R.pts[i-1][0], az = R.pts[i-1][1], dx = R.pts[i][0] - ax, dz = R.pts[i][1] - az, L2 = dx*dx + dz*dz || 1e-9;
+          let t = ((q.x - ax) * dx + (q.z - az) * dz) / L2; t = t < 0 ? 0 : t > 1 ? 1 : t; best = Math.min(best, Math.hypot(ax + dx * t - q.x, az + dz * t - q.z)) } return best };
+      const legacy = (R, d1) => { const at = d => { const p = V.posOnR(R, d), L = Math.hypot(p.dx, p.dz) || 1; return [p.x - p.dz / L * 0.028, p.z + p.dx / L * 0.028] }, a = []; for (let d = 0; d < d1; d += 0.04) a.push(at(d)); a.push(at(d1)); return a };
+      let nb = 0;
+      for (const R of V.TRANSIT) { const m = R.m; if (m !== 'tram' && !(m === 'bus' && nb++ % 40 === 0)) continue; const o = out[m]; o.routes++; o.shift.add(V.rideShift(R));
+        const d1 = Math.min(R.L, 6), pts = V.ridePath(R, 0, d1); o.pts += pts.length;
+        if (m === 'tram') { for (const q of pts) o.worst = Math.max(o.worst, dist(R, {x: q.x, z: q.z}));
+          if (pts.some((q, k) => k && q.distanceTo(pts[k-1]) > 0.0401)) o.worst = 98 }
+        else { const old = legacy(R, d1); if (old.length !== pts.length) o.worst = 97; else pts.forEach((q, k) => { o.worst = Math.max(o.worst, Math.abs(q.x - old[k][0]), Math.abs(q.z - old[k][1])) }) } }
+      for (const m of ['tram', 'bus']) out[m].shift = [...out[m].shift]; return out }""")
+    assert r['tram']['routes'] == 12 and r['tram']['pts'] > 500 and r['tram']['shift'] == [0], r
+    assert r['tram']['worst'] < 1e-5, f"a tram journey leaves its track by {r['tram']['worst']}"
+    assert r['bus']['routes'] >= 10 and r['bus']['pts'] > 500 and r['bus']['shift'] == [0.028] and r['bus']['worst'] < 1e-9, r['bus']
+
+
+def tram_midcheck(city):
+    def check(st):
+        assert st['L']['kind'] in st['chip'] and 'waiting at the stop' in st['chip'], st['chip']
+        n = city.evaluate("() => { const B = window.__V.rideState; window.__cars = B.cars.slice(); return [B.cars.length, B.cars.every(c => c.parent === window.__T.scene), B.g === B.cars[0]] }")
+        assert n == [3, True, True], f'a tram has 3 cars in the scene, the first leading: {n}'
+    return check
+
+
+@pytest.mark.browser
+@pytest.mark.hook
+@pytest.mark.parametrize('type', ['tram_stop', 'station'])
+def test_tram_journey_fare_time_arrival(city, type):
+    """A complete tram journey from a tram_stop and from a station (Tvärbanan): the ticket, the time, the log and the arrival at the stop, the cars on the way
+    and gone after, an SL card, and fare dodging, as for a bus."""
+    st, fin = journey(city, type, {'life': LIFE}, tram_midcheck(city))
+    assert not st['hasCard'] and fin['money'] == 1000 - st['ticket'], (st, fin)
+    assert fin['hour'] == pytest.approx(11 + st['min'] / 60, abs=0.02) and fin['mood'] == 50, fin
+    assert re.search(rf"{re.escape(st['L']['kind'])} {re.escape(st['L']['ref'])} to {re.escape(st['to']['name'])}, .*\({st['ticket']} kr\)\.$", fin['log'][0]), fin['log']
+    assert abs(fin['at']['x'] - st['to']['x']) < 0.6 and abs(fin['at']['z'] - st['to']['z']) < 0.6, (fin['at'], st['to'])
+    assert city.evaluate("() => window.__V.rideState === null && window.__cars.every(c => c.parent === null)"), 'the tram cars were left in the scene'
+    st, fin = journey(city, type, {'life': {**LIFE, 'hour': 8, 'slUntil': 9}})
+    assert st['hasCard'] and fin['money'] == 1000 and fin['mood'] == 49, (st, fin)
+    st, fin = journey(city, type, {'life': LIFE, 'dodge': True})
     assert fin['money'] == 1000 and 'without a ticket' in fin['log'][0], (st, fin)

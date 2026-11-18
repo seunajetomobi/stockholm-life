@@ -105,6 +105,7 @@ A system is not counted as functional because a button, menu or visual exists; o
 | Travel picker (walk, transit, taxi with time and cost) | FUNCTIONAL | [T] |
 | Transit vehicles on real lines; rides | PARTIALLY FUNCTIONAL | [C] rides are abstracted |
 | Bus and tram journeys from a stop (choose a line and a stop, pay the SL fare or use a card, ride, arrive) | FUNCTIONAL | [T] `test_transit_rides.py`; seen from outside the vehicle, no interior or seating; trams added on 2026-11-18 (Nockebybanan 12, Spårväg City 7 and 7N at tram stops; Tvärbanan 30 and 31 and Lidingöbanan 21 at their stations) |
+| Boat journeys from a pier (pendelbåt 80 Nybroplan–Ropsten and its Lidingö loops, Djurgårdsfärjan 82 Slussen–Djurgården; same fare, card, fare-dodging and arrival as a bus) | FUNCTIONAL, not yet seen by a person | [T] `test_boat_rides.py`; seen from outside the boat, no interior; added 2026-11-18; no human visual check yet; båt 89 not offered |
 | Pendeltåg journey (departing, tunnels, arriving, getting off at a real stop) | UNVERIFIED | [B-hook] boarding and getting off by shortcut are tested; a full ride between stations is not |
 | SL live departures and ferries | FUNCTIONAL | [L][T] |
 | Driving, lessons and test | UNVERIFIED | [C] |

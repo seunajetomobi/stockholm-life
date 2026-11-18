@@ -2130,8 +2130,8 @@ function poiActions(p){const n=(p.name||'').toLowerCase(),t=p.type,out=[];
   if(['station','bus_stop','ferry_terminal','tram_stop','subway_entrance','halt','platform'].includes(t)||/t-bana|tunnelbana/i.test(n))out.push({l:'Live departures',s:'Real-time from SL: next trains, trams, buses and boats',cost:0,h:0,noTime:true,e:{},fn:()=>departuresNear(p.x,p.z,p.name,t==='ferry_terminal'?'SHIP':t==='bus_stop'?'BUS':'')});
   if(t==='station'&&p.flags==='central')out.push({l:'Departure board: take a train trip',s:'SJ, VR, Snälltåget, EuroNight, Mälartåg · day trips and weekends away',cost:0,h:0,noTime:true,e:{},fn:()=>trainTrips()});
   // a stop of a tram line is a tram_stop, or a station (Tvärbanan and Lidingöbanan stops are mapped as stations: only the trams that really stop there are offered)
-  if((t==='bus_stop'||t==='tram_stop'||t==='station')&&W&&W.busLinesAt){const tram=t!=='bus_stop',lines=tram?W.transitLinesAt(p.x,p.z,['tram']):W.busLinesAt(p.x,p.z);const hasCard=S.slUntil>=S.day;lines.slice(0,8).forEach(L=>out.push({l:`Take ${tram?'tram':L.kind.replace('SL ','')} ${L.ref} towards ${L.dest}`,s:`${tram?L.kind+' · ':''}Next: ${L.next.slice(0,3).map(n=>n.name).join(', ')}… · ${hasCard?'SL card':kr(TICKET)+' ticket'}`,cost:0,h:0,noTime:true,fn:()=>setTimeout(()=>pickBusStop(L),30)}));
-    if(!lines.length&&t!=='station')out.push({l:tram?'No trams found for this stop':'No buses found for this stop',s:'Try another stop nearby',cost:0,h:0,noTime:true,need:()=>'no lines'})}
+  if((t==='bus_stop'||t==='tram_stop'||t==='station'||t==='ferry_terminal')&&W&&W.busLinesAt){const boat=t==='ferry_terminal',tram=t!=='bus_stop'&&!boat,lines=boat?W.transitLinesAt(p.x,p.z,['ferry']):tram?W.transitLinesAt(p.x,p.z,['tram']):W.busLinesAt(p.x,p.z);const hasCard=S.slUntil>=S.day;lines.slice(0,8).forEach(L=>out.push({l:`Take ${boat?'boat':tram?'tram':L.kind.replace('SL ','')} ${L.ref} towards ${L.dest}`,s:`${tram||boat?L.kind+' · ':''}Next: ${L.next.slice(0,3).map(n=>n.name).join(', ')}… · ${hasCard?'SL card':kr(TICKET)+' ticket'}`,cost:0,h:0,noTime:true,fn:()=>setTimeout(()=>pickBusStop(L),30)}));
+    if(!lines.length&&t!=='station'&&!boat)out.push({l:tram?'No trams found for this stop':'No buses found for this stop',s:'Try another stop nearby',cost:0,h:0,noTime:true,need:()=>'no lines'})}
   if(['supermarket','convenience','clothes'].includes(t))out.push({l:'Shoplift (snatteri)',s:'Illegal · guards and cameras',cost:0,h:0,noTime:true,fn:()=>setTimeout(()=>crimeAttempt('shoplift',p),30)});
   if(['bar','pub','nightclub'].includes(t)&&(S.hour>=20||S.hour<3))out.push({l:'A stranger offers "easy money": sell drugs for him',s:'Serious crime (narkotikabrott)',cost:0,h:0,noTime:true,fn:()=>setTimeout(()=>crimeAttempt('deal',p),30)});
   if(['bar','pub','nightclub','cafe','library','fitness_centre'].includes(t))out.push({l:'Talk to someone new',s:'Meet people · Swedes open up more at bars and events',cost:0,h:0,noTime:true,fn:()=>setTimeout(()=>meetStranger(),30)});
@@ -2274,7 +2274,7 @@ function showEvent(ev){modal(`<h2>${ev.t}</h2><p>${ev.b}</p><div class="choices"
 function meets(j){return Object.entries(j.req).every(([k,v])=>S[k]>=v)&&(!j.rec||!hasRecord())&&(!j.cert||S.certs[j.cert])&&(!j.lic||canDrive())}
 function chance(j){const req=Object.entries(j.req);if(!req.length)return 0.95;let m=1;for(const [k,v] of req)m=Math.min(m,clamp(0.45+(S[k]-v)/30,0,0.95));return clamp(m+(S.docs.af?0.1:0)+(policy('jobs')?0.05:0),0,0.97)}
 function pickBusStop(L){const hasCard=S.slUntil>=S.day;
-  modal(`<h2><span class="dot" style="background:${L.col}"></span>${L.kind} ${L.ref} → ${L.dest}</h2><p class="note">Where do you get off? ${L.m==='tram'?'Trams in SL stop at every stop.':'Buses in SL stop at every stop on request.'}</p>
+  modal(`<h2><span class="dot" style="background:${L.col}"></span>${L.kind} ${L.ref} → ${L.dest}</h2><p class="note">Where do you get off? ${L.m==='tram'?'Trams in SL stop at every stop.':L.m==='ferry'?'Boats in SL call at every pier on the line.':'Buses in SL stop at every stop on request.'}</p>
     <div class="choices">${L.next.map((n,i)=>{const km=(n.d-L.d0)*0.05;const min=Math.round(km/20*60+4);return `<button class="choice" data-i="${i}"><b>${n.name}</b><small>${km.toFixed(1)} km · about ${min} min</small></button>`}).join('')}</div>
     ${hasCard?'':`<label style="display:flex;gap:8px;align-items:center;font-size:13px;margin:8px 0"><input type="checkbox" id="dodge"> Don't pay (plankning) · ticket inspectors charge 1 500 kr</label>`}
     <div class="row2"><button class="btn ghost" id="no">Not now</button></div>`,m=>{m.querySelector('#no').onclick=closeModal;
@@ -3159,19 +3159,28 @@ const POSTERS_CITY=[['#f2b705','#1b1b1b','KANELBULLE','Färskt varje morgon','Ba
   // the lines of the given modes ('bus', 'tram') that stop at (x,z): each with the stops after this one, nearest first
   function transitLinesAt(x,z,modes){if(!transitOn)return [];const ids=new Set();const gx=Math.floor(x/2),gz=Math.floor(z/2);for(let i=-1;i<=1;i++)for(let j=-1;j<=1;j++){const s=TGRID.get((gx+i)+','+(gz+j));if(s)s.forEach(v=>ids.add(v))}
     const out=[],seen=new Set();
-    for(const i of ids){const R=TRANSIT[i];if(!modes.includes(R.m))continue;const d0=projOnto(R.pts,R.cum,x,z,0.16);if(d0===null||!R.stopsD.some(d=>Math.abs(d-d0)<0.25))continue;
-      const key=(R.r.ref||'')+'>'+R.dest;if(seen.has(key))continue;const next=[];
-      for(const s of R.r.stops||[]){const d=projOnto(R.pts,R.cum,s[0]/100,s[1]/100,0.25);if(d!==null&&d>d0+0.2&&!next.some(n=>n.name===s[2]))next.push({name:s[2],d,x:s[0]/100,z:s[1]/100})}
-      next.sort((a,b)=>a.d-b.d);if(!next.length)continue;seen.add(key);out.push({i,m:R.m,ref:R.r.ref||(R.m==='tram'?((R.r.name||'').match(/^\S+\s+(\S+?):/)||[])[1]||'':''),dest:R.dest,col:R.look.label,kind:R.look.kind,d0,next:next.slice(0,16)})}
+    for(const i of ids){const R=TRANSIT[i];if(!modes.includes(R.m)||!isPassengerBoat(R))continue;const d0=projOnto(R.pts,R.cum,x,z,0.16);if(d0===null)continue;
+      const boat=R.m==='ferry',sd=boat?(R.r.stops||[]).map(s=>[projOnto(R.pts,R.cum,s[0]/100,s[1]/100,0.25),s[2]]).filter(a=>a[0]!==null):null;   // a pier is a stop of its line, also at the line's ends
+      if(!(boat?sd.some(a=>Math.abs(a[0]-d0)<0.25):R.stopsD.some(d=>Math.abs(d-d0)<0.25)))continue;
+      const home=boat?sd.reduce((a,b)=>Math.abs(b[0]-d0)<Math.abs(a[0]-d0)?b:a)[1]:null,next=[];
+      for(const s of R.r.stops||[]){const d=projOnto(R.pts,R.cum,s[0]/100,s[1]/100,0.25);if(d!==null&&d>d0+0.2&&!next.some(n=>n.name===s[2])&&(!boat||wetRide(R,Math.max(0,d0-1.4),d)))next.push({name:s[2],d,x:s[0]/100,z:s[1]/100})}
+      next.sort((a,b)=>a.d-b.d);if(!next.length)continue;const dest=boat&&R.dest===home?next[next.length-1].name:R.dest,key=(R.r.ref||'')+'>'+dest;if(seen.has(key))continue;seen.add(key);out.push({i,m:R.m,ref:R.r.ref||(R.m==='tram'?((R.r.name||'').match(/^\S+\s+(\S+?):/)||[])[1]||'':''),dest,col:R.look.label,kind:R.look.kind,d0,next:next.slice(0,16)})}
     return out.sort((a,b)=>(parseInt(a.ref)||9999)-(parseInt(b.ref)||9999))}
   function busLinesAt(x,z){return transitLinesAt(x,z,['bus'])}
+  // the boats a player can ride are SL's own (pendelbåt 80, Djurgårdsfärjan 82; båt 89 is also SL's but lies outside the map, see wetRide), not the Waxholmsbolaget, cruise, canal or Finland ferries
+  const isPassengerBoat=R=>R.m!=='ferry'||R.look.kind==='SL boat';
+  // the city map ends in the west (Mälaren beyond Lilla Essingen is not modelled): a boat only sails where the map has water, from a little before its pier to the destination
+  // (a pier itself can lie on the land polygon, so only a longer stretch of land, more than 0.6 units = 30 m, ends the ride)
+  function wetRide(R,d0,d1){let dry=0;for(let d=d0;d<=d1;d+=0.1){const p=posOnR(R,d);if(inWater(p.x,p.z))dry=0;else if(++dry>6)return false}return true}
+  // the boat of a journey: the same model as the boats on the water
+  function boatPart(){const tpl=MODELS.boats&&MODELS.boats.Boat;const g=new THREE.Group();if(tpl)g.add(tpl.clone(true));else{const h=new THREE.Mesh(new THREE.BoxGeometry(0.45,0.08,0.13),plain(0xf7f7f2));h.position.y=0.03;g.add(h)}g.userData.boat=1;return g}
   // the points a journey follows from route distance dS to d1, every 0.04 units: a tram runs on its track (the route line itself), a bus keeps a little to the kerb side
   const rideShift=R=>R.m==='bus'?0.028:0;
   function ridePath(R,dS,d1){const sh=rideShift(R),pts=[],at=d=>{const p=posOnR(R,d),L=Math.hypot(p.dx,p.dz)||1;return new THREE.Vector3(p.x-p.dz/L*sh,0.012,p.z+p.dx/L*sh)};for(let d=dS;d<d1;d+=0.04)pts.push(at(d));pts.push(at(d1));return pts}
   // a journey on a bus or a tram from the stop at route distance d0 to `stop`; a tram has its cars (nc of them, cl apart) behind the head, so the path starts that far back
   function busRide(i,d0,stop,done){const R=TRANSIT[i],tram=R.m==='tram',nc=tram?(R.look.cars||3):1,cl=0.17+0.01;const dH=Math.max(0,d0-1.4),dS=Math.max(0,dH-(tram?nc*cl:0)),d1=stop.d;const pts=ridePath(R,dS,d1);const cum=[0];for(let k=1;k<pts.length;k++)cum.push(cum[k-1]+pts[k].distanceTo(pts[k-1]));
     const len=cum[cum.length-1],scale=len/((d1-dS)||1);const mids=R.stopsD.filter(d=>d>d0+0.15&&d<d1-0.15).map(d=>(d-dS)*scale);const stops=[(d0-dS)*scale,...mids,len];
-    const cars=tram?Array.from({length:nc},(_,k)=>railCar(R.look,0.17*0.96,nc===1?3:k===0?1:k===nc-1?2:0,true)):[],g=tram?cars[0]:new THREE.Group();if(tram)cars.forEach(c=>scene.add(c));else{g.add(busPart(R.look));scene.add(g)}const chip=$('ride');chip.style.display='block';chip.innerHTML=`<b style="color:${R.look.label}">${R.look.kind} ${R.r.ref||''}</b> towards ${R.dest} · waiting at the stop`;
+    const cars=tram?Array.from({length:nc},(_,k)=>railCar(R.look,0.17*0.96,nc===1?3:k===0?1:k===nc-1?2:0,true)):[],g=tram?cars[0]:R.m==='ferry'?boatPart():new THREE.Group();if(tram)cars.forEach(c=>scene.add(c));else{if(R.m!=='ferry')g.add(busPart(R.look));scene.add(g)}const chip=$('ride');chip.style.display='block';chip.innerHTML=`<b style="color:${R.look.label}">${R.look.kind} ${R.r.ref||''}</b> towards ${R.dest} · waiting at the stop`;
     rideState={bus:1,g,cars,cl,scale,pts,cum,len,d:(dH-dS)*scale,v:0,si:0,stops,dwell:0,vmax:clamp(len/14,0.45,3),R,stop,board:false,done:()=>{(tram?cars:[g]).forEach(c=>scene.remove(c));rideState=null;chip.style.display='none';
       const f=freeSpot(stop.x,stop.z)||[stop.x,stop.z];placeAvatar(f[0],f[1],false);av.visible=true;done()}};busTick(0)}
   function busTick(dt){const B=rideState;const at=d=>{let k=1;while(k<B.cum.length-1&&B.cum[k]<d)k++;const a=B.pts[k-1],b=B.pts[k],u=clamp((d-B.cum[k-1])/((B.cum[k]-B.cum[k-1])||1),0,1);return [a.clone().lerp(b,u),b.clone().sub(a)]};
@@ -3179,7 +3188,7 @@ const POSTERS_CITY=[['#f2b705','#1b1b1b','KANELBULLE','Färskt varje morgon','Ba
     else{const target=B.stops[B.si]!==undefined?B.stops[B.si]:B.len;const rem=target-B.d;B.v=Math.min(B.vmax,B.v+0.8*dt,Math.sqrt(2*0.8*Math.max(0,rem))+0.03);B.d=Math.min(target,B.d+B.v*dt);
       if(target-B.d<1e-4){B.v=0;const idx=B.si++;if(idx===0){B.dwell=1.4;B.after=()=>{B.board=true;av.visible=false;$('ride').innerHTML=`<b style="color:${B.R.look.label}">${B.R.look.kind} ${B.R.r.ref||''}</b> → ${B.stop.name}`}}
         else if(B.si>=B.stops.length){B.dwell=1.0;B.after=()=>B.done()}else B.dwell=0.7}}
-    const [p,dir]=at(B.d);B.g.position.set(p.x,0.012+deckAt(p.x,p.z),p.z);if(dir.lengthSq()>1e-10)B.g.rotation.y=Math.atan2(dir.x,dir.z);
+    const [p,dir]=at(B.d),sea=B.R.m==='ferry';B.g.position.set(p.x,sea?0.008:0.012+deckAt(p.x,p.z),p.z);if(dir.lengthSq()>1e-10)B.g.rotation.y=Math.atan2(dir.x,dir.z)-(sea?Math.PI/2:0);
     for(let k=1;k<B.cars.length;k++){const [q,dq]=at(Math.max(0,B.d-k*B.cl*B.scale)),c=B.cars[k];c.position.set(q.x,0.012+deckAt(q.x,q.z),q.z);if(dq.lengthSq()>1e-10)c.rotation.y=Math.atan2(dq.x,dq.z)}
     return B.board?B.g.position:av.position}
   // ---------- getting stuck: if you push against something for a while, step out to the nearest open pavement ----------

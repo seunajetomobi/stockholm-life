@@ -1072,11 +1072,61 @@ function log(t,cls){S.log.unshift({d:S.day,h:S.hour,t,cls:cls||''});S.log=S.log.
    place: where you are (street, interior, station, train), with a stamp of the life it was saved with (placeSave). An older version keeps the field
    but never updates it, so a place whose stamp no longer matches the life is ignored and you start on the street. Station and train time (CS.pend)
    is flushed into the save while you are there (M19); on the street it is not. */
-const SAVE_KEY='stockholm-life-v4',SAVE_OLD='stockholm-life-v3',SAVE_ENDED='ENDED:';
+const SLOT1_KEY='stockholm-life-v4',SAVE_OLD='stockholm-life-v3',SAVE_ENDED='ENDED:';
+/* ---------- save slots, part A (M1c): the index and the active slot. No slot management yet.
+   Slot 1 is the existing key stockholm-life-v4 and is never moved or copied; slots 2 to 5 would live at stockholm-life-v4-slot-N.
+   The index stockholm-life-slots-v1 is metadata only ({v:1, active, slots:[{id, name, day, ended, unreadable}]}); each slot's own key stays the truth about the life.
+   A missing index is built from what is stored. An unreadable index is copied first (stockholm-life-slots-corrupt-<ts>, never pruned), then rebuilt from the slot keys;
+   if the active slot cannot be told, it stays unset and saving is paused until it can. Every action writes the data, reads it back, and only then the index.
+   Limit: tabs still race (KNOWN_ISSUES M20); the active-slot check before a save narrows that, it does not make saving atomic. ---------- */
+const SLOTS_KEY='stockholm-life-slots-v1',SLOTS_COPY='stockholm-life-slots',SLOT_IDS=[1,2,3,4,5];
+const slotKey=id=>id===1?SLOT1_KEY:SLOT1_KEY+'-slot-'+id;
+const SL={id:null,done:false,idx:null,had:false,idxOk:true,stuck:false,msg:null};// id: the slot this tab saves into; had: the index has been read or written; idxOk: false when the index could not be written
+const activeKey=()=>slotKey(SL.id||1);
+function slotsParse(raw){let x;try{x=JSON.parse(raw)}catch(e){return null}
+  if(!x||typeof x!=='object'||Array.isArray(x)||x.v!==1||!Array.isArray(x.slots)||!(x.active===null||SLOT_IDS.includes(x.active)))return null;
+  const seen=new Set();for(const s of x.slots){if(!s||typeof s!=='object'||Array.isArray(s)||!SLOT_IDS.includes(s.id)||seen.has(s.id))return null;seen.add(s.id);
+    if((s.name!==undefined&&typeof s.name!=='string')||(s.day!==undefined&&!Number.isFinite(s.day))||(s.ended!==undefined&&typeof s.ended!=='boolean')||(s.unreadable!==undefined&&typeof s.unreadable!=='boolean'))return null}
+  if(x.active!==null&&!seen.has(x.active))return null;return x}
+// what a slot key holds, for the index: a life, an ended life, an unreadable value, or nothing (null)
+function slotMeta(id){const raw=localStorage.getItem(slotKey(id));if(raw===null)return null;if(raw.startsWith(SAVE_ENDED))return {id,ended:true};
+  const s=saveParse(raw);if(!s)return {id,unreadable:true};return s.flags&&s.flags.started&&typeof s.name==='string'?{id,name:s.name,day:s.day}:{id}}
+function slotsDiscover(){const out=[];for(const id of SLOT_IDS){const m=slotMeta(id);if(m)out.push(m);else if(id===1)out.push({id:1})}return out}
+// the active slot, only when the evidence is enough: the old index said so, or there is just slot 1, or exactly one slot holds a life
+function slotsBuild(found,hint){let active=null;const ids=found.map(m=>m.id);
+  if(hint!==null&&ids.includes(hint))active=hint;else if(ids.length===1&&ids[0]===1)active=1;else{const lives=found.filter(m=>m.name!==undefined);if(lives.length===1)active=lives[0].id}
+  return {v:1,active,slots:found}}
+function slotsWrite(idx){try{const j=JSON.stringify(idx);localStorage.setItem(SLOTS_KEY,j);if(localStorage.getItem(SLOTS_KEY)===j){SL.had=true;return true}}catch(e){console.warn('slots',e)}return false}
+function slotsInit(force){if(SL.done&&!force)return;SL.done=true;SL.stuck=false;SL.msg=null;let raw;
+  try{raw=localStorage.getItem(SLOTS_KEY)}catch(e){SL.id=1;SL.idx=null;return}// storage cannot be read: load() reports it, and slot 1 is what it has always been
+  try{if(raw===null){const found=slotsDiscover(),idx=slotsBuild(found,null);SL.idx=idx;SL.id=idx.active;
+      if(found.some(m=>m.name!==undefined||m.ended||m.unreadable||m.id!==1)&&idx.active!==null)SL.idxOk=slotsWrite(idx);return}// nothing is written for a browser with no life yet
+    const ok=slotsParse(raw);if(ok){SL.idx=ok;SL.id=ok.active;SL.had=true;return}
+    let hint=null;try{const o=JSON.parse(raw);if(o&&Number.isInteger(o.active))hint=o.active}catch(e){}
+    if(!saveKeep(SLOTS_COPY,raw)){SL.id=null;SL.stuck=true;return}// no copy, so nothing is touched
+    const idx=slotsBuild(slotsDiscover(),hint);SL.idx=idx;SL.id=idx.active;SL.had=true;SL.msg=SAVE_MSG.slots;if(idx.active!==null)SL.idxOk=slotsWrite(idx)}
+  catch(e){console.warn('slots',e);SL.id=1;SL.idx=null;SL.done=false}}// a slot key cannot be read: that is unreadable storage, which load() reports; the index is looked at again before the next save
+// the index as stored now: {idx} when valid, {missing:true}, or {bad:true}
+function slotsStored(){const raw=localStorage.getItem(SLOTS_KEY);if(raw===null)return {missing:true};const x=slotsParse(raw);return x?{idx:x}:{bad:true}}
+// true while the stored index still names this tab's slot (a new browser with no index yet counts as the same)
+function slotsMine(){const st=slotsStored();if(st.missing)return !SL.had;return !!st.idx&&st.idx.active===SL.id}
+// after a save: record the name and day of this slot; the data is already stored and read back
+function slotsMeta(){try{const st=slotsStored(),idx=st.missing&&!SL.had?SL.idx:st.idx;if(!idx||idx.active!==SL.id||!S||typeof S.name!=='string')return;
+    const i=idx.slots.findIndex(m=>m.id===SL.id),cur=i<0?null:idx.slots[i];if(cur&&cur.name===S.name&&cur.day===S.day&&!cur.ended&&!cur.unreadable&&SL.had)return;
+    const m={id:SL.id,name:S.name,day:S.day},slots=idx.slots.filter(x=>x.id!==SL.id).concat([m]).sort((a,b)=>a.id-b.id),next={v:1,active:SL.id,slots};
+    SL.idxOk=slotsWrite(next);if(SL.idxOk)SL.idx=next}catch(e){SL.idxOk=false;console.warn('slots meta',e)}}
+function slotsEnded(){try{const st=slotsStored(),idx=st.idx;if(!idx||idx.active!==SL.id)return;const cur=idx.slots.find(m=>m.id===SL.id)||{id:SL.id};
+    slotsWrite({v:1,active:idx.active,slots:idx.slots.filter(m=>m.id!==SL.id).concat([{...cur,ended:true}]).sort((a,b)=>a.id-b.id)})}catch(e){console.warn('slots end',e)}}
+// pauses saving while the active slot is unknown: nothing is written, nothing is deleted
+function slotsGuard(){if(SL.id===null||SL.stuck){SV.mode='blocked';SV.bad={slots:true};saveMsg(SAVE_MSG.slotsStuck,true)}else if(SL.msg)saveMsg(SL.msg,true)}
+// the oldest copies beyond keep go, only after the action they protect has succeeded; the -corrupt- evidence is never touched
+function savePrune(prefix,keep){try{const ks=[];for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&k.startsWith(prefix)&&/^\d+x*$/.test(k.slice(prefix.length)))ks.push(k)}
+  ks.sort((a,b)=>parseInt(a.slice(prefix.length))-parseInt(b.slice(prefix.length))||a.length-b.length);for(const k of ks.slice(0,Math.max(0,ks.length-keep)))localStorage.removeItem(k)}catch(e){console.warn('prune',e)}}
 const SV={mode:'pending',expected:null,bad:null,failing:false,timer:0,hideT:0,endChecked:false,ended:null,on:false};
 const SAVE_MSG={fail:'Your progress could not be saved. Your browser\'s storage may be full or blocked. Trying again.',back:'Saving works again. Your progress is saved.',
   kept:'Your saved life could not be read. A copy was kept in this browser and has not been deleted.',stuck:'Your saved life could not be read or copied. It will not be overwritten, so this life cannot be saved yet.',
-  unread:'Your browser\'s storage cannot be read, so nothing can be loaded or saved right now.',other:'This life was changed in another tab, so saving has stopped here. Reload to continue.'};
+  unread:'Your browser\'s storage cannot be read, so nothing can be loaded or saved right now.',slots:'The list of your save slots could not be read. A copy was kept in this browser and the list was rebuilt from your saves.',
+  slotsStuck:'Your save slots need attention, so saving is paused to protect your lives. Nothing has been deleted.',other:'This life was changed in another tab, so saving has stopped here. Reload to continue.'};
 function saveMsg(t,bad,ms){const el=$('saveStatus');clearTimeout(SV.hideT);if(!el)return;el.textContent=t||'';el.hidden=!t;el.classList.toggle('bad',!!bad);if(t&&ms)SV.hideT=setTimeout(()=>{el.hidden=true},ms)}
 function saveRetry(){if(!SV.timer)SV.timer=setTimeout(()=>{SV.timer=0;save()},30000)}
 function saveFail(e){console.warn('save',e);if(!SV.failing){SV.failing=true;saveMsg(SAVE_MSG.fail,true)}saveRetry()}
@@ -1086,26 +1136,27 @@ function saveOther(){SV.mode='superseded';SV.failing=false;clearTimeout(SV.timer
 function saveKeep(key,raw){try{const pre=key+'-corrupt-';for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&k.startsWith(pre)&&localStorage.getItem(k)===raw)return true}
   let k=pre+Date.now();while(localStorage.getItem(k)!==null)k+='x';localStorage.setItem(k,raw);return localStorage.getItem(k)===raw}catch(e){console.warn('save copy',e);return false}}
 function saveBad(key,raw){if(saveKeep(key,raw)){SV.mode='pending';saveMsg(SAVE_MSG.kept,true)}else{SV.mode='blocked';SV.bad={key,raw};saveMsg(SAVE_MSG.stuck,true)}return null}
-function saveUnblock(){const b=SV.bad;if(b.unread){let cur;try{cur=localStorage.getItem(SAVE_KEY)}catch(e){return false}if(cur!==null){saveOther();return false}SV.expected=null}else if(!saveKeep(b.key,b.raw))return false;
+function saveUnblock(){const b=SV.bad;if(b.slots){slotsInit(true);if(SL.id===null||SL.stuck)return false;SV.bad=null;SV.mode='active';SV.failing=true;return true}
+  if(b.unread){slotsInit(true);if(SL.id===null||SL.stuck)return false;let cur;try{cur=localStorage.getItem(activeKey())}catch(e){return false}if(cur!==null){saveOther();return false}SV.expected=null}else if(!saveKeep(b.key,b.raw))return false;
   SV.bad=null;SV.mode='active';SV.failing=true;return true}// saveOk() then replaces the warning, even if no save has failed yet
 function save(){if(!S||!S.flags||!S.flags.started||SV.mode==='pending'||SV.mode==='ended'||SV.mode==='superseded')return;
   // the state is half-way through a journey, an arrest or a driving lesson: the next save after it writes the result
   if(busy||(W&&W.inLesson&&W.inLesson())){if(SV.failing)saveRetry();return}
   if(SV.mode==='blocked'&&!saveUnblock()){if(SV.mode==='blocked'){SV.failing=true;saveRetry()}return}
-  try{const cur=localStorage.getItem(SAVE_KEY);if(cur!==SV.expected){saveOther();return}placeSave();const json=JSON.stringify(S);if(json!==cur){localStorage.setItem(SAVE_KEY,json);SV.expected=json}saveOk()}catch(e){saveFail(e)}}
+  try{if(!slotsMine()){saveOther();return}const k=activeKey(),cur=localStorage.getItem(k);if(cur!==SV.expected){saveOther();return}placeSave();const json=JSON.stringify(S);if(json!==cur){localStorage.setItem(k,json);SV.expected=json}saveOk();slotsMeta()}catch(e){saveFail(e)}}
 function saveParse(r){try{const s=JSON.parse(r);return s&&typeof s==='object'&&!Array.isArray(s)&&Number.isFinite(s.day)&&Number.isFinite(s.hour)?s:null}catch(e){return null}}
 function saveLoad(key,raw){const s=saveParse(raw);if(!s)return saveBad(key,raw);try{const m=migrate(s);SV.mode='active';return m}catch(e){console.warn('migrate',e);return saveBad(key,raw)}}
-function load(){let r4,r3;try{r4=localStorage.getItem(SAVE_KEY);r3=localStorage.getItem(SAVE_OLD)}catch(e){console.warn('load',e);SV.mode='blocked';SV.bad={unread:true};saveMsg(SAVE_MSG.unread,true);return null}
+function load(){slotsInit();let r4,r3;try{r4=localStorage.getItem(activeKey());r3=(SL.id||1)===1?localStorage.getItem(SAVE_OLD):null}catch(e){console.warn('load',e);SV.mode='blocked';SV.bad={unread:true};saveMsg(SAVE_MSG.unread,true);return null}
   SV.expected=r4;
   if(r4!==null){if(r4.startsWith(SAVE_ENDED))return null;const s=saveParse(r4);
     // only a real life has flags.started; day 1 without it is the placeholder an older version saved before character creation
-    if(s&&!(s.flags&&s.flags.started)&&s.day<=1){}else if(s&&s.flags&&s.flags.started)return saveLoad(SAVE_KEY,r4);else return saveBad(SAVE_KEY,r4)}
+    if(s&&!(s.flags&&s.flags.started)&&s.day<=1){}else if(s&&s.flags&&s.flags.started)return saveLoad(activeKey(),r4);else return saveBad(activeKey(),r4)}
   return r3===null||r3.startsWith(SAVE_ENDED)?null:saveLoad(SAVE_OLD,r3)}
 // deportation ends the life for good: this tab stops saving first, then v4 and v3 go, or are overwritten if they cannot be removed. Returns 'done', 'other' (the stored save is not this life) or 'failed'.
 function endLife(){if(SV.mode!=='ended'){if(SV.mode==='blocked'||SV.mode==='superseded')SV.ended='other';SV.mode='ended';SV.failing=false;clearTimeout(SV.timer);SV.timer=0;saveMsg()}
   if(SV.ended==='other')return 'other';
-  try{if(!SV.endChecked){if(localStorage.getItem(SAVE_KEY)!==SV.expected){SV.ended='other';return 'other'}SV.endChecked=true}
-    let ok=true;for(const k of [SAVE_KEY,SAVE_OLD]){try{localStorage.removeItem(k)}catch(e){console.warn('save remove',e)}
+  try{if(!SV.endChecked){if(localStorage.getItem(activeKey())!==SV.expected){SV.ended='other';return 'other'}SV.endChecked=true;slotsEnded()}
+    let ok=true;for(const k of ((SL.id||1)===1?[activeKey(),SAVE_OLD]:[activeKey()])){try{localStorage.removeItem(k)}catch(e){console.warn('save remove',e)}
       if(localStorage.getItem(k)!==null){try{localStorage.setItem(k,SAVE_ENDED+Date.now())}catch(e){console.warn('save end',e)}const v=localStorage.getItem(k);if(v!==null&&!v.startsWith(SAVE_ENDED))ok=false}}
     return ok?'done':'failed'}catch(e){console.warn('save end',e);return 'failed'}}
 // ---------- the place you are in, saved with the life it belongs to (M7) ----------
@@ -1131,11 +1182,12 @@ async function importCheck(text){let e;try{e=JSON.parse(text)}catch(x){return {e
   let m;try{m=migrate(JSON.parse(JSON.stringify(g)))}catch(x){console.warn('import',x);return {err:'The life in this file could not be read by this version.'}}
   return {game:m}}
 // the current save is copied first; returns null when the imported life is in storage, else why nothing was changed
-function importApply(g){const json=JSON.stringify(g);let cur;try{cur=localStorage.getItem(SAVE_KEY)}catch(x){return 'Your browser\'s storage cannot be read, so nothing was changed.'}
-  if(cur!==null&&!cur.startsWith(SAVE_ENDED)){const k=SAVE_KEY+'-before-import-'+Date.now();let ok=false;try{localStorage.setItem(k,cur);ok=localStorage.getItem(k)===cur}catch(x){console.warn('import backup',x)}
+function importApply(g){const json=JSON.stringify(g);let cur;if(SL.id===null||SL.stuck)return 'Your save slots need attention, so nothing was changed.';const sk=activeKey();
+  try{if(!slotsMine())return 'Your saves were changed in another tab, so nothing was changed. Reload and try again.';cur=localStorage.getItem(sk)}catch(x){return 'Your browser\'s storage cannot be read, so nothing was changed.'}
+  if(cur!==null&&!cur.startsWith(SAVE_ENDED)){const k=sk+'-before-import-'+Date.now();let ok=false;try{localStorage.setItem(k,cur);ok=localStorage.getItem(k)===cur}catch(x){console.warn('import backup',x)}
     if(!ok){try{localStorage.removeItem(k)}catch(x){}return 'Storage is full, so your current life could not be backed up first. Nothing was changed.'}}
   const was=SV.mode;SV.mode='superseded';clearTimeout(SV.timer);SV.timer=0;// this tab must not write over the imported life before it reloads
-  try{localStorage.setItem(SAVE_KEY,json);if(localStorage.getItem(SAVE_KEY)===json)return null}catch(x){console.warn('import',x)}
+  try{localStorage.setItem(sk,json);if(localStorage.getItem(sk)===json){savePrune(sk+'-before-import-',3);return null}}catch(x){console.warn('import',x)}
   SV.mode=was;return 'Storage is full, so the life could not be imported. Nothing was changed.'}
 function openSaveFile(fromIntro){const back=()=>{closeModal();if(fromIntro)intro()};
   modal(`<h2>Save file</h2><p>Keep a copy of this life as a file, or carry on a life saved in another browser, on another device or at another web address.</p>
@@ -5321,7 +5373,9 @@ function matchServices(){if(!CITY)return;const pois=CITY.m.pois.map((p,i)=>({i,c
     if(best&&bd<25){s.poi=best;s.oh=parseHours(best.hours)}}}
 async function start(data){uiInit();
   const hot=data&&data.S&&data.S.flags&&data.S.flags.started?data.S:null;
-  if(hot){S=migrate(hot);SV.mode='active';try{SV.expected=localStorage.getItem(SAVE_KEY)}catch(e){}}else S=load();
+  slotsInit();
+  if(hot){S=migrate(hot);SV.mode='active';try{SV.expected=localStorage.getItem(activeKey())}catch(e){}}else S=load();
+  slotsGuard();
   let fresh=false;const resume=placeValid(S)?S.place:null;// read now: saves made while the city loads record the street
   if(!S){fresh=true;const b=BG.newcomer,a=D[b.start];S={v:5,name:'Alex',bg:'newcomer',day:1,hour:8,money:b.s.money,energy:90,mood:b.s.mood,social:b.s.social,svenska:b.s.svenska,skill:b.s.skill,queue:0,home:b.home,pos:{x:a.x+0.3,z:a.z+0.3},loc:b.start,job:null,jobDays:0,pay:0,slUntil:0,vitD:0,coat:false,sunToday:false,sick:0,applied:{},flags:{},docs:{...b.docs},log:[],won:false,weather:'clear',temp:7};log('Welcome to Stockholm. Pick who you are to begin.')}
   lifeInit(S);updateLoc();render();

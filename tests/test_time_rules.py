@@ -9,7 +9,7 @@ import pytest
 import game
 
 EXPOSE = ('window.__V={get spendTime(){return spendTime},get sleep(){return sleep},needsTick,processBills,garnish,addBill,dateOf,HOMES,TAX,BILLSTAGE,'
-          'billTotal,clamp,MONTHS,START,QUEUE_FEE,get BARNBIDRAG(){return BARNBIDRAG},get CSN4W(){return CSN4W}};return API;')
+          'billTotal,clamp,MONTHS,START,QUEUE_FEE,csnResident,courseAct,get BARNBIDRAG(){return BARNBIDRAG},get CSN4W(){return CSN4W}};return API;')
 
 
 @pytest.fixture(scope='module')
@@ -31,7 +31,7 @@ def city(browser):
 SETUP = """(over) => { const S = window.__TS.S, V = window.__V; Math.random = () => 0.999;
   Object.assign(S, {money: 50000, day: 3, hour: 12, hunger: 80, hygiene: 80, fun: 70, mood: 50, energy: 70, social: 50, sick: 0, job: null, jobDays: 0, pay: 0, bills: [],
     home: 'soderRoom', addr: {x: 10, z: 10}, pos: {x: 10, z: 10}, weather: 'clear', sunToday: false, coat: 0, kids: [], preg: null, course: null, car: null, applied: {}});
-  S.log = []; S.docs.bank = 1; S.docs.queue = 0; S.docs.pn = 1; S.flags.sambo = 0; S.flags.karens = 0; S.flags.csn = 0; S.vitD = 1e9; S.flags.jourDay = 0;
+  S.log = []; S.csnLoan = 0; S.docs.bank = 1; S.docs.queue = 0; S.docs.pn = 1; S.docs.permit = 1; S.flags.sambo = 0; S.flags.karens = 0; S.flags.csn = 0; S.vitD = 1e9; S.flags.jourDay = 0;
   Object.assign(S, over || {}); return true }"""
 SNAP = "() => { const S = window.__TS.S; return {money: S.money, day: S.day, hour: S.hour, hunger: S.hunger, hygiene: S.hygiene, fun: S.fun, mood: S.mood, energy: S.energy, social: S.social, pay: S.pay, home: S.home, bills: JSON.parse(JSON.stringify(S.bills || [])), log: S.log.slice(0, 6).map(l => l.t)} }"
 
@@ -178,27 +178,75 @@ def test_payday_on_the_25th(city):
     check(g, money=50000, pay=10000)
     g = run(city, {'day': 32, 'pay': 0}, 'window.__V.sleep(false)')
     check(g, money=50000, mood=50)
-    # CSN study money (13 592 kr, 70% of it a loan) is paid on the 25th too, but today only when the player also has lön to be paid (the code sits inside the lön block;
-    # M2 spec §6 lists this for the owner), and with no bank account check at payout. M26's second part (independence from lön, a bank account at payout) is a separate decision.
-    g = run(city, {'day': 32, 'pay': 10000, 'course': 'x'}, "window.__TS.S.flags.csn = 1; window.__V.sleep(false)")
-    check(g, money=50000 + 7000 + 13592)
-    logged(g, 'CSN studiemedel paid: +13 592 kr')
-    logged(g, 'Lönedag! 10 000 kr gross')
-    not_logged(g, "can't be paid")                                          # CSN does not decide the warning
-    g = run(city, {'day': 32, 'pay': 0, 'course': 'x'}, "window.__TS.S.flags.csn = 1; window.__V.sleep(false)")
-    check(g, money=50000)                                                   # no lön due: today no CSN either (pinned, undecided)
-    not_logged(g, "can't be paid")                                          # and no failure warning for an unemployed student
-    # no bank account with lön due and CSN: the pay waits and the warning shows; CSN is still paid today (pinned, undecided)
-    g = run(city, {'day': 32, 'pay': 10000, 'course': 'x'}, "window.__TS.S.flags.csn = 1; window.__TS.S.docs.bank = 0; window.__V.sleep(false)")
-    check(g, money=50000 + 13592, pay=10000)
-    logged(g, "Lönedag, but your lön can't be paid: you have no bank account.")
-    logged(g, 'CSN studiemedel paid')
-    # no CSN flag: no CSN; no lön and no bank account: no warning (nothing is due)
+    # no CSN flag: no CSN, and no lön with no bank account gives no warning (nothing is due)
     g = run(city, {'day': 32, 'pay': 10000, 'course': 'x'}, 'window.__V.sleep(false)')
     check(g, money=50000 + 7000)
     not_logged(g, 'CSN studiemedel')
     g = run(city, {'day': 32, 'pay': 0}, 'window.__TS.S.docs.bank = 0; window.__V.sleep(false)')
     not_logged(g, "can't be paid")
+
+
+CSN = "window.__TS.S.flags.csn = 1; "
+
+
+def test_csn_rules(city):
+    """CSN studiemedel (13 592 kr on the 25th, 70% of it a loan): paid to a student who has permanent residence (a residence permit card and a personnummer)
+    and an active bank account on the payment date, whether or not there is any lön; it stops with the course. M26 part 2."""
+    # an unemployed resident student with a bank account is paid, and 70% of it becomes loan
+    g = run(city, {'day': 32, 'pay': 0, 'course': {'id': 'sva', 'done': 1}}, CSN + "window.__V.sleep(false)")
+    check(g, money=50000 + 13592)
+    logged(g, 'CSN studiemedel paid: +13 592 kr')
+    not_logged(g, "can't be paid")                                          # no lön due, so no salary warning
+    assert city.evaluate("() => window.__TS.S.csnLoan") == 9514             # round(13 592 x 0.7), the balance that repayment will draw down
+    # a student with lön gets both, and the salary is unchanged
+    g = run(city, {'day': 32, 'pay': 10000, 'course': {'id': 'sva', 'done': 1}}, CSN + "window.__V.sleep(false)")
+    check(g, money=50000 + 7000 + 13592, pay=0, mood=55)
+    logged(g, 'Lönedag! 10 000 kr gross, 7 000 kr after')
+    logged(g, 'CSN studiemedel paid')
+    # without permanent residence (no permit card, or no personnummer): not paid
+    for field in ('permit', 'pn'):
+        g = run(city, {'day': 32, 'pay': 0, 'course': {'id': 'sva', 'done': 1}}, CSN + f"window.__TS.S.docs.{field} = 0; window.__V.sleep(false)")
+        check(g, money=50000)
+        not_logged(g, 'CSN studiemedel paid')
+        assert city.evaluate("() => window.__TS.S.csnLoan || 0") == 0
+    # no bank account on the payment date: not paid, and it says why (also when the account existed when CSN was approved)
+    g = run(city, {'day': 32, 'pay': 0, 'course': {'id': 'sva', 'done': 1}}, CSN + "window.__TS.S.docs.bank = 0; window.__V.sleep(false)")
+    check(g, money=50000)
+    logged(g, 'CSN studiemedel could not be paid: you have no bank account.')
+    assert city.evaluate("() => window.__TS.S.csnLoan || 0") == 0
+    # with lön due and no bank account: the lön waits with its warning, and CSN is not paid either
+    g = run(city, {'day': 32, 'pay': 10000, 'course': {'id': 'sva', 'done': 1}}, CSN + "window.__TS.S.docs.bank = 0; window.__V.sleep(false)")
+    check(g, money=50000, pay=10000)
+    logged(g, "Lönedag, but your lön can't be paid: you have no bank account.")
+    # no CSN approval, or no course: no CSN
+    g = run(city, {'day': 32, 'pay': 0, 'course': {'id': 'sva', 'done': 1}}, "window.__V.sleep(false)")
+    check(g, money=50000)
+    g = run(city, {'day': 32, 'pay': 0}, CSN + "window.__V.sleep(false)")
+    check(g, money=50000)
+    # one payment per 25th: the 26th and the 24th pay nothing
+    g = run(city, {'day': 33, 'pay': 0, 'course': {'id': 'sva', 'done': 1}}, CSN + "window.__V.sleep(false)")
+    check(g, money=50000)
+    g = run(city, {'day': 31, 'pay': 0, 'course': {'id': 'sva', 'done': 1}}, CSN + "window.__V.sleep(false)")
+    check(g, money=50000)
+
+
+def test_csn_stops_when_the_course_is_finished(city):
+    """Finishing the last session ends the course and the CSN approval, so the next 25th pays nothing (this part already worked; now pinned)."""
+    run(city, {'day': 31, 'pay': 0, 'course': {'id': 'sva', 'done': 7}}, CSN)    # 'sva' has 8 sessions: this is the last one
+    city.evaluate("() => { const a = window.__V.courseAct(); a.fn() }")
+    st = city.evaluate("() => ({course: window.__TS.S.course, csn: window.__TS.S.flags.csn, cert: !!window.__TS.S.certs.sva})")
+    assert st == {'course': None, 'csn': 0, 'cert': True}, st
+    g = run(city, {'day': 32, 'pay': 0, 'course': None}, "window.__V.sleep(false)")
+    check(g, money=50000)
+    not_logged(g, 'CSN studiemedel')
+
+
+def test_csn_application_needs_permanent_residence(city):
+    """The Apply button refuses without a residence permit card and a personnummer (a student can no longer be approved without them)."""
+    run(city, {'course': {'id': 'sva', 'done': 0}}, "window.__TS.S.docs.bankid = 1; window.__TS.S.docs.permit = 0")
+    assert city.evaluate("() => window.__V.csnResident()") is False
+    run(city, {'course': {'id': 'sva', 'done': 0}}, "window.__TS.S.docs.bankid = 1")
+    assert city.evaluate("() => window.__V.csnResident()") is True
 
 
 def test_garnishing_takes_30_percent_of_the_net_pay(city):

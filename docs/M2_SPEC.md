@@ -47,7 +47,7 @@ All of these depend on the **date of the new day**, never on elapsed hours: if n
 
 ### 2.6 Findings that may be defects (observed, not changed, [?] for the owner)
 1. **Fixed 2026-11-18 (M26 part 1; the warning now follows the bank-account test).** Before the fix, on every payday with `S.pay > 0` and no CSN, the log said "Lönedag, but your lön can't be paid: you have no bank account." even when the pay was just paid. The `else` belongs to the CSN `if`, not to the bank-account `if`. Pinned as current behaviour until the fix.
-2. CSN study money sits inside the `S.pay > 0` block, so a student with no job receives no CSN on the 25th. Pinned as current behaviour.
+2. **Fixed 2026-11-19 (M26 part 2).** CSN study money sat inside the `S.pay > 0` block, so a student with no job received no CSN on the 25th. It is now paid independently of lön, to a student with a residence permit card and personnummer and an active bank account on the day; it stops at the end of the course.
 3. `__slCommit` and `__slDrive` cross midnight correctly, but `csFlush` stops at 23.98 and leaves the player to sleep; the three paths do not behave the same way at the end of the day.
 Do not fix these inside M2 without a decision; they change money and messages.
 

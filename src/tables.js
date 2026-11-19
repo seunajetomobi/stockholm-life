@@ -1,6 +1,7 @@
 /* Stockholm Life: game data tables.
-   JOBS (the employers: name, district, hourly rate, requirements, certificate) and COUNTRIES (nationality, flag,
-   region code, flight-origin city and a flag, for the start screen and customs). Plain data with no functions and
+   JOBS (the employers: name, district, hourly rate, requirements, certificate), COUNTRIES (nationality, flag,
+   region code, flight-origin city and a flag, for the start screen and customs), OPEN (default opening hours by kind of place),
+   COURSES (Komvux and other courses) and ITEMS (what the shops sell and the bag holds). Plain data with no functions and
    no reference to the game state; the original declarations, moved unchanged (docs/MODULES.md). The game reads
    them at the lines where they were declared and never changes them.
    A classic script: index.html loads it before the game script, which reads window.StockholmLife.tables.
@@ -33,7 +34,33 @@ const COUNTRIES=[['Sweden','🇸🇪','se',1,100,'',0],['Nigeria','🇳🇬','no
   ['Netherlands','🇳🇱','eu',1,0,'Amsterdam',1],['Portugal','🇵🇹','eu',1,0,'Lisbon',1],['Estonia','🇪🇪','eu',1,0,'Tallinn',1],['Lithuania','🇱🇹','eu',1,0,'Vilnius',1],['Ireland','🇮🇪','eu',0,0,'Dublin',1],
   ['Finland','🇫🇮','nordic',1,30,'Helsinki',1],['Norway','🇳🇴','nordic',1,55,'Oslo',1],['Denmark','🇩🇰','nordic',1,50,'Copenhagen',1],['Iceland','🇮🇸','nordic',1,10,'Reykjavík',1]];
 
-const tables={JOBS,COUNTRIES};
+const OPEN={
+  service:{wd:[9,16],label:'Mon–Fri 09–16'},bank:{wd:[10,15],label:'Mon–Fri 10–15'},
+  sys:{wd:[10,19],sat:[10,15],label:'Mon–Fri 10–19, Sat 10–15'},vc:{wd:[8,17],label:'Mon–Fri 08–17'},
+  sfi:{wd:[8,17],label:'Mon–Fri 08–17'},lib:{wd:[10,18],we:[11,16],label:'Mon–Fri 10–18'},
+  sal:{wd:[9.5,19],sat:[9.5,16],label:'Mon–Sat'},skansen:{all:[10,16],label:'Daily 10–16'},vasa:{all:[10,17],label:'Daily 10–17'},
+  apotek:{all:[8,21],label:'Daily 08–21'},galleria:{all:[10,20],label:'Daily 10–20'},migr:{wd:[9,15],label:'Mon–Fri 09–15'},
+};
+const COURSES={
+  sva:{name:'Svenska som andraspråk (Komvux)',where:'kungsholmen',n:8,h:3,req:{svenska:40},gain:{svenska:4},cert:'sva',csn:1},
+  usk:{name:'Undersköterska (Komvux vocational)',where:'kungsholmen',n:12,h:4,req:{svenska:45},gain:{skill:2},cert:'usk',csn:1},
+  kock:{name:'Restaurant and cooking (Komvux)',where:'sodermalm',n:8,h:4,req:{svenska:20},gain:{skill:1},cert:'kock',csn:1},
+  barn:{name:'Barnskötare (Komvux)',where:'sodermalm',n:10,h:4,req:{svenska:50},gain:{skill:1},cert:'barn',csn:1},
+  truck:{name:'Warehouse and forklift licence (Arbetsförmedlingen)',where:'kista',n:5,h:4,req:{},gain:{skill:1},cert:'truck',af:1},
+  stad:{name:'Professional cleaning (Arbetsförmedlingen)',where:'kista',n:3,h:4,req:{},gain:{},cert:'stad',af:1},
+  it:{name:'IT support technician (YH)',where:'kista',n:12,h:4,req:{skill:40,svenska:30},gain:{skill:3},cert:'it',csn:1},
+  taxi:{name:'Taxi driver ID (taxiförarlegitimation)',where:'tc',n:4,h:4,req:{svenska:40},gain:{},cert:'taxi',lic:1}};
+const ITEMS={
+  matlada:{n:'Ready meal (matlåda)',c:65,use:'eat',e:{hunger:40},at:['supermarket','convenience','kiosk','deli']},smorgas:{n:'Sandwich',c:49,use:'eat',e:{hunger:22},at:['cafe','convenience','kiosk','bakery','supermarket']},
+  bulle:{n:'Kanelbulle',c:35,use:'eat',e:{hunger:12,fun:4,mood:2},at:['cafe','bakery','supermarket','convenience']},banan:{n:'Banana',c:6,use:'eat',e:{hunger:8},at:['supermarket','greengrocer','convenience']},
+  godis:{n:'Lösgodis (pick-and-mix)',c:39,use:'eat',e:{hunger:5,fun:8,mood:2},at:['supermarket','convenience','kiosk']},kaffe:{n:'Coffee to go',c:38,use:'eat',e:{energy:12,mood:2},at:['cafe','convenience','kiosk','bakery']},
+  vatten:{n:'Bottle of water',c:22,use:'eat',e:{energy:2,hunger:2},at:['supermarket','convenience','kiosk']},energy:{n:'Energy drink',c:25,use:'eat',e:{energy:16,mood:-1},at:['supermarket','convenience','kiosk']},
+  paraply:{n:'Umbrella',c:179,use:'keep',s:'No mood loss from rain while you carry it',at:['supermarket','convenience','department_store','variety_store']},
+  alvedon:{n:'Paracetamol (Alvedon)',c:45,use:'med',e:{mood:4,energy:6},s:'Eases a cold or a fever',at:['pharmacy','supermarket']},tval:{n:'Soap and shampoo',c:69,use:'keep',s:'+10 hygiene every time you shower at home',at:['supermarket','pharmacy','chemist','convenience']},
+  blommor:{n:'Flowers',c:199,use:'gift',s:'Give to your partner or a date: +romance',at:['florist','supermarket']},vin:{n:'Bottle of wine',c:119,use:'eat',e:{fun:10,mood:3,energy:-6},s:'Systembolaget only · you must be 20+',at:['alcohol']},
+  hemmat:{n:'Food from home',c:0,use:'eat',e:{hunger:25,mood:4},at:[]},sim:{n:'Prepaid SIM card',c:99,use:'keep',s:'Swedish phone number: mobile data and calls',at:['convenience','kiosk','mobile_phone','electronics']},laddare:{n:'Phone charger',c:199,use:'keep',at:['electronics','mobile_phone','department_store']}};
+
+const tables={JOBS,COUNTRIES,OPEN,COURSES,ITEMS};
 if(typeof module==='object'&&module&&module.exports)module.exports=tables;
 else (root.StockholmLife=root.StockholmLife||{}).tables=tables;
 })(globalThis);

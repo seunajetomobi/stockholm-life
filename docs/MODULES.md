@@ -14,7 +14,7 @@ src/
     format.js     number, money and time formatting: clamp, kr, hhmm, fmtDur
   rules/
     sun.js        the sun and daylight for a date, and the WMO weather-code tables
-  tables.js       game data tables: JOBS and COUNTRIES
+  tables.js       game data tables: JOBS, COUNTRIES, OPEN, COURSES, ITEMS
   city-data.js    loading the gzip city data (gunzipFetch) and reading OpenStreetMap opening hours (parseHours)
 data/             city data, unchanged
 tests/            test_geography.py, test_format.py and test_sun.py test the modules; test_syntax.py checks every file under src/
@@ -207,7 +207,7 @@ Foundations first; one module per pull request; each pull request is a move only
 | 2 | `src/util/format.js`: `clamp`, `kr`, `hhmm`, `fmtDur` | **Done** (the second move). Pure helpers used everywhere; makes the later rules modules testable. `esc0`/`esc2`/`escH` (they differ in how they treat `null`) and `pickA` (not checked) did not move | Step 1 |
 | 3 | `src/rules/sun.js`: `sunInfo`, `daylight`, `sunrise`, `sunset`, `isLight`, WMO tables | **Done** (the third move; on its pull request). Pure maths, tested against published sun times (sunrise-sunset.org, checked 2026-11-17, tolerance 10 minutes) and against a hash of the original outputs. The latitude is fixed, so polar day and night are not supported and not tested | Step 2 |
 | 4 | `src/city-data.js`: `gunzipFetch`, `parseHours` | **Done** (the fourth move; on its pull request). Original bodies moved unchanged; `fetch`, `Blob`, `DecompressionStream`, `Response` and `TextDecoder` are looked up when called, so tests stub `fetch`. The module key is `'city-data'`. `hoursFor`, `isOpen` and `loadCity` did not move | Step 2 |
-| 5 | Data tables: `JOBS`, `HOMES`, `ACTS`, `COURSES`, `ITEMS`, `COUNTRIES`, prices (with their dates) | **Started: `JOBS` and `COUNTRIES` moved** to `src/tables.js` (read-only plain data, no function or `S` reference, no mutation; checked at `874ce40`). Remaining, per the dependency assessment: `OPEN`, `COURSES`, `ITEMS` (standalone, read-only; safe move-only); `HOMES` (`HOMES.none` and `HOMES.jour` are added at startup, line ~760); `BG` (needs `NODOCS`, later `BG.over`/`BG.domestic`); `SVC` (functions and runtime `poi`/`oh`) and `ACTS` (50 functions closing over `S`) not safe yet | After step 2 |
+| 5 | Data tables: `JOBS`, `HOMES`, `ACTS`, `COURSES`, `ITEMS`, `COUNTRIES`, prices (with their dates) | **Partly done: `JOBS`, `COUNTRIES`, `OPEN`, `COURSES` and `ITEMS` are in `src/tables.js`** (read-only plain data, no function or `S` reference, no mutation; checked at `874ce40` and `79ee5f5`). Remaining: `HOMES` (`HOMES.none` and `HOMES.jour` are added at startup, line ~760); `BG` (needs `NODOCS`, later `BG.over`/`BG.domestic`); `SVC` (functions and runtime `poi`/`oh`) and `ACTS` (50 functions closing over `S`) not safe yet. `hoursFor`/`isOpen` stay in `index.html` | After step 2 |
 | 6 | Live-data clients: weather, SL, flights, news, exchange rates | Each degrades on its own; `fetch` can be stubbed | After step 2 |
 | 7 | `src/state.js` and `src/save.js` (M1) | Owner of `S`, events, explicit hooks instead of the five reassigned functions | M1 spec approved |
 | 8 | Rules modules (needs, work, bills, civic, justice, customs, people) | Need `S` passed in or the state module | After step 7 |

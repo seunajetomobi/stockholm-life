@@ -510,18 +510,7 @@ function hoursLabel(key,svcKey){const s=svcKey&&SVC[svcKey];if(s&&s.poi&&s.poi.h
 function isOpen(key,h,dur,svcKey){const r=hoursFor(key,svcKey);return !!r&&h>=r[0]&&h+(dur||0)<=r[1]}
 
 const {JOBS}=useModule('tables');// src/tables.js: the employers
-const HOMES={
-  rinkebyRoom:{name:'Sublet room, Rinkeby',d:'rinkeby',rent:6200,type:'andrahand'},
-  korridor:{name:'Student corridor, Östermalm',d:'ostermalm',rent:4900,type:'student'},
-  parents:{name:'Childhood room, Vasastan',d:'vasastan',rent:2000,type:'parents'},
-  soderRoom:{name:'Sublet room, Södermalm',d:'sodermalm',rent:7900,type:'andrahand'},
-  kistaRoom:{name:'Sublet 1:a, Kista',d:'kista',rent:9200,type:'andrahand'},
-  sbgRoom:{name:'Sublet room, Sundbyberg',d:'sundbyberg',rent:6900,type:'andrahand'},
-  fhRinkeby:{name:'Own 2 rok, Rinkeby',d:'rinkeby',rent:7400,type:'forstahand',queue:5},
-  fhSbg:{name:'Own 1 rok, Sundbyberg',d:'sundbyberg',rent:7600,type:'forstahand',queue:7},
-  fhKungs:{name:'Own 1 rok, Kungsholmen',d:'kungsholmen',rent:7900,type:'forstahand',queue:9},
-  fhSoder:{name:'Own 2 rok, Södermalm',d:'sodermalm',rent:10400,type:'forstahand',queue:12},
-};
+const {HOMES}=useModule('tables');// src/tables.js: the homes (incl. none and jour)
 // CSN needs permanent residence. The game has no separate status, so this uses what it has: the residence permit card in hand and a personnummer.
 const csnResident=()=>S.docs.permit===1&&S.docs.pn===1;
 // CSN loan repayment: 10% of the net lön, on the payday the lön is paid, never more than is owed, no interest. It does not depend on still studying.
@@ -733,7 +722,6 @@ function checkWants(){for(const w of S.wants){if(w.done)continue;const W8=WANTS.
 const ASPIRATIONS={stockholmer:{l:'True Stockholmer',d:'Papers, first-hand flat, steady job, svenska 80, friends'},career:{l:'Career climber',d:'Reach Lead level in a job'},family:{l:'Family life',d:'Marry and have a child'},social:{l:'Social butterfly',d:'Have 6 close friends'}};
 function aspirationDone(){const a=S.aspiration;if(a==='career')return (S.jobLevel||0)>=3;if(a==='family')return partner()&&partner().st==='married'&&S.kids.length>0;if(a==='social')return S.people.filter(p=>p.fr>=70).length>=6;return false}
 // ---------- homelessness and socialtjänsten
-HOMES.none={name:'No home',d:null,rent:0,type:'none'};HOMES.jour={name:'Emergency flat via socialtjänsten',d:'rinkeby',rent:0,type:'jour'};
 function socialAct(){return {id:'soc',where:'anyhub',grp:'Socialtjänsten',l:'Socialtjänsten: apply for ekonomiskt bistånd',s:`At the stadsdelsförvaltning · up to ${kr(RIKSNORM)}/month (riksnorm 2026) if you have nothing else · must be registered at Arbetsförmedlingen`,h:2,hours:'service',
   need:()=>!S.docs.pn?'Needs a personnummer (be folkbokförd)':!S.docs.af?'Register at Arbetsförmedlingen first':S.money>RIKSNORM?'You have savings, so you are not eligible':S.flags.socMonth===today().getMonth()?'Already approved this month':null,
   fn:()=>{S.flags.socMonth=today().getMonth();S.money+=RIKSNORM;let t=`Socialtjänsten approved försörjningsstöd: +${kr(RIKSNORM)}.`;if(S.home==='none'){S.flags.jourDay=S.day+2;t+=' Because you have nowhere to live, they arrange an emergency flat (jourlägenhet) in 2 days.'}log(t,'plus')}}}

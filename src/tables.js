@@ -1,7 +1,8 @@
 /* Stockholm Life: game data tables.
    JOBS (the employers: name, district, hourly rate, requirements, certificate), COUNTRIES (nationality, flag,
    region code, flight-origin city and a flag, for the start screen and customs), OPEN (default opening hours by kind of place),
-   COURSES (Komvux and other courses) and ITEMS (what the shops sell and the bag holds). Plain data with no functions and
+   COURSES (Komvux and other courses), ITEMS (what the shops sell and the bag holds) and HOMES (the homes, with the
+   'none' and 'jour' entries the game uses for no home and the emergency flat). Plain data with no functions and
    no reference to the game state; the original declarations, moved unchanged (docs/MODULES.md). The game reads
    them at the lines where they were declared and never changes them.
    A classic script: index.html loads it before the game script, which reads window.StockholmLife.tables.
@@ -60,7 +61,21 @@ const ITEMS={
   blommor:{n:'Flowers',c:199,use:'gift',s:'Give to your partner or a date: +romance',at:['florist','supermarket']},vin:{n:'Bottle of wine',c:119,use:'eat',e:{fun:10,mood:3,energy:-6},s:'Systembolaget only · you must be 20+',at:['alcohol']},
   hemmat:{n:'Food from home',c:0,use:'eat',e:{hunger:25,mood:4},at:[]},sim:{n:'Prepaid SIM card',c:99,use:'keep',s:'Swedish phone number: mobile data and calls',at:['convenience','kiosk','mobile_phone','electronics']},laddare:{n:'Phone charger',c:199,use:'keep',at:['electronics','mobile_phone','department_store']}};
 
-const tables={JOBS,COUNTRIES,OPEN,COURSES,ITEMS};
+const HOMES={
+  rinkebyRoom:{name:'Sublet room, Rinkeby',d:'rinkeby',rent:6200,type:'andrahand'},
+  korridor:{name:'Student corridor, Östermalm',d:'ostermalm',rent:4900,type:'student'},
+  parents:{name:'Childhood room, Vasastan',d:'vasastan',rent:2000,type:'parents'},
+  soderRoom:{name:'Sublet room, Södermalm',d:'sodermalm',rent:7900,type:'andrahand'},
+  kistaRoom:{name:'Sublet 1:a, Kista',d:'kista',rent:9200,type:'andrahand'},
+  sbgRoom:{name:'Sublet room, Sundbyberg',d:'sundbyberg',rent:6900,type:'andrahand'},
+  fhRinkeby:{name:'Own 2 rok, Rinkeby',d:'rinkeby',rent:7400,type:'forstahand',queue:5},
+  fhSbg:{name:'Own 1 rok, Sundbyberg',d:'sundbyberg',rent:7600,type:'forstahand',queue:7},
+  fhKungs:{name:'Own 1 rok, Kungsholmen',d:'kungsholmen',rent:7900,type:'forstahand',queue:9},
+  fhSoder:{name:'Own 2 rok, Södermalm',d:'sodermalm',rent:10400,type:'forstahand',queue:12},
+  none:{name:'No home',d:null,rent:0,type:'none'},
+  jour:{name:'Emergency flat via socialtjänsten',d:'rinkeby',rent:0,type:'jour'},
+};
+const tables={JOBS,COUNTRIES,OPEN,COURSES,ITEMS,HOMES};
 if(typeof module==='object'&&module&&module.exports)module.exports=tables;
 else (root.StockholmLife=root.StockholmLife||{}).tables=tables;
 })(globalThis);

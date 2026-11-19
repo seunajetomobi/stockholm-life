@@ -522,6 +522,10 @@ const HOMES={
   fhKungs:{name:'Own 1 rok, Kungsholmen',d:'kungsholmen',rent:7900,type:'forstahand',queue:9},
   fhSoder:{name:'Own 2 rok, Södermalm',d:'sodermalm',rent:10400,type:'forstahand',queue:12},
 };
+// CSN needs permanent residence. The game has no separate status, so this uses what it has: the residence permit card in hand and a personnummer.
+const csnResident=()=>S.docs.permit===1&&S.docs.pn===1;
+// CSN loan repayment: 10% of the net lön, on the payday the lön is paid, never more than is owed, no interest. It does not depend on still studying.
+const csnRepay=net=>{const owed=S.csnLoan||0;if(owed<=0)return;const r=Math.min(owed,Math.round(net*0.10));if(r<=0)return;S.money-=r;S.csnLoan=owed-r;log(`CSN loan repayment: −${kr(r)} (10% of your net lön). ${kr(S.csnLoan)} left to repay.`,'minus')};
 const NODOCS={permit:1,pn:0,pnDay:0,id:0,idDay:0,bank:0,bankid:0,queue:0,vc:0,fk:0,af:0,permitDay:0};
 const BG={
   newcomer:{label:'Newcomer',sub:'Work permit approved from abroad. Strong skills, no Swedish, no papers yet. First: your residence permit card at Migrationsverket.',s:{money:18000,svenska:0,skill:48,social:8,mood:60,queue:0},home:'rinkebyRoom',start:'tc',coat:0x2f6fa8,docs:{...NODOCS,permit:0}},
@@ -713,7 +717,7 @@ function openCourses(){const list=Object.entries(COURSES);
       const why=has?'done':S.course?'finish your current course first':Object.entries(c.req).some(([a,v])=>S[a]<v)?'needs '+req:c.af&&!S.docs.af?'register at Arbetsförmedlingen first':c.lic&&S.lic.state!=='B'?'needs a Swedish körkort':!S.docs.pn?'needs a personnummer':'';
       return `<button class="choice" data-k="${k}" ${why?'disabled':''}><b>${c.name}</b><small>${c.n} sessions × ${c.h} h at ${D[c.where].name}${c.csn?' · CSN eligible':''}${why?' · '+why:''}</small></button>`}).join('')}</div>
     ${S.course&&COURSES[S.course.id].csn&&!S.flags.csn?'<button class="btn" id="csn">Apply for CSN studiemedel</button>':''}
-    <div class="row2"><button class="btn ghost" id="no">Close</button></div>`,m=>{m.querySelector('#no').onclick=closeModal;const c=m.querySelector('#csn');if(c)c.onclick=()=>{if(!S.docs.bankid){toast('Needs BankID');return}S.flags.csn=1;log('CSN studiemedel approved. Paid on the 25th while you study.','plus');closeModal();after()};
+    <div class="row2"><button class="btn ghost" id="no">Close</button></div>`,m=>{m.querySelector('#no').onclick=closeModal;const c=m.querySelector('#csn');if(c)c.onclick=()=>{if(!csnResident()){toast('CSN needs permanent residence: a residence permit card and a personnummer');return}if(!S.docs.bankid){toast('Needs BankID');return}S.flags.csn=1;log('CSN studiemedel approved. Paid on the 25th while you study.','plus');closeModal();after()};
     m.querySelectorAll('.choice').forEach(b=>b.onclick=()=>{S.course={id:b.dataset.k,done:0};log(`Enrolled: ${COURSES[b.dataset.k].name}. Classes at ${D[COURSES[b.dataset.k].where].name}.`,'plus');closeModal();after()})})}
 function courseAct(){if(!S.course)return null;const c=COURSES[S.course.id];return {id:'course',where:c.where,grp:'Your course',l:`${c.name}: session ${S.course.done+1}/${c.n}`,s:`${c.h} h of class`,h:c.h,e:{energy:-12,fun:-3,...c.gain},hours:'sfi',primary:1,
   fn:()=>{S.course.done++;maybeMeet('class',0.3);if(S.course.done>=c.n){S.certs[c.cert]=1;log(`Course finished: ${c.name}. Certificate in hand! New jobs are open to you.`,'plus');apply({mood:12});S.course=null;S.flags.csn=0;S.points+=20}}}}
@@ -2153,8 +2157,9 @@ function sleep(passedOut,mode){if(S.home==='none'&&!mode)mode='out';
   if(S.docs.pn==='wait'&&S.day>=S.docs.pnDay){S.docs.pn=1;log('Brev från Skatteverket: your personnummer has arrived. SFI, bank and vårdcentral are now possible.','plus');apply({mood:6})}
   if(S.docs.id==='wait'&&S.day>=S.docs.idDay){S.docs.id='ready';log('SMS: your ID card is ready to collect at the Skatteverket office.','plus')}
   const dt=today();
-  if(dt.getDate()===25&&S.pay>0){if(S.docs.bank){const net=Math.round(S.pay*(1-TAX));log(`Lönedag! ${kr(S.pay)} gross, ${kr(net)} after Stockholm's ~30% tax.`,'plus');S.money+=net;S.pay=0;apply({mood:5});garnish(net)}else log('Lönedag, but your lön can\'t be paid: you have no bank account.','minus')
-  if(dt.getDate()===25&&S.course&&S.flags.csn){S.money+=CSN4W;S.csnLoan=(S.csnLoan||0)+Math.round(CSN4W*0.7);log(`CSN studiemedel paid: +${kr(CSN4W)} (most of it is a loan you pay back later).`,'plus')}}
+  if(dt.getDate()===25){if(S.pay>0){if(S.docs.bank){const net=Math.round(S.pay*(1-TAX));log(`Lönedag! ${kr(S.pay)} gross, ${kr(net)} after Stockholm's ~30% tax.`,'plus');S.money+=net;S.pay=0;apply({mood:5});garnish(net);csnRepay(net)}else log('Lönedag, but your lön can\'t be paid: you have no bank account.','minus')}
+  // CSN studiemedel: paid on the 25th to a resident student with an active bank account, whether or not there is any lön
+  if(S.course&&S.flags.csn&&csnResident()){if(S.docs.bank){S.money+=CSN4W;S.csnLoan=(S.csnLoan||0)+Math.round(CSN4W*0.7);log(`CSN studiemedel paid: +${kr(CSN4W)} (most of it is a loan you pay back later).`,'plus')}else log('CSN studiemedel could not be paid: you have no bank account.','minus')}}
   if(dt.getDate()===1){if(S.car&&S.car.kind==='own'){S.money-=1100;log('Car insurance and vehicle tax: −1 100 kr.','minus')}const r=Math.round(HOMES[S.home].rent*(S.flags.sambo?0.5:1));if(r>0)if(S.money>=r){S.money-=r;log(`Rent paid for ${MONTHS[dt.getMonth()]}: −${kr(r)}.`,'minus')}
     else{addBill('rent for '+MONTHS[dt.getMonth()],r);apply({mood:-6});log(`Not enough money for rent (${kr(r)}). The landlord sent an invoice: pay within 10 days or it goes to inkasso.`,'minus')}}
   if(dt.getMonth()===0&&dt.getDate()===2&&S.docs.queue){S.money-=QUEUE_FEE;log(`Bostadsförmedlingen yearly queue fee: −${kr(QUEUE_FEE)}.`)}

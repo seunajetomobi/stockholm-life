@@ -464,7 +464,7 @@ def test_court_case_not_sentenced_twice(game_ctx):
 
 
 def test_cs_pend_not_saved(game_ctx):
-    """Known limitation, KNOWN_ISSUES M19: station and train time not yet flushed is not in the save. Not a goal; this records it."""
+    """Outside a station or train nothing flushes CS.pend into the save (in one, the save flushes it: test_save_place.py, KNOWN_ISSUES M19). This is the control for those tests."""
     t = tab(game_ctx, seeded())
     hour, clock = t.js("() => { const T = window.__T, TS = window.__TS; T.CS.pend = 30; TS.S.money += 7; TS.save(); const r = [TS.S.hour, T.csClk()]; T.CS.pend = 0; return r }")
     assert t.life()['hour'] == hour

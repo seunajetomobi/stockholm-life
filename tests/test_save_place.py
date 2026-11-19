@@ -55,6 +55,34 @@ def test_station_place_and_time_restored(browser):
         ctx.close()
 
 
+def test_train_save_flushes_pending_time(browser):
+    """M19 on a train: time held in CS.pend is in the save, and is not counted twice."""
+    ctx, page, err = life(browser)
+    try:
+        game.enter_station(page)
+        game.board_train(page)
+        page.evaluate("() => { __T.JR.depAt = Infinity }")
+        before, s, pend = page.evaluate(f"() => {{ const h = {TS}.S.hour; __T.CS.pend = 30; {TS}.save(); return [h, ({SAVED})(), __T.CS.pend] }}")
+        assert s['place']['kind'] == 'train', s.get('place')
+        assert s['hour'] == pytest.approx(before + 0.5), 'time held in CS.pend must be in the save on a train (M19)'
+        assert pend == 0
+        assert err.uncaught == []
+    finally:
+        ctx.close()
+
+
+def test_street_save_does_not_include_pending_time(browser):
+    """The control for the two tests above: outside a station or train nothing flushes CS.pend into the save."""
+    ctx, page, err = life(browser)
+    try:
+        before, s, pend = page.evaluate(f"() => {{ const h = {TS}.S.hour; __T.CS.pend = 30; {TS}.save(); const r = [h, ({SAVED})(), __T.CS.pend]; __T.CS.pend = 0; return r }}")
+        assert s['place']['kind'] == 'street' and s['hour'] == pytest.approx(before)
+        assert pend == 30
+        assert err.uncaught == []
+    finally:
+        ctx.close()
+
+
 def test_train_at_the_platform_restored(browser):
     ctx, page, err = life(browser)
     try:

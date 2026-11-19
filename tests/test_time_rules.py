@@ -9,7 +9,7 @@ import pytest
 import game
 
 EXPOSE = ('window.__V={get spendTime(){return spendTime},get sleep(){return sleep},needsTick,processBills,garnish,addBill,dateOf,HOMES,TAX,BILLSTAGE,'
-          'billTotal,clamp,MONTHS,START,QUEUE_FEE,csnResident,courseAct,get BARNBIDRAG(){return BARNBIDRAG},get CSN4W(){return CSN4W}};return API;')
+          'billTotal,clamp,MONTHS,START,QUEUE_FEE,csnResident,csnRepay,courseAct,get BARNBIDRAG(){return BARNBIDRAG},get CSN4W(){return CSN4W}};return API;')
 
 
 @pytest.fixture(scope='module')
@@ -247,6 +247,51 @@ def test_csn_application_needs_permanent_residence(city):
     assert city.evaluate("() => window.__V.csnResident()") is False
     run(city, {'course': {'id': 'sva', 'done': 0}}, "window.__TS.S.docs.bankid = 1")
     assert city.evaluate("() => window.__V.csnResident()") is True
+
+
+LOAN = "window.__TS.S.csnLoan = {n}; "
+
+
+def test_csn_loan_repayment(city):
+    """The CSN loan (S.csnLoan, 70% of each payment) is repaid with 10% of the net lön on the payday the lön is paid: never more than is owed, no
+    interest, nothing without a paid lön or without a balance, and it goes on after the course is finished. M26 part 2."""
+    # 10% of the net lön (10 000 gross, 7 000 net): 700 kr, from a larger balance
+    g = run(city, {'day': 32, 'pay': 10000}, LOAN.format(n=9514) + "window.__V.sleep(false)")
+    check(g, money=50000 + 7000 - 700, pay=0)
+    assert city.evaluate("() => window.__TS.S.csnLoan") == 8814
+    logged(g, 'CSN loan repayment: −700 kr')
+    # it goes on after the course is over (no course, no CSN flag)
+    g = run(city, {'day': 32, 'pay': 10000, 'course': None}, LOAN.format(n=1000) + "window.__V.sleep(false)")
+    check(g, money=50000 + 7000 - 700)
+    assert city.evaluate("() => window.__TS.S.csnLoan") == 300
+    # never more than is owed: the last instalment is the balance
+    g = run(city, {'day': 32, 'pay': 10000}, LOAN.format(n=250) + "window.__V.sleep(false)")
+    check(g, money=50000 + 7000 - 250)
+    assert city.evaluate("() => window.__TS.S.csnLoan") == 0
+    # no balance, no deduction and no message
+    g = run(city, {'day': 32, 'pay': 10000}, LOAN.format(n=0) + "window.__V.sleep(false)")
+    check(g, money=50000 + 7000)
+    not_logged(g, 'CSN loan repayment')
+    # no lön paid (nothing earned, or no bank account to pay it into): nothing is repaid and the balance stays
+    g = run(city, {'day': 32, 'pay': 0}, LOAN.format(n=9514) + "window.__V.sleep(false)")
+    check(g, money=50000)
+    assert city.evaluate("() => window.__TS.S.csnLoan") == 9514
+    g = run(city, {'day': 32, 'pay': 10000}, LOAN.format(n=9514) + "window.__TS.S.docs.bank = 0; window.__V.sleep(false)")
+    check(g, money=50000, pay=10000)
+    assert city.evaluate("() => window.__TS.S.csnLoan") == 9514
+    # only on the 25th: the 24th and the 26th repay nothing, and a second night after the 25th does not repeat it
+    g = run(city, {'day': 31, 'pay': 10000}, LOAN.format(n=9514) + "window.__V.sleep(false)")
+    check(g, money=50000, pay=10000)
+    g = run(city, {'day': 32, 'pay': 10000}, LOAN.format(n=9514) + "window.__V.sleep(false); window.__V.sleep(false)")
+    assert city.evaluate("() => window.__TS.S.csnLoan") == 8814        # one deduction, not two
+    # the payday that makes the loan: CSN is paid after the lön, so the first CSN payment is not repaid at once
+    g = run(city, {'day': 32, 'pay': 10000, 'course': {'id': 'sva', 'done': 1}}, CSN + "window.__V.sleep(false)")
+    check(g, money=50000 + 7000 + 13592)
+    assert city.evaluate("() => window.__TS.S.csnLoan") == 9514
+    # the garnishing (30% of the net lön for bills at stage 4) and the repayment both come out of the same lön
+    g = run(city, {'day': 32, 'pay': 10000, 'bills': [{'what': 'x', 'amt': 100, 'fees': 0, 'stage': 4, 'due': 1e9}]}, LOAN.format(n=9514) + "window.__V.sleep(false)")
+    assert city.evaluate("() => window.__TS.S.csnLoan") == 8814
+    assert g['money'] == 50000 + 7000 - 700 - 100, g['money']
 
 
 def test_garnishing_takes_30_percent_of_the_net_pay(city):

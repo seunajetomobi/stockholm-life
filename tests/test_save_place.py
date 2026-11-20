@@ -225,7 +225,7 @@ def test_export_then_import_in_a_fresh_browser(browser, tmp_path):
         time.sleep(0.5)
         page.evaluate("() => [...document.querySelectorAll('#apps > *')].find(e => e.innerText.includes('Save file')).click()")
         with page.expect_download() as dl:
-            page.click('#modalRoot #exp')
+            page.click('#modalRoot [data-slot="1"] [data-a="export"]')
         path = tmp_path / dl.value.suggested_filename
         dl.value.save_as(path)
         assert path.name.startswith('stockholmsliv-') and path.suffix == '.json', path.name
@@ -236,6 +236,7 @@ def test_export_then_import_in_a_fresh_browser(browser, tmp_path):
         game.boot(page)
         assert game.intro_shown(page)
         page.click('#modalRoot #impLife')
+        page.click('#modalRoot [data-slot="1"] [data-a="import"]')
         page.set_input_files('#modalRoot #impf', str(path))
         page.wait_for_selector('#modalRoot #yes', timeout=10000)
         with page.expect_navigation(timeout=60000):

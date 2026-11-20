@@ -216,6 +216,7 @@ button:focus-visible,[tabindex]:focus-visible,input:focus-visible,select:focus-v
 .btn{background:var(--accent);color:var(--accent-ink);border:0;border-radius:10px;padding:11px 16px;font:700 14px var(--display);letter-spacing:.08em;text-transform:uppercase}
 .btn.ghost{background:none;color:var(--fg);border:1px solid var(--line)}
 .btn:disabled{opacity:.5}
+.slrow{border:1px solid var(--line);border-radius:10px;padding:8px 10px;margin:6px 0}.slrow.on{border-color:var(--accent)}.slrow .slbt{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}.slrow .btn{padding:6px 10px;font-size:12px}.slst{font-size:11px;opacity:.75;margin-left:8px;text-transform:uppercase;letter-spacing:.06em}
 .row2{display:flex;gap:8px;flex-wrap:wrap}
 label.f{display:grid;gap:4px;font-size:12px;color:var(--muted)}
 label.f select,input[type=text]{font:inherit;color:var(--fg);background:var(--surface2);border:1px solid var(--line);border-radius:8px;padding:10px 12px;width:100%}
@@ -1086,7 +1087,7 @@ const activeKey=()=>slotKey(SL.id||1);
 function slotsParse(raw){let x;try{x=JSON.parse(raw)}catch(e){return null}
   if(!x||typeof x!=='object'||Array.isArray(x)||x.v!==1||!Array.isArray(x.slots)||!(x.active===null||SLOT_IDS.includes(x.active)))return null;
   const seen=new Set();for(const s of x.slots){if(!s||typeof s!=='object'||Array.isArray(s)||!SLOT_IDS.includes(s.id)||seen.has(s.id))return null;seen.add(s.id);
-    if((s.name!==undefined&&typeof s.name!=='string')||(s.day!==undefined&&!Number.isFinite(s.day))||(s.ended!==undefined&&typeof s.ended!=='boolean')||(s.unreadable!==undefined&&typeof s.unreadable!=='boolean'))return null}
+    if((s.name!==undefined&&typeof s.name!=='string')||(s.day!==undefined&&!Number.isFinite(s.day))||(s.ended!==undefined&&typeof s.ended!=='boolean')||(s.unreadable!==undefined&&typeof s.unreadable!=='boolean')||(s.label!==undefined&&(typeof s.label!=='string'||s.label.length>60)))return null}
   if(x.active!==null&&!seen.has(x.active))return null;return x}
 // what a slot key holds, for the index: a life, an ended life, an unreadable value, or nothing (null)
 function slotMeta(id){const raw=localStorage.getItem(slotKey(id));if(raw===null)return null;if(raw.startsWith(SAVE_ENDED))return {id,ended:true};
@@ -1113,15 +1114,15 @@ function slotsMine(){const st=slotsStored();if(st.missing)return !SL.had;return 
 // after a save: record the name and day of this slot; the data is already stored and read back
 function slotsMeta(){try{const st=slotsStored(),idx=st.missing&&!SL.had?SL.idx:st.idx;if(!idx||idx.active!==SL.id||!S||typeof S.name!=='string')return;
     const i=idx.slots.findIndex(m=>m.id===SL.id),cur=i<0?null:idx.slots[i];if(cur&&cur.name===S.name&&cur.day===S.day&&!cur.ended&&!cur.unreadable&&SL.had)return;
-    const m={id:SL.id,name:S.name,day:S.day},slots=idx.slots.filter(x=>x.id!==SL.id).concat([m]).sort((a,b)=>a.id-b.id),next={v:1,active:SL.id,slots};
+    const m={id:SL.id,name:S.name,day:S.day};if(cur&&cur.label)m.label=cur.label;const slots=idx.slots.filter(x=>x.id!==SL.id).concat([m]).sort((a,b)=>a.id-b.id),next={v:1,active:SL.id,slots};
     SL.idxOk=slotsWrite(next);if(SL.idxOk)SL.idx=next}catch(e){SL.idxOk=false;console.warn('slots meta',e)}}
 function slotsEnded(){try{const st=slotsStored(),idx=st.idx;if(!idx||idx.active!==SL.id)return;const cur=idx.slots.find(m=>m.id===SL.id)||{id:SL.id};
     slotsWrite({v:1,active:idx.active,slots:idx.slots.filter(m=>m.id!==SL.id).concat([{...cur,ended:true}]).sort((a,b)=>a.id-b.id)})}catch(e){console.warn('slots end',e)}}
 // pauses saving while the active slot is unknown: nothing is written, nothing is deleted
 function slotsGuard(){if(SL.id===null||SL.stuck){SV.mode='blocked';SV.bad={slots:true};saveMsg(SAVE_MSG.slotsStuck,true)}else if(SL.msg)saveMsg(SL.msg,true)}
 // the oldest copies beyond keep go, only after the action they protect has succeeded; the -corrupt- evidence is never touched
-function savePrune(prefix,keep){try{const ks=[];for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&k.startsWith(prefix)&&/^\d+x*$/.test(k.slice(prefix.length)))ks.push(k)}
-  ks.sort((a,b)=>parseInt(a.slice(prefix.length))-parseInt(b.slice(prefix.length))||a.length-b.length);for(const k of ks.slice(0,Math.max(0,ks.length-keep)))localStorage.removeItem(k)}catch(e){console.warn('prune',e)}}
+function savePrune(prefix,keep,spare){try{const ks=[];for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&k.startsWith(prefix)&&/^\d+x*$/.test(k.slice(prefix.length)))ks.push(k)}
+  ks.sort((a,b)=>parseInt(a.slice(prefix.length))-parseInt(b.slice(prefix.length))||a.length-b.length);for(const k of ks.slice(0,Math.max(0,ks.length-keep)))if(k!==spare)localStorage.removeItem(k)}catch(e){console.warn('prune',e)}}
 const SV={mode:'pending',expected:null,bad:null,failing:false,timer:0,hideT:0,endChecked:false,ended:null,on:false};
 const SAVE_MSG={fail:'Your progress could not be saved. Your browser\'s storage may be full or blocked. Trying again.',back:'Saving works again. Your progress is saved.',
   kept:'Your saved life could not be read. A copy was kept in this browser and has not been deleted.',stuck:'Your saved life could not be read or copied. It will not be overwritten, so this life cannot be saved yet.',
@@ -1167,10 +1168,11 @@ function placeValid(s){const p=s&&s.place;return !!(p&&typeof p==='object'&&p.ki
 const SAVE_FILE='stockholmsliv-save',SAVE_FILE_MAX=2*1024*1024;
 async function saveHash(o){const h=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(JSON.stringify(o)));return [...new Uint8Array(h)].map(x=>x.toString(16).padStart(2,'0')).join('')}
 async function exportLife(){if(!S||!S.flags||!S.flags.started){toast('Start a life first');return false}if(!(window.crypto&&crypto.subtle)){toast('Export needs a secure page (https or localhost)');return false}
-  placeSave();const game=JSON.parse(JSON.stringify(S)),env={format:SAVE_FILE,v:5,savedAt:new Date().toISOString(),game,sha256:await saveHash(game)};
-  const nm=String(S.name||'life').replace(/[^\p{L}\p{N}_-]+/gu,'-').slice(0,40)||'life',a=document.createElement('a');
-  a.href=URL.createObjectURL(new Blob([JSON.stringify(env)],{type:'application/json'}));a.download=`stockholmsliv-${nm}-day${S.day}-${new Date().toISOString().slice(0,10)}.json`;
-  document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1000);log('Saved a copy of this life to a file.');return true}
+  placeSave();return exportGame(JSON.parse(JSON.stringify(S)))}
+async function exportGame(game){const env={format:SAVE_FILE,v:5,savedAt:new Date().toISOString(),game,sha256:await saveHash(game)};
+  const nm=String(game.name||'life').replace(/[^\p{L}\p{N}_-]+/gu,'-').slice(0,40)||'life',a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([JSON.stringify(env)],{type:'application/json'}));a.download=`stockholmsliv-${nm}-day${game.day}-${new Date().toISOString().slice(0,10)}.json`;
+  document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1000);if(S&&game.name===S.name)log('Saved a copy of this life to a file.');return true}
 // returns {game} ready to write, or {err} saying why the file was refused
 async function importCheck(text){let e;try{e=JSON.parse(text)}catch(x){return {err:'This file is not a saved life (it is not readable data).'}}
   if(!e||typeof e!=='object'||e.format!==SAVE_FILE)return {err:'This file is not a Stockholmsliv saved life.'};
@@ -1181,27 +1183,132 @@ async function importCheck(text){let e;try{e=JSON.parse(text)}catch(x){return {e
   if(!(Number.isFinite(g.day)&&Number.isFinite(g.hour)&&Number.isFinite(g.money)&&g.flags&&g.flags.started&&g.pos&&Number.isFinite(g.pos.x)&&Number.isFinite(g.pos.z)))return {err:'The life in this file is incomplete.'};
   let m;try{m=migrate(JSON.parse(JSON.stringify(g)))}catch(x){console.warn('import',x);return {err:'The life in this file could not be read by this version.'}}
   return {game:m}}
-// the current save is copied first; returns null when the imported life is in storage, else why nothing was changed
-function importApply(g){const json=JSON.stringify(g);let cur;if(SL.id===null||SL.stuck)return 'Your save slots need attention, so nothing was changed.';const sk=activeKey();
+/* ---------- save slots, part B (M1c): managing the five slots from the Save file window.
+   The slot keys are the truth about each life; the index only says which slot is active and carries the player's slot names (label).
+   Every action that can lose a life makes a copy first, reads it back, and only then changes anything; copies are pruned to the newest 3 per category and slot
+   only after the action has succeeded. The -corrupt- copies are never pruned, and an unreadable life is kept as a -corrupt- copy, never as a prunable one.
+   Copy categories: before-import, before-delete, before-replace (start over), before-restore. Switching reloads the page. ---------- */
+const SLOT_CATS=['before-import','before-delete','before-replace','before-restore','corrupt'],SLOT_KEEP=3,LABEL_MAX=30;
+const slotRaw=id=>{let r=localStorage.getItem(slotKey(id));if(r===null&&id===1)r=localStorage.getItem(SAVE_OLD);return r};
+// what a slot holds right now: {id, st:'empty'|'life'|'ended'|'unreadable', name, day, money, label, title, active}
+function slotInfo(id){const o={id,st:'empty',label:'',active:id===SL.id};let ix=null;
+  try{const st=slotsStored();ix=((st.idx||SL.idx)||{slots:[]}).slots.find(m=>m.id===id)||null;if(ix&&ix.label)o.label=ix.label;
+    const raw=slotRaw(id);if(raw===null){if(ix&&ix.ended)o.st='ended'}else if(raw.startsWith(SAVE_ENDED))o.st='ended';
+    else{const s=saveParse(raw);if(!s)o.st='unreadable';else if(s.flags&&s.flags.started&&typeof s.name==='string'){o.st='life';o.name=s.name;o.day=s.day;o.money=s.money}}}
+  catch(e){o.st='unreadable'}
+  if(o.active&&S&&S.flags&&S.flags.started&&SV.mode!=='ended'){o.st='life';o.name=S.name;o.day=S.day;o.money=S.money}
+  o.title=o.label||o.name||'Slot '+id;return o}
+function slotName(t){t=String(t==null?'':t).replace(/[\p{C}]+/gu,' ').replace(/\s+/g,' ').trim();return t&&Array.from(t).length<=LABEL_MAX?t:null}
+// change the index through one validated, read-back write; false when it could not be written
+function slotsSet(fn){try{const st=slotsStored();let idx=st.idx?JSON.parse(JSON.stringify(st.idx)):(st.missing&&SL.id!==null?{v:1,active:SL.id,slots:slotsDiscover()}:null);if(!idx)return false;
+    fn(idx);idx.slots.sort((a,b)=>a.id-b.id);if(!slotsParse(JSON.stringify(idx)))return false;if(!slotsWrite(idx))return false;SL.idx=idx;return true}catch(e){console.warn('slots set',e);return false}}
+const slotPut=(idx,m)=>{const o=idx.slots.find(x=>x.id===m.id);if(o&&o.label)m.label=o.label;idx.slots=idx.slots.filter(x=>x.id!==m.id).concat([m])};
+// '' when nothing stops a slot action, else the reason
+function slotGate(){if(SL.id===null||SL.stuck)return 'Your save slots need attention, so nothing was changed.';try{if(!slotsMine())return 'Your saves were changed in another tab, so nothing was changed. Reload and try again.'}catch(e){return 'Your browser\'s storage cannot be read, so nothing was changed.'}return ''}
+function slotBusy(){if(busy)return 'A journey or an arrest is in progress. Finish it first, then try again.';if(W&&W.inLesson&&W.inLesson())return 'A driving lesson is in progress. Finish it first, then try again.';
+  if(W&&W.isDriving&&W.isDriving())return 'You are driving. Stop first, then try again.';if(W&&W.inJourney&&W.inJourney())return 'You are on a train ride. Get off first, then try again.';return ''}
+// the life in this tab is written and read back before it is left; '' when it is safe (or there is nothing to store)
+function slotFlush(){if(!S||!S.flags||!S.flags.started||SV.mode==='pending'||SV.mode==='ended')return '';
+  if(SV.mode!=='active')return 'Saving is paused, so this life cannot be left safely. Reload the page first.';
+  try{const k=activeKey(),cur=localStorage.getItem(k);if(cur!==SV.expected)return 'This life was changed in another tab, so nothing was changed. Reload and try again.';
+    placeSave();const json=JSON.stringify(S);if(json!==cur){localStorage.setItem(k,json);SV.expected=json}if(localStorage.getItem(k)!==json)return 'Your current life could not be saved first, so nothing was changed.';slotsMeta();return ''}
+  catch(e){console.warn('slot flush',e);return 'Storage is full or blocked, so your current life could not be saved first. Nothing was changed.'}}
+// a verified copy of what the slot holds, in the given category; an unreadable value is kept as -corrupt- evidence instead. {ok, k, none}
+function slotBackup(id,cat){let raw;try{raw=slotRaw(id)}catch(e){return {ok:false}}
+  if(raw===null||raw.startsWith(SAVE_ENDED))return {ok:true,none:true};
+  if(!saveParse(raw))return {ok:saveKeep(slotKey(id),raw),kept:true};
+  let k=slotKey(id)+'-'+cat+'-'+Date.now();try{while(localStorage.getItem(k)!==null)k+='x';localStorage.setItem(k,raw);if(localStorage.getItem(k)===raw)return {ok:true,k}}catch(e){console.warn('slot backup',e)}
+  try{localStorage.removeItem(k)}catch(e){}return {ok:false}}
+// the copies kept for a slot, newest first: {k, cat, t, ok (can be restored), name, day}
+function slotBackups(id){const out=[];try{const base=slotKey(id);for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(!k)continue;
+    for(const cat of SLOT_CATS){const pre=base+'-'+cat+'-',pre3=id===1&&cat==='corrupt'?SAVE_OLD+'-corrupt-':null;const p=k.startsWith(pre)?pre:pre3&&k.startsWith(pre3)?pre3:null;if(!p||!/^\d+x*$/.test(k.slice(p.length)))continue;
+      const raw=localStorage.getItem(k),s=raw===null?null:saveParse(raw);let ok=false;try{ok=!!(s&&s.flags&&s.flags.started&&migrate(s))}catch(e){}
+      out.push({k,cat,t:parseInt(k.slice(p.length)),ok,name:ok?s.name:'',day:ok?s.day:0})}}}catch(e){console.warn('slot backups',e)}
+  return out.sort((a,b)=>b.t-a.t||b.k.length-a.k.length)}
+// open another slot: this life is saved and read back, the other one is checked, the index names it, then the page reloads. Returns why not, or null.
+function slotSwitch(id){let e=slotBusy()||slotGate();if(e)return e;if(id===SL.id)return 'You are already in this slot.';if(slotInfo(id).st==='ended')return 'That life has ended, so it cannot be opened. Delete the slot to start a new life there.';
+  let raw;try{raw=slotRaw(id)}catch(x){return 'Your browser\'s storage cannot be read, so nothing was changed.'}
+  if(raw!==null){if(raw.startsWith(SAVE_ENDED))return 'That life has ended, so it cannot be opened.';const s=saveParse(raw);let ok=false;try{ok=!!(s&&((s.flags&&s.flags.started&&migrate(s))||s.day<=1))}catch(x){}
+    if(!ok)return 'That slot cannot be read, so it was not opened. Nothing was changed.'}
+  e=slotFlush();if(e)return e;
+  if(!slotsSet(idx=>{idx.active=id;if(!idx.slots.some(m=>m.id===id))idx.slots.push({id})}))return 'The slot list could not be updated, so nothing was changed.';
+  SV.mode='superseded';clearTimeout(SV.timer);SV.timer=0;location.reload();return null}
+function slotRename(id,t){const n=slotName(t);if(n===null)return 'Use 1 to 30 letters or numbers for the name.';const e=slotGate();if(e)return e;
+  return slotsSet(idx=>{const m=idx.slots.find(x=>x.id===id);if(m)m.label=n;else idx.slots.push({id,label:n})})?null:'The slot list could not be updated, so the name was not changed.'}
+// delete a slot you are not in: the player types its name, a copy is made and read back, then the slot goes
+function slotDelete(id,typed){const e=slotGate();if(e)return e;if(id===SL.id)return 'You are in this slot. Open another slot first.';const inf=slotInfo(id);if(inf.st==='empty')return 'This slot is empty.';
+  if(typed!==inf.title)return 'The name you typed does not match. Nothing was deleted.';
+  const b=slotBackup(id,'before-delete');if(!b.ok)return 'Storage is full, so a copy of this life could not be made first. Nothing was deleted.';
+  try{localStorage.removeItem(slotKey(id));if(id===1)localStorage.removeItem(SAVE_OLD);if(localStorage.getItem(slotKey(id))!==null||(id===1&&localStorage.getItem(SAVE_OLD)!==null))return 'This slot could not be cleared. Its copy was kept.'}catch(x){return 'This slot could not be cleared. Its copy was kept.'}
+  slotsSet(idx=>{idx.slots=idx.slots.filter(m=>m.id!==id)});if(b.k)savePrune(slotKey(id)+'-before-delete-',SLOT_KEEP);return null}
+// start a new life in a slot that holds a life: typed name, a verified before-replace copy, the index names the slot, then it is emptied and the page reloads
+function slotRestart(id,typed){let e=slotBusy()||slotGate();if(e)return e;const inf=slotInfo(id);if(inf.st!=='life')return 'Only a life can be replaced this way.';if(typed!==inf.title)return 'The name you typed does not match. Nothing was changed.';
+  if(id===SL.id){e=slotFlush();if(e)return e}
+  const b=slotBackup(id,'before-replace');if(!b.ok)return 'Storage is full, so a copy of this life could not be made first. Nothing was changed.';
+  if(!slotsSet(idx=>{idx.active=id;idx.slots=idx.slots.filter(m=>m.id!==id);slotPut(idx,{id})}))return 'The slot list could not be updated, so nothing was changed.';
+  SV.mode='superseded';clearTimeout(SV.timer);SV.timer=0;// the index now names this slot, so this tab must stop writing
+  try{localStorage.removeItem(slotKey(id));if(id===1)localStorage.removeItem(SAVE_OLD);if(localStorage.getItem(slotKey(id))!==null||(id===1&&localStorage.getItem(SAVE_OLD)!==null))return 'This slot could not be cleared. Reload the page; your life is still there.'}catch(x){return 'This slot could not be cleared. Reload the page; your life is still there.'}
+  if(b.k)savePrune(slotKey(id)+'-before-replace-',SLOT_KEEP);location.reload();return null}
+// put a kept copy back: it must be a readable life, the slot's current content is copied first (before-restore), and the copy chosen is never changed
+function slotRestore(id,bk){let e=slotGate();if(e)return e;const bs=slotBackups(id).find(x=>x.k===bk);if(!bs||!bs.ok)return 'This copy cannot be restored.';
+  const act=id===SL.id;if(act){e=slotBusy();if(e)return e}
+  let raw,cur;try{raw=localStorage.getItem(bk);cur=localStorage.getItem(slotKey(id))}catch(x){return 'Your browser\'s storage cannot be read, so nothing was changed.'}
+  let g=null;try{const s=raw===null?null:saveParse(raw);g=s&&s.flags&&s.flags.started?migrate(s):null}catch(x){}if(!g)return 'This copy cannot be restored.';
+  if(act){e=slotFlush();if(e)return e;try{cur=localStorage.getItem(slotKey(id))}catch(x){return 'Your browser\'s storage cannot be read, so nothing was changed.'}}
+  const b=slotBackup(id,'before-restore');if(!b.ok)return 'Storage is full, so the life in this slot could not be copied first. Nothing was changed.';
+  const was=SV.mode;if(act){SV.mode='superseded';clearTimeout(SV.timer);SV.timer=0}
+  const sk=slotKey(id);let bad=false;try{localStorage.setItem(sk,raw);bad=localStorage.getItem(sk)!==raw}catch(x){bad=true}
+  if(bad){try{if(cur===null)localStorage.removeItem(sk);else localStorage.setItem(sk,cur)}catch(x){}if(act)SV.mode=was;return 'The copy could not be restored. Nothing was changed.'}
+  slotsSet(idx=>slotPut(idx,{id,name:g.name,day:g.day}));if(b.k)savePrune(sk+'-before-restore-',SLOT_KEEP,bk);// the newest three stay, and so does the copy that was chosen
+  if(act)location.reload();return null}
+async function exportSlot(id){if(id===SL.id&&S&&S.flags&&S.flags.started)return exportLife();let g=null;try{const s=saveParse(slotRaw(id)||'');g=s&&s.flags&&s.flags.started?migrate(s):null}catch(e){}
+  if(!g){toast('This slot has no readable life to export');return false}return exportGame(g)}
+// the chosen slot's current life is copied first (a verified before-import copy; an unreadable value is kept as -corrupt- evidence); returns null when the imported life is in storage, else why nothing was changed
+function importApply(g,id){id=id||SL.id||1;const json=JSON.stringify(g);if(SL.id===null||SL.stuck)return 'Your save slots need attention, so nothing was changed.';const sk=slotKey(id),act=id===SL.id;let cur;
   try{if(!slotsMine())return 'Your saves were changed in another tab, so nothing was changed. Reload and try again.';cur=localStorage.getItem(sk)}catch(x){return 'Your browser\'s storage cannot be read, so nothing was changed.'}
-  if(cur!==null&&!cur.startsWith(SAVE_ENDED)){const k=sk+'-before-import-'+Date.now();let ok=false;try{localStorage.setItem(k,cur);ok=localStorage.getItem(k)===cur}catch(x){console.warn('import backup',x)}
-    if(!ok){try{localStorage.removeItem(k)}catch(x){}return 'Storage is full, so your current life could not be backed up first. Nothing was changed.'}}
-  const was=SV.mode;SV.mode='superseded';clearTimeout(SV.timer);SV.timer=0;// this tab must not write over the imported life before it reloads
-  try{localStorage.setItem(sk,json);if(localStorage.getItem(sk)===json){savePrune(sk+'-before-import-',3);return null}}catch(x){console.warn('import',x)}
-  SV.mode=was;return 'Storage is full, so the life could not be imported. Nothing was changed.'}
-function openSaveFile(fromIntro){const back=()=>{closeModal();if(fromIntro)intro()};
-  modal(`<h2>Save file</h2><p>Keep a copy of this life as a file, or carry on a life saved in another browser, on another device or at another web address.</p>
-    <div class="row2">${S&&S.flags&&S.flags.started?'<button class="btn" id="exp">Export this life</button>':''}<button class="btn ghost" id="imp">Import a life from a file…</button></div>
-    <input type="file" id="impf" accept=".json,application/json" hidden><p class="note" id="impmsg"></p><div class="row2"><button class="btn ghost" id="no">Close</button></div>`,m=>{
-    const msg=t=>{m.querySelector('#impmsg').textContent=t},f=m.querySelector('#impf');m.querySelector('#no').onclick=back;
-    const ex=m.querySelector('#exp');if(ex)ex.onclick=async()=>{if(await exportLife())msg('The file is in your downloads. Keep it somewhere safe.')};
-    m.querySelector('#imp').onclick=()=>f.click();
+  const b=slotBackup(id,'before-import');if(!b.ok)return 'Storage is full, so your current life could not be backed up first. Nothing was changed.';
+  const was=SV.mode;if(act){SV.mode='superseded';clearTimeout(SV.timer);SV.timer=0}// this tab must not write over the imported life before it reloads
+  try{localStorage.setItem(sk,json);if(localStorage.getItem(sk)===json){if(b.k)savePrune(sk+'-before-import-',SLOT_KEEP);if(!act)slotsSet(idx=>slotPut(idx,{id,name:g.name,day:g.day}));return null}}catch(x){console.warn('import',x)}
+  try{if(localStorage.getItem(sk)!==cur){if(cur===null)localStorage.removeItem(sk);else localStorage.setItem(sk,cur)}}catch(x){}
+  if(act)SV.mode=was;return 'Storage is full, so the life could not be imported. Nothing was changed.'}
+// ---- the Save file window: five slots ----
+function slotConfirm(o){modal(`<h2>${o.title}</h2><p>${o.body}</p>${o.word?`<label class="f">Type <b>${esc2(o.word)}</b> to confirm<input id="slw" autocomplete="off" maxlength="40"></label>`:''}
+    <p class="note" id="slmsg"></p><div class="row2"><button class="btn" id="yes"${o.word?' disabled':''}>${o.btn}</button><button class="btn ghost" id="no">Cancel</button></div>`,m=>{
+    const inp=m.querySelector('#slw'),yes=m.querySelector('#yes');if(inp)inp.oninput=()=>{yes.disabled=inp.value!==o.word};
+    m.querySelector('#no').onclick=o.back;yes.onclick=()=>{const e=o.go(inp?inp.value:'');if(e)m.querySelector('#slmsg').textContent=e;else if(o.done)o.done()}})}
+function openSlotBackups(id,fromIntro){const inf=slotInfo(id),bs=slotBackups(id),CN={'before-import':'Before an import','before-delete':'Before a delete','before-replace':'Before starting over','before-restore':'Before a restore','corrupt':'Unreadable copy'};
+  modal(`<h2>Copies of ${esc2(inf.title)}</h2><p class="note">Older copies of this slot. Restoring one keeps it, and first copies what the slot holds now. Unreadable copies are kept as evidence and are never removed by the game.</p>
+    ${bs.length?bs.map((b,i)=>`<div class="slrow"><b>${CN[b.cat]}</b> · ${esc2(new Date(b.t).toLocaleString())}<div class="note">${b.ok?esc2(b.name)+' · day '+b.day:'Cannot be read, so it cannot be restored. It is kept.'}</div>${b.ok?`<div class="slbt"><button class="btn ghost" data-i="${i}">Restore</button></div>`:''}</div>`).join(''):'<p class="note">No copies of this slot.</p>'}
+    <p class="note" id="slmsg"></p><div class="row2"><button class="btn ghost" id="no">Back</button></div>`,m=>{
+    m.querySelector('#no').onclick=()=>openSaveFile(fromIntro);
+    m.querySelectorAll('[data-i]').forEach(btn=>btn.onclick=()=>{const b=bs[+btn.dataset.i],occ=inf.st!=='empty',back=()=>openSlotBackups(id,fromIntro);
+      slotConfirm({title:'Restore this copy?',body:occ?`This puts the copy back into ${esc2(inf.title)}. What the slot holds now is copied first.`:'This puts the copy back into the empty slot.',word:occ?inf.title:'',btn:'Restore',back,go:()=>slotRestore(id,b.k),done:()=>openSaveFile(fromIntro,'The copy was restored.')})})})}
+function openSaveFile(fromIntro,note){const back=()=>{closeModal();if(fromIntro)intro()},rows=SLOT_IDS.map(slotInfo),ST={life:'',ended:'Ended',unreadable:'Unreadable',empty:'Empty'};
+  const btn=(a,id,t,cls)=>`<button class="btn${cls?' '+cls:' ghost'}" data-a="${a}" data-id="${id}">${t}</button>`;
+  const row=i=>{const bk=slotBackups(i.id).length>0,a=[];
+    if(i.st==='life'){if(!i.active)a.push(btn('switch',i.id,'Open',''));a.push(btn('export',i.id,'Export'),btn('rename',i.id,'Rename'),btn('import',i.id,'Replace from file…'),btn('restart',i.id,'Start over'));if(!i.active)a.push(btn('delete',i.id,'Delete'))}
+    else if(i.st==='empty'){if(!i.active)a.push(btn('switch',i.id,'Start a new life here',''));a.push(btn('import',i.id,'Import here…'))}
+    else{a.push(btn('import',i.id,'Replace from file…'),btn('delete',i.id,'Delete'))}
+    if(bk)a.push(btn('backups',i.id,'Copies'));
+    const d=i.st==='life'?`${esc2(i.name)} · day ${i.day} · ${kr(i.money)}`:i.st==='ended'?'This life has ended (deported).':i.st==='unreadable'?'This slot could not be read. Nothing has been deleted; see Copies.':i.active?'Empty. Start your life from the first screen.':'Empty';
+    return `<div class="slrow${i.active?' on':''}" data-slot="${i.id}"><div><b>${esc2(i.title)}</b><span class="slst">${i.active?'Active'+(ST[i.st]?' · '+ST[i.st]:''):ST[i.st]}</span></div><div class="note">${d}</div><div class="slbt">${a.join('')}</div></div>`};
+  modal(`<h2>Save slots</h2><p class="note">Five lives can be kept in this browser. Opening, replacing or deleting one first keeps a copy. A file lets you carry a life to another browser or device.</p>${rows.map(row).join('')}
+    <input type="file" id="impf" accept=".json,application/json" hidden><p class="note" id="impmsg">${esc2(note||'')}</p><div class="row2"><button class="btn ghost" id="no">Close</button></div>`,m=>{
+    const msg=t=>{m.querySelector('#impmsg').textContent=t},f=m.querySelector('#impf');let tgt=0;m.querySelector('#no').onclick=back;
+    const again=n=>openSaveFile(fromIntro,n);
+    m.querySelectorAll('[data-a]').forEach(b=>b.onclick=async()=>{const a=b.dataset.a,id=+b.dataset.id,inf=slotInfo(id);
+      if(a==='switch'){const e=slotSwitch(id);if(e)msg(e)}
+      else if(a==='export'){if(await exportSlot(id))msg('The file is in your downloads. Keep it somewhere safe.')}
+      else if(a==='backups')openSlotBackups(id,fromIntro);
+      else if(a==='import'){tgt=id;f.click()}
+      else if(a==='rename')modal(`<h2>Rename this slot</h2><label class="f">Name<input id="rn" maxlength="${LABEL_MAX}" value="${esc2(inf.title)}" autocomplete="off"></label><p class="note" id="slmsg"></p><div class="row2"><button class="btn" id="yes">Save name</button><button class="btn ghost" id="no">Cancel</button></div>`,c=>{
+        c.querySelector('#no').onclick=()=>again();c.querySelector('#yes').onclick=()=>{const e=slotRename(id,c.querySelector('#rn').value);if(e)c.querySelector('#slmsg').textContent=e;else again('The slot was renamed.')}})
+      else if(a==='delete')slotConfirm({title:'Delete this slot?',body:inf.st==='life'?`<b>${esc2(inf.title)}</b> will be removed from this browser. A copy is kept first and can be restored from Copies.`:'This slot will be cleared. A copy of anything it holds is kept first.',word:inf.title,btn:'Delete',back:()=>again(),go:t=>slotDelete(id,t),done:()=>again('The slot was deleted. A copy was kept.')})
+      else if(a==='restart')slotConfirm({title:'Start over in this slot?',body:`<b>${esc2(inf.title)}</b> will be replaced by a new life. A copy is kept first and can be restored from Copies.`,word:inf.title,btn:'Start over',back:()=>again(),go:t=>slotRestart(id,t)})});
     f.onchange=async()=>{const file=f.files&&f.files[0];f.value='';if(!file)return;if(file.size>SAVE_FILE_MAX){msg('This file is too large to be a saved life.');return}
-      let r;try{r=await importCheck(await file.text())}catch(x){r={err:'This file could not be read.'}}if(r.err){msg(r.err);return}const g=r.game;
-      modal(`<h2>Carry on this life?</h2><p><b>${esc2(g.name)}</b> · day ${g.day} · ${kr(g.money)}</p><p>${S&&S.flags&&S.flags.started?'This replaces the life in this browser. A copy of it is kept first.':'This life will be loaded in this browser.'}</p>
-        <p class="note" id="impmsg"></p><div class="row2"><button class="btn" id="yes">Carry on this life</button><button class="btn ghost" id="no">Cancel</button></div>`,c=>{
-        c.querySelector('#no').onclick=()=>openSaveFile(fromIntro);
-        c.querySelector('#yes').onclick=()=>{const e=importApply(g);if(e){c.querySelector('#impmsg').textContent=e;return}location.reload()}})}})}
+      let r;try{r=await importCheck(await file.text())}catch(x){r={err:'This file could not be read.'}}if(r.err){msg(r.err);return}const g=r.game,id=tgt,inf=slotInfo(id),occ=inf.st!=='empty';
+      slotConfirm({title:'Carry on this life?',body:`<b>${esc2(g.name)}</b> · day ${g.day} · ${kr(g.money)}<br>${occ?`This replaces what is in ${esc2(inf.title)}. A copy of it is kept first.`:'This life will be put in the empty slot.'}`,word:occ?inf.title:'',btn:'Carry on this life',back:()=>again(),
+        go:()=>importApply(g,id),done:()=>{if(id===SL.id)location.reload();else again('The life was imported.')}})}})}
 function toast(t){const el=document.createElement('div');el.className='toast';el.textContent=t;document.body.appendChild(el);setTimeout(()=>el.remove(),2400)}
 function apply(e){for(const k in e){if(k==='money')S.money+=e[k];else S[k]=clamp(S[k]+e[k],0,k==='energy'&&S.sick>S.day?60:100)}}
 function spendTime(h){needsTick(h);S.hour+=h;if(S.hour>=24){log('You stayed out past midnight and nodded off on the night bus.','minus');sleep(true)}}
@@ -5352,7 +5459,7 @@ const POSTERS_CITY=[['#f2b705','#1b1b1b','KANELBULLE','Färskt varje morgon','Ba
       if(t===0)JR.depAt=Math.max(JR.depAt,csClk()+1);else{JR.si=t-1;JR.d=JR.stops[t].d+HALF*CM;JR.v=0;JR.doors=0;jrArrive()}
       csLine(`Back on pendeltåg ${d.ref} to ${d.to} · ${JR.stops[JR.si].disp}`,6)});return true}
   tick();
-  const API={startLesson,inLesson:()=>!!COACH.mode,lookAtFlight,placeAvatar,landAt:info=>{if(IN.on)exitInterior(true);playLanding(info,()=>enterInterior('arlanda',{name:'Stockholm Arlanda Airport · Terminal 5 · Arrivals'},{}))},openGate:k=>{const gt=IN.gates&&IN.gates[k];if(!gt)return;IN.col=IN.col.filter(c=>!gt.c.includes(c));gt.m.forEach(m=>m.visible=false)},leaveAirportBy:(mode,dst,cb)=>{exitInterior(true);arriveBy(mode,dst,cb)},enterAirport:()=>{if(IN.on)exitInterior(true);enterInterior('arlanda',{name:'Stockholm Arlanda Airport · Terminal 5 · Arrivals'},{})},leaveAirport:(x,z)=>{exitInterior(true);const f=freeSpot(x,z)||[x,z];placeAvatar(f[0],f[1],true)},stationPos:k=>{const ll=k==='cityterminal'?[59.3318,18.0560]:[59.3303,18.0581];const [x,z]=P(ll[0],ll[1]);const f=freeSpot(x,z)||[x,z];return {x:f[0],z:f[1]}},avPos:()=>({x:av.position.x,z:av.position.z}),lieDown,hideAv:h=>{avHidden=h;av.visible=!h},emergency,leaveScene,isDriving:()=>DR.on,busLinesAt,transitLinesAt,busRide,hospitalNear:(x,z)=>{const L=[['Karolinska Universitetssjukhuset Solna',59.3488,18.0307],['Södersjukhuset',59.3106,18.0521],['S:t Görans sjukhus',59.3376,18.0221],['Danderyds sjukhus',59.3919,18.0412]].map(([n,a,b])=>{const [hx,hz]=P(a,b);const f=freeSpot(hx,hz)||[hx,hz];return {name:n,x:f[0],z:f[1]}});return L.sort((a,b)=>Math.hypot(a.x-x,a.z-z)-Math.hypot(b.x-x,b.z-z))[0]},setCoat,walkPath,ride,emote,refresh,season:()=>{lastSeason=''},snapTime,aurora:()=>{auroraT=1.2},route,streetName,isMoving:()=>inputVec().mag>0.08,setLook:n=>setLook(n),applyOutfit,setHome,syncCar,startDrive,stopDrive,nearPlaces,kindFor,poi:i=>POIS[i],
+  const API={startLesson,inLesson:()=>!!COACH.mode,inJourney:()=>!!(CS&&CS.mode==='ride'),lookAtFlight,placeAvatar,landAt:info=>{if(IN.on)exitInterior(true);playLanding(info,()=>enterInterior('arlanda',{name:'Stockholm Arlanda Airport · Terminal 5 · Arrivals'},{}))},openGate:k=>{const gt=IN.gates&&IN.gates[k];if(!gt)return;IN.col=IN.col.filter(c=>!gt.c.includes(c));gt.m.forEach(m=>m.visible=false)},leaveAirportBy:(mode,dst,cb)=>{exitInterior(true);arriveBy(mode,dst,cb)},enterAirport:()=>{if(IN.on)exitInterior(true);enterInterior('arlanda',{name:'Stockholm Arlanda Airport · Terminal 5 · Arrivals'},{})},leaveAirport:(x,z)=>{exitInterior(true);const f=freeSpot(x,z)||[x,z];placeAvatar(f[0],f[1],true)},stationPos:k=>{const ll=k==='cityterminal'?[59.3318,18.0560]:[59.3303,18.0581];const [x,z]=P(ll[0],ll[1]);const f=freeSpot(x,z)||[x,z];return {x:f[0],z:f[1]}},avPos:()=>({x:av.position.x,z:av.position.z}),lieDown,hideAv:h=>{avHidden=h;av.visible=!h},emergency,leaveScene,isDriving:()=>DR.on,busLinesAt,transitLinesAt,busRide,hospitalNear:(x,z)=>{const L=[['Karolinska Universitetssjukhuset Solna',59.3488,18.0307],['Södersjukhuset',59.3106,18.0521],['S:t Görans sjukhus',59.3376,18.0221],['Danderyds sjukhus',59.3919,18.0412]].map(([n,a,b])=>{const [hx,hz]=P(a,b);const f=freeSpot(hx,hz)||[hx,hz];return {name:n,x:f[0],z:f[1]}});return L.sort((a,b)=>Math.hypot(a.x-x,a.z-z)-Math.hypot(b.x-x,b.z-z))[0]},setCoat,walkPath,ride,emote,refresh,season:()=>{lastSeason=''},snapTime,aurora:()=>{auroraT=1.2},route,streetName,isMoving:()=>inputVec().mag>0.08,setLook:n=>setLook(n),applyOutfit,setHome,syncCar,startDrive,stopDrive,nearPlaces,kindFor,poi:i=>POIS[i],
     enterPlace:(p,o)=>{const k=kindFor(p);if(!k){showPoi(p);return}if(k==='club'&&!(S.hour>=21.5||S.hour<2)){toast('The club opens late in the evening');return}if(k==='club'&&!S.flags['club'+S.day]){if(S.money<200){toast('Entry is 200 kr');return}S.money-=200;S.flags['club'+S.day]=1;log('Paid 200 kr entry at '+p.name+'.');render()}enterInterior(k,p,o)},
     enterHome:()=>enterInterior('home',null,{}),showCrowd,exitInterior,setQueue:n=>{IN.queue=n},inside:()=>IN.on,driving:()=>DR.on,
     centralEntrance:()=>{csDoorsWorld();return CS_DOORS[0].w},inStation:()=>CS.mode,leaveStation:csForceOut,placeState,restorePlace};

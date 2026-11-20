@@ -5,11 +5,12 @@ Everything runs the production functions (`spendTime`, `sleep`, `needsTick`, `pr
 The names come from `window.__V`, added with the test hook as in test_transit_rides.py; index.html is not changed.
 Run alone with: python3 -m pytest tests/test_time_rules.py"""
 import json
+import re
 import pytest
 import game
 
 EXPOSE = ('window.__V={get spendTime(){return spendTime},get sleep(){return sleep},needsTick,processBills,garnish,addBill,dateOf,HOMES,TAX,BILLSTAGE,'
-          'billTotal,clamp,MONTHS,START,QUEUE_FEE,csnResident,csnRepay,courseAct,get BARNBIDRAG(){return BARNBIDRAG},get CSN4W(){return CSN4W}};return API;')
+          'billTotal,clamp,MONTHS,START,QUEUE_FEE,csnResident,csnRepay,courseAct,get BARNBIDRAG(){return BARNBIDRAG},get CSN4W(){return CSN4W},EVENTS,ACTS,takeTrip};return API;')
 
 
 @pytest.fixture(scope='module')
@@ -366,3 +367,68 @@ def test_time_does_not_pass_while_standing_still(city):
     city.evaluate("() => new Promise(r => { let n = 0; const f = () => ++n >= 4 ? r() : requestAnimationFrame(f); requestAnimationFrame(f) })")
     after = city.evaluate(SNAP)
     assert (before['hour'], before['day'], before['hunger'], before['hygiene'], before['fun'], before['energy']) == (after['hour'], after['day'], after['hunger'], after['hygiene'], after['fun'], after['energy']), (before, after)
+
+
+# ---------- M2 stage 1: what is not pinned above (docs/M2_SPEC.md §2.2 and §2.6; M2 plan R2, R12, R13) ----------
+# These pin today's behaviour, including two places that move the hour without a needs drop or a midnight check. Later M2 stages change them on purpose, in the same pull request, with the reason.
+def test_walking_across_midnight_nods_off_on_a_bench(city):
+    """A walk that reaches 24:00 drops the needs for the whole walk, then `sleep(true)`: the next day starts at 08:00 and the time past midnight is not carried over."""
+    g = run(city, {'hour': 23.99}, 'window.__slCommit(8, 0, 12, 12)')      # 5 minutes walked: 24.073
+    check(g, day=4, hour=8, hunger=80 - 6 * 5 / 60 - 18, hygiene=80 - 2.8 * 5 / 60 - 8)
+    logged(g, 'nodded off on a bench')
+
+
+def test_driving_across_midnight_also_sleeps_but_says_nothing(city):
+    """A drive that reaches 24:00 also ends in `sleep(true)` (day 4, 08:00), but unlike walking and spending time it logs no 'nodded off' line. Observed, not decided (M2 plan D2)."""
+    g = run(city, {'hour': 23.99}, 'window.__slDrive(9, 12, 12)')          # 1 minute driven: 24.007
+    check(g, day=4, hour=8, hunger=80 - 6 / 60 - 18)
+    not_logged(g, 'nodded off')
+
+
+@pytest.mark.parametrize('start,spend', [(23, 1), (22.5, 1.5), (20, 10), (0.5, 23.5)])
+def test_reaching_or_passing_24_gives_exactly_one_day_and_discards_the_overflow(city, start, spend):
+    """Exactly 24:00 counts as midnight, and a long spend that runs far past it still moves one day only, to the wake-up hour: the hours past midnight are discarded, not carried."""
+    g = run(city, {'hour': start}, f'window.__V.spendTime({spend})')
+    check(g, day=4, hour=8)
+
+
+def test_signalfel_event_moves_the_hour_with_no_needs_drop_and_no_midnight_check(city):
+    """The 'Signalfel' random event does `S.hour+=1` directly (M2 plan R12): hunger does not fall, and at 23:30 the hour becomes 24.5 on the same day, with no sleep. Pinned as found."""
+    g = run(city, {'hour': 12}, "window.__V.EVENTS.find(e => e.t === 'Signalfel').c[0].fx()")
+    check(g, day=3, hour=13, hunger=80, mood=48)
+    g = run(city, {'hour': 23.5}, "window.__V.EVENTS.find(e => e.t === 'Signalfel').c[0].fx()")
+    check(g, day=3, hour=24.5, hunger=80)
+
+
+def test_doctor_drop_in_wait_moves_the_hour_the_same_unchecked_way(city):
+    """Seeing a doctor without being listed at a vårdcentral adds a 1.5 h wait with `S.hour+=1.5` inside the action (M2 plan R12, a sixth direct write found after the plan was first written):
+    no needs drop and no midnight check. Pinned as found."""
+    g = run(city, {'hour': 12}, "window.__TS.S.docs.vc = 0; window.__V.ACTS.find(a => a.id === 'doctor').fn()")
+    check(g, day=3, hour=13.5, hunger=80)
+    logged(g, 'waited 3 hours as a drop-in')
+    g = run(city, {'hour': 23}, "window.__TS.S.docs.vc = 0; window.__V.ACTS.find(a => a.id === 'doctor').fn()")
+    check(g, day=3, hour=24.5)
+    g = run(city, {'hour': 12}, "window.__TS.S.docs.vc = 1; window.__V.ACTS.find(a => a.id === 'doctor').fn()")
+    check(g, day=3, hour=12)                                                  # listed: no extra wait
+
+
+@pytest.mark.parametrize('nights,day', [(1, 4), (2, 5)])
+def test_trip_return_is_at_17_at_the_earliest(city, nights, day):
+    """A trip with nights sleeps each night away from home (`sleep(false, 'trip')` per night, wake-up 08:00), then raises the hour to at least 17:00 on return."""
+    trip = "{c: 0, e: {}, t: 'Test', h: 0, nights: %d, op: 'X', to: 'Y'}" % nights
+    g = run(city, {'hour': 9}, f'window.__V.takeTrip({trip})')
+    check(g, day=day, hour=17)
+    g = run(city, {'hour': 9}, "window.__V.takeTrip({c: 0, e: {}, t: 'Test', h: 3, nights: 0, op: 'X', to: 'Y'})")
+    check(g, day=3, hour=12)                                                  # a day trip is a plain spendTime(h)
+
+
+def test_the_hour_writers_are_the_six_known_ones():
+    """Inventory of every `S.hour+=` in index.html, so a new or removed writer is a deliberate change (M2 stage 3 turns these into one `advance`).
+    The six: the doctor drop-in wait, `__slDrive`, `__slCommit`, `spendTime`, the Signalfel event, `csFlush`."""
+    html = (game.ROOT / 'index.html').read_text(encoding='utf-8')
+    lines = [l for l in html.split('\n') if 'S.hour+=' in l]
+    assert len(re.findall(r'S\.hour\+=', html)) == 6, [l[:70] for l in lines]
+    for marker in ("id:'doctor'", 'window.__slDrive=', 'window.__slCommit=', 'function spendTime(h)', "t:'Signalfel'", 'function csFlush('):
+        assert any(marker in l or (marker == 'window.__slCommit=' and 'dist>0' in l and 'const min=(dist-run)' in l) for l in lines), f'no S.hour+= in {marker}'
+    assert 'S.hour-=' not in html
+

@@ -1,0 +1,14 @@
+# Files that are not part of the game and are not published
+.git
+.github
+.agent
+.gitignore
+.assetsignore
+wrangler.jsonc
+docs
+tests
+tools
+AGENTS.md
+CLAUDE.md
+README.md
+start.sh

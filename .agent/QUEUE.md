@@ -4,13 +4,14 @@ The single source of the current task and the tasks after it. Project status (co
 
 How to use it: one task is **Current**. The coordinator (ChatGPT, through the user) adds and orders tasks; the user approves them. An agent starts only the current task, moves it to **Done** with a link to its pull request or report when the user has accepted it, and does not start the next one without approval. A task that needs more than a few lines gets a spec in `.agent/tasks/<task-id>.md`.
 
-Updated 2026-11-17.
+Updated 2026-11-20.
 
 ## Current
 
 | ID | Task | Owner | Status | Needs approval for |
 | --- | --- | --- | --- | --- |
 | m0-desktop-checks | The remaining manual desktop checks in [TEST_PLAN.md §4](../docs/TEST_PLAN.md), results recorded. First, by hand: "Sit down?" with the mouse, the HUD button, E, Enter and Y. Automated simulated mouse presses did not activate it (1 of 40, then 0 of 40). In the manual session, the mouse on 'Sit down?' failed; the cause is not confirmed. | User, with Claude Code recording | Current — paused; awaiting explicit owner approval to resume. Paused 2026-11-04 by the user; no task is active until then. Started and not finished; detailed results are private and are not reported here, and testing resumes from the recorded stopping point. M15 stays open | Resuming; any fix is a separate pull request |
+| m1c-save-slot-ui | M1c part B: the five-slot Save slots window (open, new life, rename, delete, start over, per-slot export and import, restore a kept copy) on the part A storage; `tests/test_save_slot_ui.py` (52 tests). **Status: implemented and tested locally; not committed or pushed; the full regression and the negative controls are being run; no pull request yet.** Branch `feat/save-slot-ui` from `main` `3316b68` | Claude Code | Owner approved the merge on 2026-11-20 once all three checks pass on the exact head | Merging (pre-approved under those conditions); deployment is not approved |
 
 ## Up next
 
@@ -30,7 +31,8 @@ In order. Apart from the part of `m0-devices` noted below, none of these has sta
 | m3-tables-jobs-countries | M3 step 5, first slice ([MODULES.md §6](../docs/MODULES.md)): `JOBS` and `COUNTRIES` moved unchanged into `src/tables.js`, with `tests/test_tables.py`. **Status: merged as PR #29 on 2026-11-19 (merge `79ee5f5`; not deployed).** Branch `refactor/data-jobs-countries`. Deferred: `HOMES`, `BG`, `SVC`, `ACTS`, the synthetic `parseHours` PH test. Does not touch `S`, saves or the clock | Claude Code | Approved by the owner on 2026-11-18 | Merging, any deployment |
 | m3-city-data | M3 step 4 ([MODULES.md §6](../docs/MODULES.md)): `gunzipFetch` and `parseHours` moved unchanged into `src/city-data.js`, with `tests/test_city_data.py`. **Status: merged as PR #28 on 2026-11-18 (merge `874ce40`, head `179922e`; not deployed).** Branch `refactor/city-data-step4`. Does not touch `S`, saves or the game clock; step 5 data tables not started | Claude Code | Approved by the owner on 2026-11-18 | Merging, any deployment |
 | m3-sun-rules | M3 step 3 ([MODULES.md §6](../docs/MODULES.md)): the sun and daylight rules (`sunInfo`, `daylight`, `sunrise`, `sunset`, `isLight`) and the WMO weather-code tables moved out of `index.html` into `src/rules/sun.js`, behaviour-preserving, with `tests/test_sun.py`. **Status: implemented and tested locally (2026-11-17); on its pull request, awaiting CI and review. Not merged, not deployed.** Branch `refactor/sun-rules` from `main` `2cd7a9a`. Does not touch saves, the game clock or M0/M1 | Claude Code | Approved by the owner on 2026-11-17. Does not replace `m0-desktop-checks`, which stays Current and paused. M2 is not started | Merging, any deployment |
-| m1-save | The rest of the M1 save and state foundation ([MASTER_ROADMAP.md](../docs/MASTER_ROADMAP.md#m1--save-and-state-foundation)): save format v5, slots, export and import, restoring the place, the state module | Claude Code | Spec to be written in `.agent/tasks/` when M0 is closed | Starting, then merging |
+| m2-clock | M2, the unified game clock, in stages: (1) tests that pin today's time rules (`tests/test_time_rules.py`); (2) `src/clock.js`; (3) one writer of the hour; (4) one clock for city, station and train; (5) idle time at 4×. **Status: planned and approved in principle; not started. Stage 1 is drafted on branch `test/m2-characterisation` (not run).** Starts after PR B merges | Claude Code | The owner approved the seven default decisions on 2026-11-20 ([M2_SPEC.md §6](../docs/M2_SPEC.md)); the doctor drop-in line (a sixth writer) is not yet confirmed | Merging each stage |
+| m1-save | The rest of the M1 save and state foundation ([MASTER_ROADMAP.md](../docs/MASTER_ROADMAP.md#m1--save-and-state-foundation)): save format v5, slots (part A merged, part B above), export and import, restoring the place, the state module | Claude Code | Spec to be written in `.agent/tasks/` when M0 is closed | Starting, then merging |
 
 ## Proposed, not approved
 

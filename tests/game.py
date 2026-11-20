@@ -30,7 +30,8 @@ HOOK_LIVE = ['CS', 'JR', 'JRS', 'avHidden']  # reassigned during play, so read t
 # negative control (SL_INDEX_HTML=<baseline>) still boots and the tests fail on behaviour, not on the hook.
 SAVE_HOOK = ("window.__TS={get S(){return S},get busy(){return busy},set busy(v){busy=v},COACH,save,deported,sentence,crimeDaily,"
              "get SV(){return typeof SV==='undefined'?null:SV},get W(){return W},"
-             + ','.join(f"{n}:typeof {n}==='undefined'?null:{n}" for n in ('placeStamp', 'placeValid', 'importCheck', 'importApply', 'saveHash', 'SAVE_FILE'))
+             + ','.join(f"{n}:typeof {n}==='undefined'?null:{n}" for n in ('placeStamp', 'placeValid', 'importCheck', 'importApply', 'saveHash', 'SAVE_FILE',
+                                                       'openSaveFile', 'openSlotBackups', 'slotInfo', 'slotBackups', 'slotSwitch', 'slotRename', 'slotDelete', 'slotRestart', 'slotRestore', 'exportSlot'))
              + "};")
 
 

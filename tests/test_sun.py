@@ -169,7 +169,7 @@ def test_game_uses_the_module(browser):
             for (let h = -1; h <= 25; h += 0.25) if (F.isLight(h) !== M.isLight(h, d)) bad.push('isLight ' + h);
             return bad }""")
         assert same == [], same
-        assert sorted(page.evaluate("() => Object.keys(window.StockholmLife)")) == ['city-data', 'clock', 'format', 'geography', 'sun', 'tables']
+        assert sorted(page.evaluate("() => Object.keys(window.StockholmLife)")) == ['city-data', 'clock', 'format', 'geography', 'holidays', 'stockholm-time', 'sun', 'tables']
         assert page.evaluate("() => ['SUN','sunInfo','sunrise','sunset','isLight','daylight','wmo','WMO','WXICON','RAD','LAT','lastSun'].filter(k => k in window)") == []
         assert err.uncaught == []
         assert err.local_failures() == []

@@ -1,0 +1,7 @@
+{
+  // Serves this repository as a static site on Cloudflare (Workers static assets). No Worker code.
+  // Not the flights relay: that is tools/flights-worker.js, deployed separately.
+  "name": "stockholmsliv",
+  "compatibility_date": "2026-11-01",
+  "assets": { "directory": "./" }
+}

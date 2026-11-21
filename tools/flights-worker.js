@@ -21,7 +21,7 @@
 // the 8-second cache means one request upstream per 8 seconds however many people play.
 
 const CENTER = { lat: 59.47, lon: 17.95, nm: 45 };   // covers Arlanda, Bromma and the city, ~80 km across
-const ALLOW = ['https://seunajetomobi.github.io', 'http://localhost:8000', 'http://127.0.0.1:8000'];
+const ALLOW = ['https://seunajetomobi.github.io', 'https://stockholmsliv.app', 'https://www.stockholmsliv.app', 'http://localhost:8000', 'http://127.0.0.1:8000'];
 const UA = { 'User-Agent': 'Mozilla/5.0 (compatible; stockholm-life-flights-relay; +https://github.com/seunajetomobi/stockholm-life)', 'Accept': 'application/json' };
 const LOG = [];   // what each source answered, shown with /flights?debug=1
 async function get(url) {

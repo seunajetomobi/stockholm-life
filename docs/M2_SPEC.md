@@ -1,6 +1,6 @@
 # M2 specification: an independent, consistent game-time model
 
-Status: **preparation only** (written 2026-11-18 at `main` `7066e60`). M2 is not started and is blocked (§7). This document records how game time works today, what a unified clock must preserve, and what the owner must still decide. It changes no game behaviour. The tests that pin the current behaviour are in [`tests/test_time_rules.py`](../tests/test_time_rules.py).
+Status: **partly superseded on 2026-11-21 by [REALTIME_SPEC.md](REALTIME_SPEC.md) (real Stockholm time replaces the 4x rate); originally preparation only** (written 2026-11-18 at `main` `7066e60`). M2 is not started and is blocked (§7). This document records how game time works today, what a unified clock must preserve, and what the owner must still decide. It changes no game behaviour. The tests that pin the current behaviour are in [`tests/test_time_rules.py`](../tests/test_time_rules.py).
 
 Tags: **[V]** verified in the code and pinned by a test (the test name is given), **[S]** verified in the code, not pinned, **[P]** proposed future behaviour, **[?]** open decision for the owner. Line numbers are those of `index.html` at `7066e60` and move with edits; search for the names.
 

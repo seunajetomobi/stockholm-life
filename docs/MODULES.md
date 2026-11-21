@@ -14,6 +14,7 @@ src/
     format.js     number, money and time formatting: clamp, kr, hhmm, fmtDur
   rules/
     sun.js        the sun and daylight for a date, and the WMO weather-code tables
+    clock.js      the game calendar (START, dateOf), the clock rate and the midnight test
   tables.js       game data tables: JOBS, COUNTRIES, OPEN, COURSES, ITEMS, HOMES
   city-data.js    loading the gzip city data (gunzipFetch) and reading OpenStreetMap opening hours (parseHours)
 data/             city data, unchanged
@@ -23,7 +24,10 @@ tests/            test_geography.py, test_format.py and test_sun.py test the mod
 | Module | Owns | Public interface (an object on `window.StockholmLife`, named after the module) | Depends on |
 | --- | --- | --- | --- |
 | `src/geography.js` | The projection (1 unit = 50 m, origin T-Centralen, x east, z south); the fallback water outlines; the ten districts; the 45 T-bana and tram stations; the six lines; route finding with transfer penalties; the nearest station to a point | `O_LAT`, `O_LON`, `P`, `PP`, `WATER_FALLBACK`, `AREAS`, `HUB_R`, `ST`, `STP`, `LINES`, `transitRoute`, `nearestStation` | Nothing: no DOM, no game state, no three.js, no network |
+| `src/rules/stockholm-time.js` | `nowMs` (with a fake clock for tests), `partsAt`, `hourAt`, `dayNumber`, `lifeDay`, `weekday`, `startOfDay`, `dayLengthHours`: real Stockholm time, daylight saving included. Loaded but not yet used by the game (REALTIME_SPEC R1); tests `tests/test_stockholm_time.py` |
+| `src/rules/holidays.js` | `easterSunday`, `holidays(year)`, `holidayOn`, `isRedDay`: Swedish public holidays from Lag (1989:253), read 2026-11-21; Whit Monday and the eves are not statutory (the eves are returned as kind 'eve'). Loaded but not yet used by the game; tests `tests/test_holidays.py` |
 | `src/rules/sun.js` | `sunInfo(date)` (day length, solar noon and the highest sun for a date at the fixed latitude of Stockholm, 59.33 N), `daylight`, `sunrise`, `sunset` and `isLight(hour, date)`; the WMO weather-code tables `WMO`, `wmo` and `WXICON`. The original bodies, moved unchanged: only `today()` became the argument `date`, so the game script keeps `today()` and its `sunInfo`, `daylight`, `sunrise`, `sunset` and `isLight` are one-line wrappers that pass it | `window.StockholmLife.sun`: `RAD`, `LAT`, `lastSun`, `sunInfo`, `daylight`, `sunrise`, `sunset`, `isLight`, `WMO`, `wmo`, `WXICON` | `src/util/format.js` (`clamp`), which must load first, read through `window.StockholmLife.format` (or `require` in Node). The first module with a dependency. No DOM, no game state, no three.js, no network |
+| `src/rules/clock.js` | `START` (day 1 = Saturday 24 October 2026), `dateOf(day)`, `CLOCK_RATE` (4: the rate at which the station and train clocks run, one game minute per 15 real seconds) and `reachesMidnight(hour, h)` (`hour+h>=24`). `START` and `dateOf` are the original code moved unchanged; `CLOCK_RATE` is the station's `CRATE` given a name; nothing here changes how game time passes (M2 stage 2, [M2_SPEC.md](M2_SPEC.md)) | `window.StockholmLife.clock`: `START`, `dateOf`, `CLOCK_RATE`, `reachesMidnight`; Node `require()` gives the same | `tests/test_clock.py` |
 | `src/util/format.js` | `clamp`; `kr` (kronor with a space between thousands and a real minus sign); `hhmm` (a clock time from hours, wrapping at 24); `fmtDur` (a duration from minutes). The original bodies, moved unchanged | `window.StockholmLife.format`: `clamp`, `kr`, `hhmm`, `fmtDur` | Nothing: no DOM, no game state, no three.js, no network |
 
 The game script reads each module once, at the place where the code used to be, under the names it always used (`D` stays an alias of `AREAS`; `clamp`, `kr`, `hhmm` and `fmtDur` are read at their old lines; `wmo` and `WXICON` at the old line of the WMO table). No function, variable or save key changed name. The game script's other `hhmm` is a local variable inside a function and stays local. `dateOf`, `today`, `esc0`, `esc2` and the local `escH` stayed where they were: they are not pure or not identical, and merging them would change behaviour.
@@ -38,6 +42,9 @@ A module is a **classic script** in `src/`, loaded by its own `<script src>` tag
 <script src="src/geography.js"></script>
 <script src="src/util/format.js"></script>
 <script src="src/rules/sun.js"></script>
+<script src="src/rules/clock.js"></script>
+<script src="src/rules/stockholm-time.js"></script>
+<script src="src/rules/holidays.js"></script>
 <script>
 (function(){
 const {O_LAT, …, nearestStation}=useModule('geography');
@@ -117,7 +124,7 @@ The Deploy workflow (`.github/workflows/deploy.yml`, step "Collect the game file
 
 1. **HTML parse.** The CSS and the markup are read, and the loading screen is visible.
 2. **three.js r128 and its add-ons**, classic scripts from cdnjs and jsdelivr.
-3. **The `src/` modules**, in order. Today: `geography.js`, `util/format.js`, `rules/sun.js`, `city-data.js`, then `tables.js`.
+3. **The `src/` modules**, in order. Today: `geography.js`, `util/format.js`, `rules/sun.js`, `city-data.js`, then `tables.js`; `rules/clock.js` (M2 stage 2) follows `rules/sun.js` in the load order.
 4. **The game script, top level.** The constants and tables are defined, plus about 600 functions. Five core functions are wrapped by later reassignments, so their behaviour depends on file order: `log` and `addBill`, `spendTime` and `sleep` in the phone section, and `newGame` in the origins section. No geography name is used at this stage outside a function.
 5. **`start()`**, called directly, or through `window.claude.hot` when that is present:
    1. `uiInit()`;

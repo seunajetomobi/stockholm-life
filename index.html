@@ -460,6 +460,9 @@ h2.hero{font-size:34px;background:linear-gradient(90deg,var(--sweblue),#3a86ff 4
 <script src="src/geography.js"></script>
 <script src="src/util/format.js"></script>
 <script src="src/rules/sun.js"></script>
+<script src="src/rules/clock.js"></script>
+<script src="src/rules/stockholm-time.js"></script>
+<script src="src/rules/holidays.js"></script>
 <script src="src/city-data.js"></script>
 <script src="src/tables.js"></script>
 <script>
@@ -479,7 +482,7 @@ let CITY=null; // filled after loading data/*.json.gz
 const {gunzipFetch,parseHours}=useModule('city-data');// src/city-data.js: loading the city data and reading opening hours
 
 /* =================== GAME DATA =================== */
-const START=new Date(2026,9,24);
+const {START,dateOf,CLOCK_RATE}=useModule('clock','rules/clock.js');// src/rules/clock.js: the game calendar and the clock rate
 const MONTHS=['jan','feb','mar','apr','maj','jun','jul','aug','sep','okt','nov','dec'];
 const WD=['sön','mån','tis','ons','tor','fre','lör'];
 const TAX=0.30,SL_PRICE=1060,TICKET=43,QUEUE_SPEED=20,QUEUE_FEE=210;
@@ -994,9 +997,10 @@ function renderCivic(){if(!S||!S.civ)return;const c=S.civ,sh=pollShares(),v=canV
 let S=null,busy=false;
 const $=id=>document.getElementById(id);
 const {clamp,kr,hhmm,fmtDur}=useModule('format','util/format.js');
-const dateOf=d=>{const x=new Date(START);x.setDate(x.getDate()+d-1);return x};
 const today=()=>dateOf(S.day);
 const SUN=useModule('sun','rules/sun.js');// the sun and daylight rules; the date is passed in, so the game keeps today() and nothing else changes
+const STIME=useModule('stockholm-time','rules/stockholm-time.js');// real Stockholm time (docs/REALTIME_SPEC.md R1); not used by the game yet
+const HOLIDAYS=useModule('holidays','rules/holidays.js');// Swedish public holidays from the statute (src/rules/holidays.js); not used by the game yet
 function sunInfo(){return SUN.sunInfo(today())}
 const daylight=()=>SUN.daylight(today());
 const sunrise=()=>SUN.sunrise(today()),sunset=()=>SUN.sunset(today());
@@ -4514,7 +4518,7 @@ const POSTERS_CITY=[['#f2b705','#1b1b1b','KANELBULLE','Färskt varje morgon','Ba
   // gates on the lower floor lead to T-Centralen and to Stockholm City, the pendeltåg station deep below (35–44 m in reality, 26 m here)
   // with glass walls along the platform edge. Times in the station are a simulated timetable in game time (always labelled so); the
   // information desk also opens the live SL board, and the exchange office uses live ECB rates when it can reach them.
-  const CM=0.02,CRATE=4;// metres → world units; station and train clocks run 4× real time (a game minute every 15 s)
+  const CM=0.02,CRATE=CLOCK_RATE;// metres → world units; station and train clocks run 4× real time (a game minute every 15 s)
   const CS={mode:null,pend:0,late:0,B:null,reg:null,sit:null,auto:null,guide:null,hudT:0,flushT:0,cine:true,avS:1,lastMin:-1};
   const csClk=()=>S.hour*60+CS.pend,csAbs=()=>S.day*1440+csClk();
   const hmm=m=>{m=Math.floor(m);return String(Math.floor(m/60)%24).padStart(2,'0')+':'+String(((m%60)+60)%60).padStart(2,'0')};

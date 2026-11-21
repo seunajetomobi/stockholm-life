@@ -23,6 +23,7 @@ tests/            test_geography.py, test_format.py and test_sun.py test the mod
 | Module | Owns | Public interface (an object on `window.StockholmLife`, named after the module) | Depends on |
 | --- | --- | --- | --- |
 | `src/geography.js` | The projection (1 unit = 50 m, origin T-Centralen, x east, z south); the fallback water outlines; the ten districts; the 45 T-bana and tram stations; the six lines; route finding with transfer penalties; the nearest station to a point | `O_LAT`, `O_LON`, `P`, `PP`, `WATER_FALLBACK`, `AREAS`, `HUB_R`, `ST`, `STP`, `LINES`, `transitRoute`, `nearestStation` | Nothing: no DOM, no game state, no three.js, no network |
+| `src/rules/stockholm-time.js` | `nowMs` (with a fake clock for tests), `partsAt`, `hourAt`, `dayNumber`, `lifeDay`, `weekday`, `startOfDay`, `dayLengthHours`: real Stockholm time, daylight saving included. Loaded but not yet used by the game (REALTIME_SPEC R1); tests `tests/test_stockholm_time.py` |
 | `src/rules/sun.js` | `sunInfo(date)` (day length, solar noon and the highest sun for a date at the fixed latitude of Stockholm, 59.33 N), `daylight`, `sunrise`, `sunset` and `isLight(hour, date)`; the WMO weather-code tables `WMO`, `wmo` and `WXICON`. The original bodies, moved unchanged: only `today()` became the argument `date`, so the game script keeps `today()` and its `sunInfo`, `daylight`, `sunrise`, `sunset` and `isLight` are one-line wrappers that pass it | `window.StockholmLife.sun`: `RAD`, `LAT`, `lastSun`, `sunInfo`, `daylight`, `sunrise`, `sunset`, `isLight`, `WMO`, `wmo`, `WXICON` | `src/util/format.js` (`clamp`), which must load first, read through `window.StockholmLife.format` (or `require` in Node). The first module with a dependency. No DOM, no game state, no three.js, no network |
 | `src/util/format.js` | `clamp`; `kr` (kronor with a space between thousands and a real minus sign); `hhmm` (a clock time from hours, wrapping at 24); `fmtDur` (a duration from minutes). The original bodies, moved unchanged | `window.StockholmLife.format`: `clamp`, `kr`, `hhmm`, `fmtDur` | Nothing: no DOM, no game state, no three.js, no network |
 
@@ -38,6 +39,7 @@ A module is a **classic script** in `src/`, loaded by its own `<script src>` tag
 <script src="src/geography.js"></script>
 <script src="src/util/format.js"></script>
 <script src="src/rules/sun.js"></script>
+<script src="src/rules/stockholm-time.js"></script>
 <script>
 (function(){
 const {O_LAT, …, nearestStation}=useModule('geography');

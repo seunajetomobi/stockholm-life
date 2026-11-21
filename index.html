@@ -463,6 +463,7 @@ h2.hero{font-size:34px;background:linear-gradient(90deg,var(--sweblue),#3a86ff 4
 <script src="src/rules/clock.js"></script>
 <script src="src/rules/stockholm-time.js"></script>
 <script src="src/rules/holidays.js"></script>
+<script src="src/rules/life-start.js"></script>
 <script src="src/city-data.js"></script>
 <script src="src/tables.js"></script>
 <script>
@@ -1000,6 +1001,7 @@ const {clamp,kr,hhmm,fmtDur}=useModule('format','util/format.js');
 const today=()=>dateOf(S.day);
 const SUN=useModule('sun','rules/sun.js');// the sun and daylight rules; the date is passed in, so the game keeps today() and nothing else changes
 const STIME=useModule('stockholm-time','rules/stockholm-time.js');// real Stockholm time (docs/REALTIME_SPEC.md R1); not used by the game yet
+const LIFESTART=useModule('life-start','rules/life-start.js');// real start of a life for the save (src/rules/life-start.js); not used by the game yet
 const HOLIDAYS=useModule('holidays','rules/holidays.js');// Swedish public holidays from the statute (src/rules/holidays.js); not used by the game yet
 function sunInfo(){return SUN.sunInfo(today())}
 const daylight=()=>SUN.daylight(today());

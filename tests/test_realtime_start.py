@@ -33,3 +33,20 @@ def test_old_clock_still_available_with_realtime_off(browser, server):
         assert err.uncaught == []
     finally:
         ctx.close()
+
+
+def test_sick_pay_is_added_once_per_calendar_day(browser, server):
+    """Sleeping twice on the same real-time day must not pay sjukpenning twice (Codex review of #53)."""
+    ctx, page, err = game.new_page(browser, hook=True, realtime=True)
+    try:
+        game.boot(page)
+        assert game.wait_for(page, "() => window.__TS && window.__TS.S && window.__TS.S.name", 60)
+        pays = page.evaluate("""() => { const S = window.__TS.S;
+          S.job = 'barista'; S.docs.fk = 1; S.flags.karens = 1; S.sick = S.day + 5; S.pay = 0; S.home = S.home === 'none' ? 'room' : S.home;
+          const out = [];
+          for (let i = 0; i < 3; i++) { window.__TS.sleep(false); out.push(S.pay) }
+          return out }""")
+        assert pays[1] == pays[0] and pays[2] == pays[0], pays
+        assert err.uncaught == []
+    finally:
+        ctx.close()

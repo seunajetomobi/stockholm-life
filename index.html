@@ -2302,7 +2302,7 @@ function sleep(passedOut,mode){if(S.home==='none'&&!mode)mode='out';
   if(dark&&!S.sunToday&&S.vitD<S.day){const p=S.coat?3:5;apply({mood:-p});log(`Another day without seeing the sun. −${p} mood.`,'minus')}
   if(S.sunToday&&dark)log('You caught some of today\'s short daylight. It helped.','plus');
   apply({social:-2});if(S.energy<15)apply({mood:-3});if(roll&&S.job)S.jobDays++;
-  if(wasSick&&S.job&&S.job!=='foodora'){const j=JOBS[S.job];if(!S.flags.karens){S.flags.karens=1;log('Karensavdrag: the first sick day is unpaid.','minus')}
+  if(roll&&wasSick&&S.job&&S.job!=='foodora'){const j=JOBS[S.job];if(!S.flags.karens){S.flags.karens=1;log('Karensavdrag: the first sick day is unpaid.','minus')}
     else if(S.docs.fk){S.pay+=Math.round(j.rate*8*0.8);log(`Sjukpenning from Försäkringskassan: ${kr(Math.round(j.rate*8*0.8))} added to lön.`,'plus')}
     else log('No sjukpenning: you never registered with Försäkringskassan.','minus')}
   if(S.weather==='rain'&&!S.coat&&!(S.bag&&S.bag.paraply)){apply({mood:-1})}

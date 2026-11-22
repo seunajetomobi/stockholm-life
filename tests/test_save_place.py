@@ -146,7 +146,7 @@ def test_place_from_an_older_version_is_ignored(browser):
         reload(page)
         time.sleep(5)
         assert page.evaluate("() => __T.CS.mode") is None, 'a stale place was restored'
-        assert page.evaluate(f"() => {TS}.S.v") == 5
+        assert page.evaluate(f"() => {TS}.S.v") == 6
         assert err.uncaught == []
     finally:
         ctx.close()
@@ -161,7 +161,7 @@ def test_v4_save_loads_as_v5_on_the_street(browser):
     ctx, page, err = life(browser, ONCE.format(k=json.dumps(game.SAVE_KEY), v=json.dumps(json.dumps(V4))))
     try:
         assert not game.intro_shown(page), 'the v4 life was not loaded'
-        assert page.evaluate(f"() => [{TS}.S.name, {TS}.S.v, __T.CS.mode]") == ['Four', 5, None]
+        assert page.evaluate(f"() => [{TS}.S.name, {TS}.S.v, __T.CS.mode]") == ['Four', 6, None]
         assert err.uncaught == []
     finally:
         ctx.close()

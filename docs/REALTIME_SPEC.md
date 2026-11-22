@@ -34,3 +34,21 @@ Dependencies: M1c is done (slots and saves). M2 Stage 1 (tests) is merged, Stage
 
 ## Risks
 A full redesign of the core loop: balance (needs, money, jobs) must be re-tuned, many tests pin the old behaviour, saves change version, and a player who opens the game at 03:00 will find it asleep. Mitigation: staged PRs, a fake clock for tests, a save migration with backups (the M1 machinery), and owner review of balance at R5.
+
+## Decisions taken on the owner's delegation (2026-11-22: "choose the best for the game")
+The four open questions above, answered by Claude as lead. Each is reversible before R7.
+1. **Catch-up cap.** Needs drain for time away at a quarter of the normal rate and never below a floor (energy, mood, food and hygiene stop at 15), for at most 24 hours of away time; longer absences count only the first 24 hours. A week away is not a death sentence. Rent, bills and mail still follow calendar days, because they are paperwork, not bodies.
+2. **Time zone.** Always Stockholm, wherever the player is in the game and wherever the browser is. The clock chip shows "Stockholm 14:05".
+3. **Waiting.** A timed activity shows a card with the name, a progress bar, the finish time and "leave it running"; a notification (the phone, and the browser title) tells the player when it is done. Free actions (phone, looking, walking, shopping) stay possible meanwhile; other timed actions wait.
+4. **Skip.** A fake clock exists for tests (`StockholmLife['stockholm-time'].setFakeNow`, already built) and, for the owner only, through a `?fakeclock=` URL parameter that is ignored unless `localStorage` has a developer flag. The live game has no skip.
+
+## Design of R2 and R3 together (they cannot ship apart: a real sky over a game hour is incoherent)
+**Switch.** Everything below sits behind one flag, `REALTIME` (default off; `?realtime=1` or a developer flag turns it on). With the flag off the game behaves exactly as today and every existing test stays valid; with it on, a second set of tests runs. R7 flips the default and deletes the old path. This lets each stage merge after one CI run without a half-converted game.
+**Derived time.** With the flag on, `S.day` is `lifeDay(S.t0, now)` and `S.hour` is the Stockholm hour at `now` (both recomputed by the main tick), never written. The six direct writers (`spendTime`, `sleep` and its `S.hour=` wake times, the signal-failure event, `__slDrive`, walking in `needsTick` pairs, `csFlush`) are replaced:
+- `spendTime(h)` becomes `startTask({act, hours})`: it records `{act, start, end}` in `S.task` and applies the action's effects at `end`; needs drain by elapsed real time in the tick (`needsTick(dt)` already takes hours).
+- Walking, driving and rides advance time only through their real duration, so `needsTick` is called by the tick, not by the action.
+- `sleep()` becomes a task that ends at the next wake time (07:00, or the mode's time), with its energy and hygiene effects applied at `end`. The forced nod-off at 24:00 is removed; a tired player simply runs low on energy.
+- The hospital, cell, jail, shelter, trip and friend modes become tasks of their stated length.
+**Catch-up.** On load, finished tasks are completed in order, then needs drain by the cap above. The migration of an old life uses `t0` from PR #48.
+**World.** `dateOf` takes the real date for the season, sun and sky; the weather fallback uses the real month; opening hours use the real hour and the red-day rule already merged; trains and the station use the one clock (`CRATE` goes).
+**Order of work.** (1) the flag, the clock source and the derived `S.day`/`S.hour`, with tests under the fake clock; (2) `startTask` and sleep; (3) the other writers in groups; (4) catch-up; (5) the world; (6) balance and R7 acceptance, then flip the flag. One PR each, every PR with a full browser run.

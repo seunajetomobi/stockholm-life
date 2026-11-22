@@ -591,7 +591,7 @@ const ACTS=[
   {id:'gym',where:'ostermalm',l:'Workout at a gym',h:1.5,cost:129,e:{mood:6,energy:-15}},
   {id:'sfi',where:'kungsholmen',grp:'SFI school',l:'SFI Swedish class',s:'Free for everyone who is folkbokförd',h:3,e:{svenska:6,social:2,energy:-10},hours:'sfi',need:need('pn'),primary:1},
   {id:'vclist',where:'kungsholmen',svc:'vc',grp:'Vårdcentral',l:'List yourself at the vårdcentral',s:'Your own health centre',h:0.5,hours:'vc',need:need('pn'),cond:()=>!S.docs.vc,fn:()=>{S.docs.vc=1;log('Listed at '+svcPlace('vc').name+'.','plus')}},
-  {id:'doctor',where:'kungsholmen',svc:'vc',grp:'Vårdcentral',l:'See a doctor',s:'Patient fee 200 kr',h:1.5,cost:200,hours:'vc',need:need('sick'),fn:()=>{if(!S.docs.vc){log('Without being listed you waited 3 hours as a drop-in.','minus');S.hour+=1.5}S.sick=Math.max(S.day,S.sick-1);apply({mood:3});log('The doctor says rest. You\'ll be better sooner.')}},
+  {id:'doctor',where:'kungsholmen',svc:'vc',grp:'Vårdcentral',l:'See a doctor',s:'Patient fee 200 kr',h:1.5,cost:200,hours:'vc',need:need('sick'),fn:()=>{if(!S.docs.vc){log('Without being listed you waited 3 hours as a drop-in.','minus');if(!REALTIME)S.hour+=1.5}S.sick=Math.max(S.day,S.sick-1);apply({mood:3});log('The doctor says rest. You\'ll be better sooner.')}},
   {id:'swim',where:'kungsholmen',l:'Swim at Rålis',s:'Jun–Aug',h:1.5,e:{mood:9,energy:-5},out:1,months:[5,6,7]},
   {id:'stadshus',where:'kungsholmen',l:'Walk to Stadshuset along Norr Mälarstrand',h:1,e:{mood:4},out:1},
   {id:'library',where:'vasastan',svc:'lib',l:'Study at the city library',s:'Temporary premises while Asplund\'s rotunda is renovated',h:3,e:{skill:5,energy:-10},hours:'lib',primary:1},
@@ -1002,10 +1002,13 @@ function renderCivic(){if(!S||!S.civ)return;const c=S.civ,sh=pollShares(),v=canV
 let S=null,busy=false;
 const $=id=>document.getElementById(id);
 const {clamp,kr,hhmm,fmtDur}=useModule('format','util/format.js');
-const today=()=>dateOf(S.day);
+const today=()=>REALTIME&&S&&S.t0?realDate():dateOf(S.day);
 const SUN=useModule('sun','rules/sun.js');// the sun and daylight rules; the date is passed in, so the game keeps today() and nothing else changes
 const STIME=useModule('stockholm-time','rules/stockholm-time.js');// real Stockholm time (docs/REALTIME_SPEC.md R1); not used by the game yet
-const RTIME=useModule('realtime','rules/realtime.js');// the real-time switch and derived clock (src/rules/realtime.js); not used by the game yet
+const RTIME=useModule('realtime','rules/realtime.js');// the real-time switch and derived clock (src/rules/realtime.js)
+const REALTIME=RTIME.enabled(location.search,(()=>{try{return localStorage}catch(e){return null}})(),true);// real Stockholm time is the default (docs/REALTIME_SPEC.md); ?realtime=0 is the old game clock
+function syncClock(){if(!REALTIME||!S||!S.t0)return false;const c=RTIME.deriveClock(S.t0,STIME.nowMs()),ch=c.day!==S.day;S.day=c.day;S.hour=c.hour;return ch}
+const realDate=()=>{const p=STIME.partsAt(S.t0);return new Date(p.year,p.month-1,p.day+S.day-1)};
 const NAMNSDAG=useModule('namnsdag','rules/namnsdag.js');// Swedish name days (src/rules/namnsdag.js), shown as the tooltip of the date
 const LIFESTART=useModule('life-start','rules/life-start.js');// real start of a life for the save (src/rules/life-start.js); not used by the game yet
 const HOLIDAYS=useModule('holidays','rules/holidays.js');// Swedish public holidays from the statute (src/rules/holidays.js); not used by the game yet
@@ -1048,9 +1051,9 @@ function rollWeather(){if(liveFresh()){applyLiveWeather();return}const m=today()
   S.weather=winter()?(r<0.35?'snow':r<0.65?'cloud':'clear'):[9,10].includes(m)?(r<0.35?'rain':r<0.65?'cloud':'clear'):(r<0.2?'rain':r<0.45?'cloud':'clear');
   S.temp=Math.round(TEMP[m]+(Math.random()-0.5)*6+(S.weather==='clear'&&m>=4&&m<=8?2:0));if(S.weather==='snow'&&S.temp>1)S.temp=0}
 let lastFreeRender=0;
-window.__slDrive=(dist,x,z)=>{if(!S)return;S.pos={x,z};updateLoc();const min=dist*50/450;S.hour+=min/60;needsTick(min/60);S.flags.fuel=(S.flags.fuel||0)+dist*0.05*1.9;if(S.flags.fuel>=5){const f=Math.floor(S.flags.fuel);S.money-=f;S.flags.fuel-=f}$('time').textContent=hhmm(S.hour);if(S.hour>=24){W&&W.stopDrive();sleep(true)}const now=performance.now();if(now-lastFreeRender>2500){lastFreeRender=now;save();render()}};
+window.__slDrive=(dist,x,z)=>{if(!S)return;S.pos={x,z};updateLoc();const min=dist*50/450;if(!REALTIME)S.hour+=min/60;needsTick(min/60);S.flags.fuel=(S.flags.fuel||0)+dist*0.05*1.9;if(S.flags.fuel>=5){const f=Math.floor(S.flags.fuel);S.money-=f;S.flags.fuel-=f}$('time').textContent=hhmm(S.hour);if(S.hour>=24){W&&W.stopDrive();sleep(true)}const now=performance.now();if(now-lastFreeRender>2500){lastFreeRender=now;save();render()}};
 window.__slCommit=(dist,run,x,z)=>{if(!S||busy)return;S.pos={x,z};const prev=S.loc;updateLoc();
-  if(dist>0){const min=(dist-run)*50/80+run*50/160;S.hour+=min/60;needsTick(min/60);S.flags.walkE=(S.flags.walkE||0)+(dist-run)*50/80/60*5+run*50/160/60*12;
+  if(dist>0){const min=(dist-run)*50/80+run*50/160;if(!REALTIME)S.hour+=min/60;needsTick(min/60);S.flags.walkE=(S.flags.walkE||0)+(dist-run)*50/80/60*5+run*50/160/60*12;
     while(S.flags.walkE>=1){S.energy=clamp(S.energy-1,0,100);S.flags.walkE-=1}
     if(isLight(S.hour)){S.flags.sunMin=(S.flags.sunMin||0)+min;if(S.flags.sunMin>=10&&!S.sunToday){S.sunToday=true;log('You caught some daylight on your walk.','plus')}}
     $('time').textContent=hhmm(S.hour);
@@ -1324,7 +1327,7 @@ function openSaveFile(fromIntro,note){const back=()=>{closeModal();if(fromIntro)
         go:()=>importApply(g,id),done:()=>{if(id===SL.id)location.reload();else again('The life was imported.')}})}})}
 function toast(t){const el=document.createElement('div');el.className='toast';el.textContent=t;document.body.appendChild(el);setTimeout(()=>el.remove(),2400)}
 function apply(e){for(const k in e){if(k==='money')S.money+=e[k];else S[k]=clamp(S[k]+e[k],0,k==='energy'&&S.sick>S.day?60:100)}}
-function spendTime(h){needsTick(h);S.hour+=h;if(S.hour>=24){log('You stayed out past midnight and nodded off on the night bus.','minus');sleep(true)}}
+function spendTime(h){needsTick(h);if(REALTIME){syncClock();return}S.hour+=h;if(S.hour>=24){log('You stayed out past midnight and nodded off on the night bus.','minus');sleep(true)}}
 
 function whereOk(a){if(DESK&&a.grp===DESK)return true;if(a.where==='any')return true;if(a.where==='anyhub')return !!S.loc;if(a.where==='home')return atHome();if(Array.isArray(a.where))return a.where.includes(S.loc);return a.where===S.loc}
 function actSvc(a){return a.svcFn?a.svcFn():a.svc}
@@ -1451,7 +1454,7 @@ function trainTrips(){const dep=TRIPS.map((t,i)=>{const hh=6+((i*5+S.day*3)%15);
     <div class="sec" style="padding:0"><h3>Who runs the trains in Stockholm</h3><ul class="news">${OPERATORS.map(o=>`<li><span class="dot" style="background:${o.col}"></span><b>${o.op}</b> · ${o.run} · ${o.lines}</li>`).join('')}</ul></div>
     <div class="row2"><button class="btn ghost" id="no">Close</button></div>`,m=>{m.querySelector('#no').onclick=closeModal;m.querySelectorAll('.choice').forEach(b=>b.onclick=()=>{const t=dep[+b.dataset.i];closeModal();takeTrip(t)})})}
 function takeTrip(t){if(S.money<t.c*2){toast('Not enough money');return}S.money-=t.c*2;apply(t.e);S.seen.culture=S.day;log(`${t.op} to ${t.to}: ${t.t.toLowerCase()} (${kr(t.c*2)} return).`,'plus');
-  if(!t.nights){spendTime(t.h);after();return}for(let i=0;i<t.nights;i++)sleep(false,'trip');S.hour=Math.max(S.hour,17);log(`Back at Stockholms centralstation after ${t.nights} night${t.nights>1?'s':''} in ${t.to}.`,'plus');after()}
+  if(!t.nights){spendTime(t.h);after();return}for(let i=0;i<t.nights;i++)sleep(false,'trip');if(!REALTIME)S.hour=Math.max(S.hour,17);log(`Back at Stockholms centralstation after ${t.nights} night${t.nights>1?'s':''} in ${t.to}.`,'plus');after()}
 
 /* ---------- accidents, ambulance and hospital ----------
    Region Stockholm patient fees (1177.se, 2026): ambulance 0 kr, akutmottagning 400 kr, hospital stay 130 kr/day.
@@ -2034,7 +2037,11 @@ const TRAITS_ME=[['outgoing','Outgoing',{social:10,charisma:8}],['shy','Shy',{ch
 const HOBBIES=['Football','Gym','Running','Music','Dancing','Cooking','Gaming','Reading','Hiking','Art','Photography','Tech','Fashion','Faith community','Volunteering','Movies'];
 const MARITAL=[['single','Single'],['relationship','In a relationship'],['married','Married'],['divorced','Divorced'],['widowed','Widowed']];
 const EDU=[['basic','Compulsory school',0],['upper','Upper secondary (gymnasium)',4],['uni','University degree',10],['phd','PhD',16]];
-function intro(){const F={kind:'stockholm',over:false,city:SWE_CITIES[0][0],nat:'Nigeria',from:'Nigeria',route:0,purpose:'work',name:'Alex',age:27,gender:'m',marital:'single',kids:0,edu:'upper',prof:'',eng:'good',traits:['kind'],hobbies:['Music'],bio:'',look:'',skin:'',height:'avg',build:'avg',hair:'auto',headw:'none',headCol:'0x1d2733',beard:'none',glasses:'no',pref:'any',asp:''};
+function intro(auto){const F={kind:'stockholm',over:false,city:SWE_CITIES[0][0],nat:'Nigeria',from:'Nigeria',route:0,purpose:'work',name:'Alex',age:27,gender:'m',marital:'single',kids:0,edu:'upper',prof:'',eng:'good',traits:['kind'],hobbies:['Music'],bio:'',look:'',skin:'',height:'avg',build:'avg',hair:'auto',headw:'none',headCol:'0x1d2733',beard:'none',glasses:'no',pref:'any',asp:''};
+  const finish=()=>{const natG=(COUNTRIES.find(c=>c[0]===F.nat)||[])[2];
+        const bg=F.kind==='stockholm'?(F.over?'over':'local'):F.kind==='sweden'?'domestic':natG==='se'?'domestic':(F.purpose==='study'?'student':'newcomer');
+        const look=F.look||(F.gender==='f'?(F.age>=60?'OldClassy_Female':'Casual_Female'):F.gender==='m'?'Casual_Male':(Math.random()<0.5?'Casual_Female':'Casual_Male'));newGame(F.name.trim()||'Alex',bg,look,F.pref,F.asp||Object.keys(ASPIRATIONS)[0],F.skin,{...F,routeObj:F.kind==='abroad'?routesFrom(F.from)[F.route]:null})};
+  if(auto){F.kind='abroad';finish();return}// real time: no intro, the game starts at once with the default newcomer (who you are can be changed in Me)
   const draw=()=>{const nat=COUNTRIES.find(c=>c[0]===F.nat)||COUNTRIES[1];const rts=routesFrom(F.from);if(F.route>=rts.length)F.route=0;const rt=rts[F.route];
     const papers=F.kind!=='abroad'?'':nat[2]==='se'?'You are Swedish: no permit needed. Re-register your address at Skatteverket.':nat[2]==='nordic'?'Nordic citizens can live and work in Sweden freely. You only register at Skatteverket.':nat[2]==='eu'?'EU/EEA citizens have a right of residence: no permit card. Register at Skatteverket once you have work or studies.':F.purpose==='study'?'You have a residence permit for studies. First stop: Migrationsverket for your permit card.':'Your work permit was approved from abroad. First stop: Migrationsverket for your permit card.';
     const border=F.kind!=='abroad'||!rt?'':rt.sch?`Your last flight leaves from ${rt.last}, inside the Schengen area. ${nat[2]==='noneu'&&rt.last!==(COUNTRIES.find(c=>c[0]===F.from)||[])[5]?`You pass passport control in ${rt.last} when you enter Schengen, `:''}so there is <b>no passport control at Arlanda</b>.`:`Your last flight leaves from ${rt.last}, outside the Schengen area: <b>you go through Swedish passport control at Arlanda</b>.`;
@@ -2082,9 +2089,7 @@ function intro(){const F={kind:'stockholm',over:false,city:SWE_CITIES[0][0],nat:
       m.querySelectorAll('select[data-f]').forEach(el=>el.onchange=()=>{sync();if(el.dataset.f==='nat'){F.from=COUNTRIES.find(c=>c[0]===F.nat&&c[5])?F.nat:F.from;F.route=0}if(el.dataset.f==='from')F.route=0;if(el.dataset.f==='gender')F.look='';if(['nat','from','route','purpose','city','over','gender'].includes(el.dataset.f))draw()});
       m.querySelectorAll('.pill[data-t]').forEach(b=>b.onclick=()=>{const k=b.dataset.t;if(F.traits.includes(k))F.traits=F.traits.filter(x=>x!==k);else if(F.traits.length<3)F.traits.push(k);else{toast('Pick up to 3');return}b.classList.toggle('on',F.traits.includes(k))});
       m.querySelectorAll('.pill[data-h]').forEach(b=>b.onclick=()=>{const k=b.dataset.h;F.hobbies=F.hobbies.includes(k)?F.hobbies.filter(x=>x!==k):[...F.hobbies,k];b.classList.toggle('on',F.hobbies.includes(k))});
-      m.querySelector('#go').onclick=()=>{sync();closeModal();const natG=(COUNTRIES.find(c=>c[0]===F.nat)||[])[2];
-        const bg=F.kind==='stockholm'?(F.over?'over':'local'):F.kind==='sweden'?'domestic':natG==='se'?'domestic':(F.purpose==='study'?'student':'newcomer');
-        const look=F.look||(F.gender==='f'?(F.age>=60?'OldClassy_Female':'Casual_Female'):F.gender==='m'?'Casual_Male':(Math.random()<0.5?'Casual_Female':'Casual_Male'));newGame(F.name.trim()||'Alex',bg,look,F.pref,F.asp||Object.keys(ASPIRATIONS)[0],F.skin,{...F,routeObj:F.kind==='abroad'?routesFrom(F.from)[F.route]:null})}})};
+      m.querySelector('#go').onclick=()=>{sync();closeModal();finish()}})};
   draw()}
 function applyMe(o){const me={age:o.age,gender:o.gender,nat:o.kind==='abroad'?o.nat:'Sweden',marital:o.marital,kids:o.kids,edu:o.edu,prof:o.prof,eng:o.eng,traits:o.traits,hobbies:o.hobbies,bio:o.bio};S.me=me;
   const e=EDU.find(x=>x[0]===o.edu);if(e)S.skill=clamp(S.skill+e[2],0,100);if(/develop|program|engineer|it\b|data/i.test(o.prof||''))S.skill=clamp(S.skill+8,0,100);
@@ -2292,15 +2297,16 @@ function showPoi(p){
 
 /* ---------- day cycle ---------- */
 function sleep(passedOut,mode){if(S.home==='none'&&!mode)mode='out';
+  const roll=!REALTIME||S.flags.rolled!==S.day;// with real time the daily bookkeeping runs once per calendar day, however often you sleep
   const wasHome=atHome(),dark=daylight()<8,wasSick=S.sick>S.day;
   if(dark&&!S.sunToday&&S.vitD<S.day){const p=S.coat?3:5;apply({mood:-p});log(`Another day without seeing the sun. −${p} mood.`,'minus')}
   if(S.sunToday&&dark)log('You caught some of today\'s short daylight. It helped.','plus');
-  apply({social:-2});if(S.energy<15)apply({mood:-3});if(S.job)S.jobDays++;
+  apply({social:-2});if(S.energy<15)apply({mood:-3});if(roll&&S.job)S.jobDays++;
   if(wasSick&&S.job&&S.job!=='foodora'){const j=JOBS[S.job];if(!S.flags.karens){S.flags.karens=1;log('Karensavdrag: the first sick day is unpaid.','minus')}
     else if(S.docs.fk){S.pay+=Math.round(j.rate*8*0.8);log(`Sjukpenning from Försäkringskassan: ${kr(Math.round(j.rate*8*0.8))} added to lön.`,'plus')}
     else log('No sjukpenning: you never registered with Försäkringskassan.','minus')}
   if(S.weather==='rain'&&!S.coat&&!(S.bag&&S.bag.paraply)){apply({mood:-1})}
-  S.day++;if(S.docs.queue)S.queue+=QUEUE_SPEED*(policy('housing')?1.3:1);processBills();crimeDaily();S.sunToday=false;S.applied={};S.flags.sunMin=0;rollWeather();try{invTick()}catch(e){}setTimeout(()=>wearTip(),1500);
+  if(!REALTIME)S.day++;if(roll){if(S.docs.queue)S.queue+=QUEUE_SPEED*(policy('housing')?1.3:1);processBills();crimeDaily();S.sunToday=false;S.applied={};S.flags.sunMin=0;rollWeather();try{invTick()}catch(e){}setTimeout(()=>wearTip(),1500)}
   if(!(S.sick>S.day))S.flags.karens=0;
   S.hunger=clamp(S.hunger-18,0,100);S.hygiene=clamp(S.hygiene-8,0,100);
   if(mode==='hospital'){S.energy=clamp(S.energy+40,0,100);S.hour=9;apply({hunger:30,hygiene:20})}
@@ -2317,13 +2323,14 @@ function sleep(passedOut,mode){if(S.home==='none'&&!mode)mode='out';
   if(S.docs.pn==='wait'&&S.day>=S.docs.pnDay){S.docs.pn=1;log('Brev från Skatteverket: your personnummer has arrived. SFI, bank and vårdcentral are now possible.','plus');apply({mood:6})}
   if(S.docs.id==='wait'&&S.day>=S.docs.idDay){S.docs.id='ready';log('SMS: your ID card is ready to collect at the Skatteverket office.','plus')}
   const dt=today();
-  if(dt.getDate()===25){if(S.pay>0){if(S.docs.bank){const net=Math.round(S.pay*(1-TAX));log(`Lönedag! ${kr(S.pay)} gross, ${kr(net)} after Stockholm's ~30% tax.`,'plus');S.money+=net;S.pay=0;apply({mood:5});garnish(net);csnRepay(net)}else log('Lönedag, but your lön can\'t be paid: you have no bank account.','minus')}
+  if(roll&&dt.getDate()===25){if(S.pay>0){if(S.docs.bank){const net=Math.round(S.pay*(1-TAX));log(`Lönedag! ${kr(S.pay)} gross, ${kr(net)} after Stockholm's ~30% tax.`,'plus');S.money+=net;S.pay=0;apply({mood:5});garnish(net);csnRepay(net)}else log('Lönedag, but your lön can\'t be paid: you have no bank account.','minus')}
   // CSN studiemedel: paid on the 25th to a resident student with an active bank account, whether or not there is any lön
   if(S.course&&S.flags.csn&&csnResident()){if(S.docs.bank){S.money+=CSN4W;S.csnLoan=(S.csnLoan||0)+Math.round(CSN4W*0.7);log(`CSN studiemedel paid: +${kr(CSN4W)} (most of it is a loan you pay back later).`,'plus')}else log('CSN studiemedel could not be paid: you have no bank account.','minus')}}
-  if(dt.getDate()===1){if(S.car&&S.car.kind==='own'){S.money-=1100;log('Car insurance and vehicle tax: −1 100 kr.','minus')}const r=Math.round(HOMES[S.home].rent*(S.flags.sambo?0.5:1));if(r>0)if(S.money>=r){S.money-=r;log(`Rent paid for ${MONTHS[dt.getMonth()]}: −${kr(r)}.`,'minus')}
+  if(roll&&dt.getDate()===1){if(S.car&&S.car.kind==='own'){S.money-=1100;log('Car insurance and vehicle tax: −1 100 kr.','minus')}const r=Math.round(HOMES[S.home].rent*(S.flags.sambo?0.5:1));if(r>0)if(S.money>=r){S.money-=r;log(`Rent paid for ${MONTHS[dt.getMonth()]}: −${kr(r)}.`,'minus')}
     else{addBill('rent for '+MONTHS[dt.getMonth()],r);apply({mood:-6});log(`Not enough money for rent (${kr(r)}). The landlord sent an invoice: pay within 10 days or it goes to inkasso.`,'minus')}}
-  if(dt.getMonth()===0&&dt.getDate()===2&&S.docs.queue){S.money-=QUEUE_FEE;log(`Bostadsförmedlingen yearly queue fee: −${kr(QUEUE_FEE)}.`)}
-  lifeDaily(dt);
+  if(roll&&dt.getMonth()===0&&dt.getDate()===2&&S.docs.queue){S.money-=QUEUE_FEE;log(`Bostadsförmedlingen yearly queue fee: −${kr(QUEUE_FEE)}.`)}
+  if(roll)lifeDaily(dt);
+  if(REALTIME){S.flags.rolled=S.day;syncClock()}
   log(`${WD[dt.getDay()]} ${dt.getDate()} ${MONTHS[dt.getMonth()]}. Sunrise ${hhmm(sunrise())}, sunset ${hhmm(sunset())}.`);
   W&&W.snapTime();save();
   if(!(S.sick>S.day)&&S.energy<55&&Math.random()<0.12){S.sick=S.day+2;apply({mood:-5});return showEvent({t:'Förkyld',b:'Sore throat, runny nose. Classic Stockholm autumn. You should stay home for a couple of days.',c:[{l:'Okay',fx:()=>S.job&&S.job!=='foodora'?'You called in sick to work.':'Tea and blankets.'}]})}
@@ -2344,7 +2351,7 @@ const EVENTS=[
   {w:2,t:'Middagsbjudning',b:'A colleague invites a few people over for dinner on Saturday.',c:[{l:'Go',fx:()=>{const w=S.flags.wine;S.flags.wine=0;apply({social:w?10:5,mood:5});return w?'You brought wine from Systembolaget. Perfect guest.':'You came empty-handed. Swedes noticed, quietly.'}},{l:'Stay home',fx:()=>'Another quiet night.'}]},
   {w:3,t:'A note in the stairwell',b:'"Till den som inte städar efter sig i tvättstugan…" Someone is unhappy about the laundry room. It might be about you.',c:[{l:'Book your slot properly',fx:()=>{apply({svenska:1,mood:-1});return 'You learned the word tvättstuga the hard way.'}},{l:'Write an equally passive note back',fx:()=>{apply({mood:3,social:-2});return 'Very Swedish of you.'}}]},
   {w:2,t:'On the platform floor',b:'A 200-kronor note is lying by the gates at Slussen.',c:[{l:'Keep it',fx:()=>{S.money+=200;return '+200 kr. Nobody saw.'}},{l:'Hand it to SL staff',fx:()=>{apply({mood:4});return 'The guard nods. You feel lagom righteous.'}}]},
-  {w:2,t:'Signalfel',b:'Signal failure on the green line. Everyone stares at their phones in silence.',c:[{l:'Wait it out',fx:()=>{S.hour+=1;apply({mood:-2});return 'An hour gone. Classic.'}}]},
+  {w:2,t:'Signalfel',b:'Signal failure on the green line. Everyone stares at their phones in silence.',c:[{l:'Wait it out',fx:()=>{if(!REALTIME)S.hour+=1;apply({mood:-2});return 'An hour gone. Classic.'}}]},
   {w:1,months:[9,10,11,0,1,2],t:'Norrsken tonight?',b:'The aurora forecast says you might see northern lights from the city tonight.',c:[{l:'Stay up and look',fx:()=>{apply({mood:10,energy:-15});W&&W.aurora();return 'A faint green ribbon over Saltsjön. Worth it.'}},{l:'Sleep',fx:()=>'You saw it on Instagram the next day.'}]},
   {w:1,cond:()=>HOMES[S.home].type==='andrahand',t:'Your sublet is ending',b:'The first-hand tenant is moving back. You have to find another sublet and pay a month\'s deposit.',c:[{l:'Take a room on Södermalm',fx:()=>moveTo('soderRoom',true)},{l:'Take a room in Sundbyberg',fx:()=>moveTo('sbgRoom',true)}]},
   {w:2,t:'Grey drizzle',b:'Horizontal rain off the water all day. Det finns inget dåligt väder, bara dåliga kläder.',c:[{l:'Okay',fx:()=>{S.weather='rain';apply({mood:S.coat?0:-3});return S.coat?'Your thrifted coat earns its keep.':'You need better clothes.'}}]},
@@ -4937,7 +4944,7 @@ const POSTERS_CITY=[['#f2b705','#1b1b1b','KANELBULLE','Färskt varje morgon','Ba
   function csExitNow(d){const B=CS.B;B.sc.remove(av);scene.add(av);av.scale.setScalar(CS.avS);ring.visible=true;if(CS.sit)csStand(true);csControls(false);const yaw=yawS2W(av.rotation.y);CS.mode=null;CS.auto=null;csDoorsWorld();
     placeAvatar(d.w.x,d.w.z,true);av.rotation.y=yaw;PRM.dis.add('w'+d.id);promptSet(null);csHudMode(null);csGuideOff();['crowd','rumble','wind'].forEach(n=>audSet(n,0));csFlush(true);if(CS.late){CS.late=0;spendTime(0.05)}save();render()}
   function csExit(d){fadeDo(()=>{csExitNow(d);log(`Left Stockholm Central by the ${d.name.toLowerCase()}.`)})}
-  function csFlush(force){if(CS.pend<=0)return;let h=CS.pend/60;CS.pend=0;if(S.hour+h>=23.98){h=Math.max(0,23.98-S.hour);CS.late=1}if(h>0){needsTick(h);S.hour+=h}if(force||Math.random()<1)render()}
+  function csFlush(force){if(CS.pend<=0)return;let h=CS.pend/60;CS.pend=0;if(!REALTIME&&S.hour+h>=23.98){h=Math.max(0,23.98-S.hour);CS.late=1}if(h>0){needsTick(h);if(!REALTIME)S.hour+=h}if(force||Math.random()<1)render()}
   function csRide(path,sp,toName){if(CS.sit)csStand();const p0=av.position.clone();CS.auto={type:'path',pts:[p0,...path],i:1,sp,toName};audSet('crowd',0.03)}
   function csGateIn(G){if(!csTicket()){sfx.no();G.flash=1.2;G.rd.material.color.setHex(0xd8263a);csTicketMachine('the SL gates');return}csGatePass(G,1)}
   function csGatePass(G,dir){if(CS.sit)csStand();if(dir>0){sfx.ok();G.rd.material.color.setHex(0x2fbf62);G.flash=1.5;const t=csTicket();log(`Tapped your ${t?t.n.replace(/^SL /,'SL '):'ticket'} at the SL gates.`)}CS.auto={type:'gate',G,dir,ph:'open',xA:dir>0?37.95:41.7,xB:dir>0?41.7:37.95}}
@@ -5507,7 +5514,7 @@ async function start(data){uiInit();
   if(!CITY){const n=document.createElement('div');n.className='nogl';n.style.cssText='inset:auto;top:160px;left:50%;transform:translateX(-50%);width:min(440px,calc(100% - 32px));background:var(--glass);border-radius:12px;z-index:5;line-height:1.45';n.textContent=location.protocol==='file:'?'The city cannot load when index.html is opened from disk. Run ./start.sh in this folder and open http://localhost:8000 instead.':'Could not load the city data from the data/ folder, so the map is empty. Check that ./start.sh is running in the game folder, then reload.';$('stage').appendChild(n)}
   if(!W){const n=document.createElement('div');n.className='nogl';n.style.cssText='inset:auto;top:160px;left:50%;transform:translateX(-50%);width:min(440px,calc(100% - 32px));background:var(--glass);border-radius:12px;z-index:5;line-height:1.45';n.textContent='Your browser could not start 3D graphics (WebGL), so the city cannot be drawn. The game still works from the panels. Fix: quit the browser completely and reopen it (after a graphics crash Chrome blocks 3D until restart), and check that "Use graphics acceleration" is on in its settings.';$('stage').appendChild(n)}
   else{W.placeAvatar(S.pos.x,S.pos.z,true);if(!S.addr&&S.home!=='none'){assignAddress();save()}W.setHome();W.syncCar();if(!S.wants.length)rollWants();if(S.flags&&S.flags.arlanda&&W.enterAirport)setTimeout(()=>W.enterAirport(),600);else if(resume&&W.restorePlace)setTimeout(()=>W.restorePlace(resume),600)}
-  render();if(fresh)intro();
+  syncClock();render();if(fresh)intro(REALTIME);if(REALTIME)setInterval(()=>{if(!S)return;if(syncClock())render();else $('time').textContent=hhmm(S.hour)},1000);
   fetchLiveWeather().then(ok=>{if(ok)setTimeout(()=>wearTip(true),fresh?20000:2500)});setInterval(fetchLiveWeather,10*60e3);if(FLIGHT_RELAY){fetchFlights();setInterval(fetchFlights,10000)}setInterval(()=>{if(Math.random()<0.35)incomingCall()},150000);
 }
 window.claude?.hot?.snapshot?.(()=>({S}));

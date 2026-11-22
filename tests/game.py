@@ -64,11 +64,14 @@ class Errors:
         return [m for s, m in self.failed + self.http if not s]
 
 
-def new_page(browser, width=1366, height=768, mobile=False, hook=False, init_script=None):
+def new_page(browser, width=1366, height=768, mobile=False, hook=False, init_script=None, realtime=False):
     opts = {'viewport': {'width': width, 'height': height}}
     if mobile:
         opts.update(is_mobile=True, has_touch=True, device_scale_factor=2)
     ctx = browser.new_context(**opts)
+    # The game runs on real Stockholm time by default. The existing tests were written against the game clock and the intro,
+    # so they keep that path unless a test asks for real time (realtime=True).
+    ctx.add_init_script("try{localStorage.setItem('stockholmsliv-realtime','%s')}catch(e){}" % ('1' if realtime else '0'))
     if init_script:
         ctx.add_init_script(init_script)
     if hook:

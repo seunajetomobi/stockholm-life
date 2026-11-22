@@ -4466,7 +4466,7 @@ const POSTERS_CITY=[['#f2b705','#1b1b1b','KANELBULLE','Färskt varje morgon','Ba
   let avModel=null,avMixer=null,avActs={},avState='';
   function setAvState(st){if(!avActs[st]||st===avState)return;const next=avActs[st];next.reset().play();if(avActs[avState])avActs[avState].crossFadeTo(next,0.22,false);avState=st}
   function setLook(name){if(!MODELS.ready)return;const keys=Object.keys(MODELS.chars);if(!keys.length)return;const tpl=MODELS.chars[name]||MODELS.chars[keys[0]];
-    if(avModel)av.remove(avModel);const inst=THREE.SkeletonUtils.clone(tpl);avModel=new THREE.Group();avModel.add(inst);{const b=(S&&S.body)||{},k=0.078/AV_S,h={short:0.93,avg:1,tall:1.07}[b.h]||1,w={slim:0.9,avg:1,athletic:1.06,heavy:1.18}[b.b]||1;avModel.scale.set(k*h*w,k*h,k*h*w)}av.add(avModel);applyOutfit();
+    if(avModel)av.remove(avModel);const inst=THREE.SkeletonUtils.clone(tpl);avModel=new THREE.Group();avModel.add(inst);{const b=(S&&S.body)||{},k=0.078/AV_S,h={short:0.93,avg:1,tall:1.07}[b.h]||1,w=({slim:0.9,avg:1,athletic:1.06,heavy:1.18}[b.b]||1)*0.88;/* the model is wide for its height; 0.88 gives a slimmer figure at every build */avModel.scale.set(k*h*w,k*h,k*h*w)}av.add(avModel);applyOutfit();
     av.userData.body.visible=false;try{applyStyle(inst)}catch(e){console.warn('style',e)}avMixer=new THREE.AnimationMixer(inst);avActs={};['Idle','Walk','Run'].forEach(k=>{if(MODELS.clips[k])avActs[k]=avMixer.clipAction(MODELS.clips[k])});avState='';setAvState('Idle')}
   // headwear, facial hair and glasses on the model's Head bone, sized from the model itself; covering headwear hides the hair
   function applyStyle(inst){const st=S&&S.style;{let r=inst;while(r.parent)r=r.parent;r.updateMatrixWorld(true)}const head=inst.getObjectByName('Head');

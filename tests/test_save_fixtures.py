@@ -5,9 +5,9 @@ with the provenance and a hash of each file in manifest.json (see tests/fixtures
 exception is v3-legacy, written by hand and labelled synthetic: no build in the history ever wrote the v3 key.
 
 What is checked, for every fixture the current build can import (a v3 life has no `flags.started`, so it goes through load() only):
-  - migration keeps every key and value (only `v` 4 -> 5 changes), adds only `bills`, drops nothing, and is idempotent;
+  - migration keeps every key and value (only `v` changes, to 6), adds only `bills` and `t0`, drops nothing, and is idempotent;
   - the file checks of an import: a bad hash, an unsupported or missing version and a bad format are refused;
-  - loading the save at start: no intro, version 5, no uncaught error, the same values apart from the live weather and, in a station
+  - loading the save at start: no intro, version 6, no uncaught error, the same values apart from the live weather and, in a station
     or a train, the station time (the hour, the needs that drain with it, the place stamp) and the log line of the entry (M19), and the
     place comes back;
   - saving writes every field of the fixture (nothing dropped), and saving and reloading is stable, and exporting then importing a life gives the same life.
@@ -21,7 +21,7 @@ FX = Path(__file__).resolve().parent / 'fixtures' / 'saves'
 MANIFEST = json.loads((FX / 'manifest.json').read_text(encoding='utf-8'))['fixtures']
 IDS = [e['id'] for e in MANIFEST]
 TS = 'window.__TS'
-CURRENT = 5
+CURRENT = 6
 # what the game rewrites at start from live data, and what restoring a place changes; nothing else may differ
 LIVE = ['temp', 'weather', 'wx']                   # the weather reading from Open-Meteo is applied at start (applyLiveWeather)
 # in a station or a train the clock keeps running (M19): the hour moves on, the needs drain with it (needsTick), the saved place stamp holds
@@ -123,13 +123,13 @@ MIGRATE = DIFF + """async ([fixtures]) => { const T = window.__TS, out = {};
 def test_migration_keeps_the_life_and_is_idempotent(lab):
     r = lab.evaluate(MIGRATE, [[[i, fixture(i)[2], fixture(i)[0]['save_version'] or 4] for i in IMPORTABLE]])
     for fid in IMPORTABLE:
-        want_changed = ['v: 4 -> 5'] if fixture(fid)[0]['save_version'] == 4 else []
+        want_changed = [f"v: {fixture(fid)[0]['save_version'] or 4} -> {CURRENT}"]
         got = r[fid]
         assert 'err' not in got, f'{fid} was refused: {got}'
         assert got['v'] == CURRENT, f"{fid}: version {got['v']}"
         assert got['changed'] == want_changed, f"{fid}: migration changed {got['changed']}"
         assert got['dropped'] == [], f"{fid}: migration dropped {got['dropped']}"
-        assert got['added'] == ['bills'], f"{fid}: migration added {got['added']}"   # the one field a saved life may lack
+        assert got['added'] == ['bills', 't0'], f"{fid}: migration added {got['added']}"   # the fields a saved life may lack: bills (v4), t0 (v6, the real start of the life)
         assert got['again'] == [], f"{fid}: migrating again changed {got['again']}"
 
 
@@ -221,3 +221,16 @@ def test_fixture_loads_saves_reloads_and_round_trips(browser, fid):
         assert err.local_failures() == []
     finally:
         ctx.close()
+
+
+@pytest.mark.browser
+@pytest.mark.hook
+def test_migrated_life_gets_a_start_that_makes_today_its_saved_day(lab):
+    """t0 anchors the life on the real calendar (docs/REALTIME_SPEC.md R1b): for every fixture the Stockholm life day of now equals the saved day, and a good t0 is kept."""
+    r = lab.evaluate("""([fixtures]) => { const T = window.__TS, S = window.StockholmLife, out = {};
+      for (const [id, g] of fixtures) { const m = T.migrate(JSON.parse(JSON.stringify(g))), now = S['stockholm-time'].nowMs();
+        const again = T.migrate(JSON.parse(JSON.stringify(m)));
+        out[id] = {day: S['stockholm-time'].lifeDay(m.t0, now) === g.day, kept: again.t0 === m.t0, finite: Number.isFinite(m.t0) && m.t0 > 0 && m.t0 <= now} }
+      return out }""", [[[i, fixture(i)[2]] for i in IMPORTABLE]])
+    for fid in IMPORTABLE:
+        assert r[fid] == {'day': True, 'kept': True, 'finite': True}, f'{fid}: {r[fid]}'

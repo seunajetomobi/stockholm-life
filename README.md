@@ -1,4 +1,4 @@
-# Stockholm Life
+# Stockholmsliv (formerly Stockholm Life)
 
 A 3D life simulation set in real Stockholm, built in the browser with three.js and OpenStreetMap data.
 

@@ -154,3 +154,49 @@ def test_title_blocks_the_game_and_buttons_animate(browser, server):
         assert err.uncaught == [], err.uncaught
     finally:
         ctx.close()
+
+
+def test_time_is_stockholm_even_when_the_device_clock_is_wrong(browser, server):
+    """The device clock is set three hours wrong; the game still gets the true time from the server's Date header."""
+    import time
+    skew = "const R = Date, OFF = 3 * 3600e3; class D extends R { constructor(...a) { a.length ? super(...a) : super(R.now() + OFF) } static now() { return R.now() + OFF } } Date = D;"
+    ctx, page, err = game.new_page(browser, hook=True, realtime=True, title=True, init_script=skew)
+    page.set_default_timeout(90000)
+    try:
+        game.boot(page)
+        assert game.wait_for(page, "() => { const t = document.getElementById('title'); return t && !t.hidden && /Start/.test(t.innerText) }", 60)
+        got = page.evaluate("() => ({device: Date.now(), true_: window.StockholmLife['stockholm-time'].nowMs(), off: window.StockholmLife['stockholm-time'].getOffset()})")
+        real = time.time() * 1000
+        assert abs(got['device'] - real - 3 * 3600e3) < 5000, got        # the device really was three hours ahead
+        assert abs(got['true_'] - real) < 4000, (got, real)               # and the game's time is still the true time
+        assert err.uncaught == [], err.uncaught
+    finally:
+        ctx.close()
+
+
+def test_no_ringing_on_the_title_page(browser, server):
+    ctx, page, err = game.new_page(browser, hook=True, realtime=True, title=True)
+    page.set_default_timeout(90000)
+    try:
+        game.boot(page)
+        assert game.wait_for(page, "() => { const t = document.getElementById('title'); return !!(t && !t.hidden && window.__T && window.__T.incomingCall) }", 60)
+        for _ in range(5):
+            page.evaluate("() => window.__T.incomingCall()")
+        page.wait_for_timeout(800)
+        assert page.evaluate("() => document.querySelectorAll('.callscr,.ringing').length") == 0, 'a phone call showed on the title page'
+        assert err.uncaught == [], err.uncaught
+    finally:
+        ctx.close()
+
+
+def test_title_buttons_are_a_narrow_column(browser, server):
+    ctx, page, err = game.new_page(browser, hook=True, realtime=True, title=True, width=1366, height=768)
+    page.set_default_timeout(90000)
+    try:
+        game.boot(page)
+        assert game.wait_for(page, "() => { const t = document.getElementById('title'); return t && !t.hidden && /Start/.test(t.innerText) }", 60)
+        w = page.evaluate("() => [...document.querySelectorAll('#titleCard .btns button')].map(b => b.offsetWidth)")  # layout width: a focused button is drawn slightly larger
+        assert len(w) == 5 and max(w) <= 262, w
+        assert err.uncaught == [], err.uncaught
+    finally:
+        ctx.close()

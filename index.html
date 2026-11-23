@@ -114,6 +114,7 @@ button:focus-visible,[tabindex]:focus-visible,input:focus-visible,select:focus-v
 .title .tr button[aria-pressed=true]{background:rgba(255,255,255,.26)}.title .tr svg{width:22px;height:15px;border-radius:2px;display:block}
 .title .stack{width:min(400px,100%);margin:auto}
 .title .card{display:flex;flex-direction:column;gap:11px;text-align:center}
+.title .btns{width:min(260px,100%);margin:0 auto;display:flex;flex-direction:column;gap:9px}.title .btns button{padding:12px 16px;font-size:16px}
 .title .card.panel{background:rgba(8,16,32,.6);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);padding:22px;border-radius:22px;border:1px solid rgba(255,255,255,.16)}
 .title h1{margin:0;white-space:nowrap;font:700 clamp(32px,11vw,72px)/1 var(--display);letter-spacing:.04em;text-transform:uppercase;color:#fecc02;-webkit-text-stroke:max(2px,.045em) #006aa7;paint-order:stroke fill;filter:drop-shadow(0 3px 14px rgba(0,0,0,.45))}
 .title .stack{width:min(440px,100%)}.title h1 span{color:#006aa7;-webkit-text-stroke:max(3px,.075em) #fecc02}
@@ -1042,7 +1043,10 @@ const $=id=>document.getElementById(id);
 const {clamp,kr,hhmm,fmtDur}=useModule('format','util/format.js');
 const today=()=>REALTIME&&S&&S.t0?realDate():dateOf(S.day);
 const SUN=useModule('sun','rules/sun.js');// the sun and daylight rules; the date is passed in, so the game keeps today() and nothing else changes
-const STIME=useModule('stockholm-time','rules/stockholm-time.js');// real Stockholm time (docs/REALTIME_SPEC.md R1); not used by the game yet
+const STIME=useModule('stockholm-time','rules/stockholm-time.js');
+// The time is Stockholm's whatever the device says: the offset between the device clock and our own server's Date header is applied to every STIME.nowMs()
+async function syncServerTime(){try{const t0=Date.now(),r=await fetch(location.pathname+'?t='+t0,{method:'HEAD',cache:'no-store'}),t1=Date.now(),d=Date.parse(r.headers.get('Date')||'');if(Number.isFinite(d)){STIME.setOffset(d+(t1-t0)/2-t1);return true}}catch(e){}return false}
+const TIMESYNC=syncServerTime();setInterval(syncServerTime,10*60e3);// real Stockholm time (docs/REALTIME_SPEC.md R1); not used by the game yet
 const RTIME=useModule('realtime','rules/realtime.js');// the real-time switch and derived clock (src/rules/realtime.js)
 const REALTIME=RTIME.enabled(location.search,(()=>{try{return localStorage}catch(e){return null}})(),true);// real Stockholm time is the default (docs/REALTIME_SPEC.md); ?realtime=0 is the old game clock
 function syncClock(){if(!REALTIME||!S||!S.t0)return false;const c=RTIME.deriveClock(S.t0,STIME.nowMs()),ch=c.day!==S.day;S.day=c.day;S.hour=c.hour;return ch}
@@ -5589,10 +5593,9 @@ function showTitle(fresh){titleGo(()=>titleMain(fresh))}
 function titleMain(fresh){
   const started=!!(S&&S.flags&&S.flags.started)&&!fresh;
   titleShow(`<h1>Stockholms<span>liv</span></h1><p class="tag">${tt('tag')}</p>
-    <button class="primary" id="tPlay">${started?tt('cont'):tt('start')}</button>
+    <div class="btns"><button class="primary" id="tPlay">${started?tt('cont'):tt('start')}</button>
     ${started?`<button id="tNew">${tt('newlife')}</button>`:''}
-    <button id="tOpt">${tt('options')}</button><button id="tHow">${tt('how')}</button><button id="tSet">${tt('settings')}</button><button id="tSaves">${tt('saves')}</button>
-`,t=>{
+    <button id="tOpt">${tt('options')}</button><button id="tHow">${tt('how')}</button><button id="tSet">${tt('settings')}</button><button id="tSaves">${tt('saves')}</button></div>`,t=>{
     t.querySelector('#tPlay').onclick=()=>{if(started){titleHide();return}const go=()=>{titleHide();intro(REALTIME)};if(!seenIntro())titleGo(()=>introSlides(go));else go()};
     const nw=t.querySelector('#tNew');if(nw)nw.onclick=()=>titleGo(()=>titleNewLife());
     t.querySelector('#tOpt').onclick=()=>titleGo(()=>optionsScreen(()=>titleGo(()=>titleMain(fresh))));
@@ -5629,7 +5632,8 @@ function settingsScreen(back){
     t.querySelector('#sReplay').onclick=()=>{try{localStorage.removeItem(SEENKEY)}catch(e){}t.querySelector('#sNote').textContent=tt('replayed')};
     t.querySelector('#sBack').onclick=back})}
 document.addEventListener('click',e=>{if(e.target.closest&&e.target.closest('#menuBtn')&&S)showTitle(false)});
-async function start(data){uiInit();
+async function start(data){uiInit();await Promise.race([TIMESYNC,new Promise(r=>setTimeout(r,3000))]);// a new life must start on the true Stockholm time
+
   const hot=data&&data.S&&data.S.flags&&data.S.flags.started?data.S:null;
   slotsInit();
   if(hot){S=migrate(hot);SV.mode='active';try{SV.expected=localStorage.getItem(activeKey())}catch(e){}}else S=load();

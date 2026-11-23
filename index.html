@@ -3,7 +3,15 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<link rel="icon" href="data:,">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/icons/favicon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="assets/icons/icon-192.png">
+<link rel="apple-touch-icon" sizes="180x180" href="assets/icons/apple-touch-icon-180.png">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#006aa7">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Stockholmsliv">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Stockholmsliv</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -191,6 +199,52 @@ button:focus-visible,[tabindex]:focus-visible,input:focus-visible,select:focus-v
 .title .acnote{margin:0;color:#fff;background:rgba(255,255,255,.16);border-radius:10px;padding:0;font-size:14px;line-height:1.5}.title .acnote:not(:empty){padding:10px 12px}
 /* the form's buttons stay in view at the bottom while the fields scroll */
 .title .actions{position:sticky;bottom:-22px;margin:2px -26px -22px;padding:14px 26px 22px;display:flex;flex-direction:column;gap:10px;background:linear-gradient(180deg,rgba(74,143,205,0),var(--panel-bot) 26%)}
+/* store badges on the main menu: the stores' own artwork, side by side, unchanged */
+.title .stores{display:flex;flex-direction:column;align-items:center;gap:6px;margin-top:10px}
+.title .stsoon{margin:0;font-size:11.5px;letter-spacing:.14em;text-transform:uppercase;color:#fff;text-shadow:0 1px 8px rgba(0,0,0,.7)}.title .stsoon:empty{display:none}
+.title .storerow{display:flex;flex-direction:row;align-items:center;justify-content:center;gap:12px;flex-wrap:nowrap}
+.title .store{display:flex;align-items:center;justify-content:center;height:44px;text-decoration:none;border-radius:8px}
+.title .store img{display:block;user-select:none;-webkit-user-drag:none}
+.title .store img.st-ios{height:44px;width:auto}
+.title .store img.st-play{height:68px;width:auto;margin:-12px -10px}/* Google's file has clear space around the badge; the badge itself is 44 px tall like Apple's */
+.title a.store:hover,.title a.store:focus-visible{outline:2px solid #fff;outline-offset:3px}
+.title .store.pending{cursor:default}
+/* menu list, details, danger, accessibility modes */
+.title .menulist{display:flex;flex-direction:column;border-top:1px solid rgba(255,255,255,.25)}
+.title .card.panel .mrow{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;padding:13px 4px;border:0;border-bottom:1px solid rgba(255,255,255,.25);border-radius:0;background:transparent;color:#fff;text-align:left;font-size:16px;letter-spacing:.01em;box-shadow:none}
+.title .card.panel .mrow span{color:inherit;font:inherit;letter-spacing:inherit;text-transform:none;opacity:1;display:inline}
+.title .card.panel .mrow i{font-style:normal;font-size:22px;line-height:1;opacity:.8;transition:transform .2s ease}
+.title .card.panel .mrow:hover,.title .card.panel .mrow:focus-visible{background-color:rgba(255,255,255,.12);transform:none;letter-spacing:.01em;box-shadow:none}
+.title .card.panel .mrow:hover i,.title .card.panel .mrow:focus-visible i{transform:translateX(4px)}
+.title .card.panel .mrow::after{display:none}
+.title .abtn{display:block;text-align:center;text-decoration:none;font:500 16px/1.2 'Jost',sans-serif;padding:13px 18px;border-radius:999px;border:1px solid rgba(255,255,255,.55);background:rgba(255,255,255,.12);color:#fff}
+.title .abtn:hover,.title .abtn:focus-visible{background:rgba(255,255,255,.26);border-color:#fff;outline:0}
+.title .card.panel .danger{border-color:#ffb4a8;color:#ffe3de;background:rgba(179,38,30,.35)}
+.title .card.panel .danger:hover:not(:disabled),.title .card.panel .danger:focus-visible:not(:disabled){background-color:#b3261e;border-color:#ffb4a8}
+.title .card.panel .danger:disabled{opacity:.5;cursor:not-allowed}
+.title details{border-top:1px solid rgba(255,255,255,.25);padding:2px 0}.title details:last-of-type{border-bottom:1px solid rgba(255,255,255,.25)}
+.title summary{cursor:pointer;padding:12px 4px;font-weight:600;font-size:15.5px;list-style:none;display:flex;justify-content:space-between;gap:10px}
+.title summary::-webkit-details-marker{display:none}.title summary::after{content:"+";font-size:20px;line-height:1;opacity:.8}.title details[open] summary::after{content:"–"}
+.title summary:focus-visible{outline:2px solid #fff;outline-offset:2px;border-radius:6px}
+.title details p{margin:0 4px 12px;color:rgba(255,255,255,.92);font-size:15px;line-height:1.55}
+.title .setrow ul{margin:6px 0 0;padding-left:18px;font-size:14.5px;line-height:1.5;color:rgba(255,255,255,.92);font-weight:400}.title .setrow ul li{margin:2px 0}
+.title .tag b{font-weight:600}
+/* zoom of menus and dialogs (Accessibility, text size) */
+.title .stack,.title .ttop{zoom:var(--tz,1)}.modal{zoom:var(--tz,1)}
+/* high contrast */
+body.hc .title .card.panel{background:#06214a;box-shadow:0 0 0 2px #fff}
+body.hc .title .card.panel::before{opacity:1}
+body.hc .title input,body.hc .title select,body.hc .title textarea{border:2px solid #000;color:#000}
+body.hc .title button,body.hc .title .abtn{border:2px solid #fff}
+body.hc .title .tag,body.hc .title small,body.hc .title label,body.hc .title label em,body.hc .title .steps,body.hc .title .ticks,body.hc .title details p,body.hc .title .setrow ul{color:#fff}
+body.hc .title .card.panel .tog{border:2px solid #fff;background:#000}body.hc .title .card.panel .tog[aria-checked=true]{background:var(--yellow);border-color:#fff}
+body.hc .modal,body.hc .board,body.hc .dock,body.hc #drawer{background:#000!important;color:#fff!important;border:1px solid #fff!important}
+/* reduced motion switched on by the player (the device setting is honoured as well) */
+body.rm .title *,body.rm .title *::before,body.rm .title *::after,body.rm .modal *,body.rm .loading *{animation:none!important;transition:none!important;scroll-behavior:auto!important}
+body.rm .title button:hover,body.rm .title button:focus-visible{transform:none!important;letter-spacing:.03em!important}
+/* edit about me */
+.modal .chk2{display:inline-flex;gap:6px;align-items:center;margin:3px 10px 3px 0;font-size:14px}.modal .tagrm{cursor:pointer}
+.loading #loadtip{display:block;margin-top:10px;opacity:.85}
 /* resume card and saved status */
 .title .resume{display:flex;flex-direction:column;gap:2px;background:rgba(255,255,255,.16);border-radius:12px;padding:12px 14px}.title .resume b{font-size:18px;font-weight:600}.title .resume span{font-size:14px;color:rgba(255,255,255,.88)}
 .title small.saved:not(:empty){display:inline-block;align-self:flex-start;background:rgba(254,204,2,.18);color:#fff;border-radius:999px;padding:5px 12px;font-size:13px}
@@ -548,7 +602,7 @@ h2.hero{font-size:34px;background:linear-gradient(90deg,var(--sweblue),#3a86ff 4
   <button class="runbtn" id="runbtn" aria-pressed="false">Run</button>
   <div class="attrib">© OpenStreetMap contributors</div>
   <div class="credit">Developer: Seun Ajetomobi · © 2026 Helekt · <a href="https://www.helekt.net" target="_blank" rel="noopener">www.helekt.net</a></div>
-  <div class="loading" id="loading"><div class="box"><b>Stockholmsliv</b><div class="bar"><i id="loadbar"></i></div><small id="loadtxt">Downloading 84 000 buildings, 160 000 street segments and 15 000 places from OpenStreetMap…</small></div></div>
+  <div class="loading" id="loading"><div class="box"><b>Stockholmsliv</b><div class="bar"><i id="loadbar"></i></div><small id="loadtip" aria-live="off"></small><small id="loadtxt">Downloading 84 000 buildings, 160 000 street segments and 15 000 places from OpenStreetMap…</small></div></div>
 </section>
 <nav class="dock" id="dock" aria-label="Panels">
   <button data-tab="here" aria-label="Here"><svg viewBox="0 0 24 24"><path d="M12 21s7-6.3 7-12a7 7 0 1 0-14 0c0 5.7 7 12 7 12z"/><circle cx="12" cy="9" r="2.5"/></svg><span>Here</span></button>
@@ -2361,7 +2415,25 @@ function renderAbout(){const el=document.getElementById('aboutSec');if(!el||!S)r
   el.innerHTML=`<h3>About ${esc2(S.name)}</h3><div class="aboutme"><div>${nat?nat[1]+' ':''}${esc2(me.nat)} · ${me.age} years · ${esc2(me.genderLabel||({m:'man',f:'woman',x:'non-binary'})[me.gender]||'')}${me.prof?' · '+esc2(me.prof):''}${me.homeTown?' · from '+esc2(me.homeTown):''}</div>
     <div>${(MARITAL.find(x=>x[0]===me.marital)||['',''])[1]}${p?` (${esc2(p.n)}${p.away?', in '+esc2(p.away):''})`:''}${me.kids?` · ${me.kids} child${me.kids>1?'ren':''}`:''} · ${(EDU.find(x=>x[0]===me.edu)||['',''])[1]} · ${(me.languages&&me.languages.length)?'Languages: '+me.languages.map(x=>esc2(x.l)+' ('+x.lv+')').join(', '):'English: '+me.eng}</div>
     ${S.route?`<div>Arrived: ${esc2(S.route)}</div>`:S.from?`<div>From ${esc2(S.from)}</div>`:''}
-    <div class="tags">${(me.traits||[]).map(t=>`<i class="t">${(TRAITS_ME.find(x=>x[0]===t)||['',t])[1]}</i>`).join('')}${(me.skills||[]).map(h=>`<i class="t">${esc2(h)}</i>`).join('')}${(me.hobbies||[]).map(h=>`<i>${esc2(h)}</i>`).join('')}</div>${me.bio?`<div class="note">"${esc2(me.bio)}"</div>`:''}</div>`}
+    <div class="tags">${(me.traits||[]).map(t=>`<i class="t">${(TRAITS_ME.find(x=>x[0]===t)||['',t])[1]}</i>`).join('')}${(me.skills||[]).map(h=>`<i class="t">${esc2(h)}</i>`).join('')}${(me.hobbies||[]).map(h=>`<i>${esc2(h)}</i>`).join('')}</div>${me.bio?`<div class="note">"${esc2(me.bio)}"</div>`:''}<button class="btn ghost" id="editMe" type="button">Edit about me</button></div>`;
+  const eb=document.getElementById('editMe');if(eb)eb.onclick=editMeModal}
+function editMeModal(){const me=S.me||(S.me={}),langs=(me.languages||[]).map(x=>({l:x.l,lv:x.lv})),hob=new Set(me.hobbies||[]);
+  const lvOpts=['basic','good','fluent'].map(v=>`<option value="${v}">${v[0].toUpperCase()+v.slice(1)}</option>`).join('');
+  const nameOpts=[...new Set(LANG_CODES.map(c=>langName(c,'en')))].sort().map(n=>`<option>${esc2(n)}</option>`).join('');
+  modal(`<h2>Edit about me</h2><label class="f">Name<input id="emName" maxlength="24" value="${esc2(S.name)}"></label>
+    <label class="f">Profession or field<input id="emProf" maxlength="40" value="${esc2(me.prof||'')}"></label>
+    <label class="f">About you<textarea id="emBio" maxlength="300" rows="3">${esc2(me.bio||'')}</textarea></label>
+    <div class="f"><b>Languages</b><div id="emLangs"></div><div class="row2"><select id="emLang">${nameOpts}</select><select id="emLv">${lvOpts}</select><button class="btn ghost" type="button" id="emAdd">Add</button></div></div>
+    <div class="f"><b>Interests</b><div id="emHob">${HOBBIES.map(h=>`<label class="chk2"><input type="checkbox" data-h="${esc2(h)}"${hob.has(h)?' checked':''}> ${esc2(h)}</label>`).join(' ')}</div></div>
+    <p id="emErr" role="alert"></p><div class="row2"><button class="btn" type="button" id="emSave">Save</button><button class="btn ghost" type="button" id="emCancel">Cancel</button></div>`,m=>{
+    const q=x=>m.querySelector(x),draw=()=>{q('#emLangs').innerHTML=langs.length?langs.map((x,i)=>`<button type="button" class="btn ghost" data-i="${i}">${esc2(x.l)} (${x.lv}) ×</button>`).join(' '):'<small>None yet</small>';
+      q('#emLangs').querySelectorAll('button').forEach(b=>b.onclick=()=>{langs.splice(+b.dataset.i,1);draw()})};draw();
+    q('#emAdd').onclick=()=>{const l=q('#emLang').value;if(l&&!langs.some(x=>x.l===l))langs.push({l,lv:q('#emLv').value});draw()};
+    q('#emCancel').onclick=closeModal;
+    q('#emSave').onclick=()=>{const n=q('#emName').value.trim();if(!n){q('#emErr').textContent='Please enter a name.';return}
+      S.name=n;me.prof=q('#emProf').value.trim();me.bio=q('#emBio').value.trim();me.languages=langs;me.hobbies=[...m.querySelectorAll('#emHob input:checked')].map(x=>x.dataset.h);
+      const sv=langs.find(x=>x.l==='Swedish');if(sv)S.svenska=Math.max(S.svenska,({basic:15,good:40,fluent:80})[sv.lv]||0);
+      closeModal();save();render();log('You updated your details.')}})}
 lifeMailHooks();
 function poiActions(p){const n=(p.name||'').toLowerCase(),t=p.type,out=[];
   const friend={social:8,mood:5,energy:-6};
@@ -5644,17 +5716,24 @@ function matchServices(){if(!CITY)return;const pois=CITY.m.pois.map((p,i)=>({i,c
 
 /* ---------- title page, introduction, options and settings ---------- */
 const SETKEY='stockholmsliv-settings',SEENKEY='stockholmsliv-intro-seen',LANGKEY='stockholmsliv-lang';
-const SET=(()=>{const d={quality:'auto',live:true,hints:true,tips:true};try{const v=JSON.parse(localStorage.getItem(SETKEY)||'{}');return{quality:['low','auto','high'].includes(v.quality)?v.quality:d.quality,live:v.live!==false,hints:v.hints!==false,tips:v.tips!==false}}catch(e){return d}})();
+const SET=(()=>{const d={quality:'auto',live:true,hints:true,tips:true,tz:1,hc:false,rm:false};try{const v=JSON.parse(localStorage.getItem(SETKEY)||'{}');return{quality:['low','auto','high'].includes(v.quality)?v.quality:d.quality,live:v.live!==false,hints:v.hints!==false,tips:v.tips!==false,tz:[0,1,2,3].includes(v.tz)?v.tz:1,hc:v.hc===true,rm:v.rm===true}}catch(e){return d}})();
 const setSave=()=>{try{localStorage.setItem(SETKEY,JSON.stringify(SET))}catch(e){}};
 const applyHints=()=>document.body.classList.toggle('nohints',!SET.hints);applyHints();
 const titleOpen=()=>{const t=document.getElementById('title');return !!t&&!t.hidden};// while the title page is open nothing else in the game answers
-['keydown','keyup','keypress'].forEach(ev=>window.addEventListener(ev,e=>{if(titleOpen())e.stopPropagation()},true));
+['keydown','keyup','keypress'].forEach(ev=>window.addEventListener(ev,e=>{if(titleOpen()){if(ev==='keydown')titleKey(e);e.stopPropagation()}},true));
 const TITLE_ON=(()=>{try{return localStorage.getItem('stockholmsliv-title')!=='0'}catch(e){return true}})();
 let LANG=(()=>{try{const v=localStorage.getItem(LANGKEY);if(v==='sv'||v==='en')return v}catch(e){}return /^sv/i.test(navigator.language||'')?'sv':'en'})();
 const TXT={
  en:{tag:'Live a life in Stockholm. Real map, real time, real weather.',start:'Start',cont:'Continue',newlife:'New life',options:'Options',how:'How to Play',settings:'Settings',saves:'Saves',
   next:'Next',skip:'Skip',back:'Back',
   aboutBtn:'About and credits',abMap:'Map and places',abContrib:'contributors',abPlaces:'Countries and home towns',abWeather:'Weather',abTransit:'Public transport',abMoney:'Exchange rates',abVia:'via',abFlights:'Flights',abRoutes:'routes from',abType:'Lettering',abEngine:'3D engine',
+  accBtn:'Accessibility',axTitle:'Accessibility',axText:'Text size',axTextD:'Makes the menus and dialogs larger or smaller.',tzSmall:'Small',tzNormal:'Normal',tzLarge:'Large',tzXL:'Extra large',axContrast:'High contrast',axContrastD:'Stronger borders and plain backgrounds.',axMotion:'Reduce motion',axMotionD:'Turns off sliding and fading effects.',axNote:'These apply to menus and dialogs. The 3D city follows your graphics setting.',
+  pvBtn:'Privacy and my data',pvTitle:'Privacy and my data',pvStored:'Your lives, settings and language are stored on this device, in your browser. There is no account, and nothing is sent to us.',pvContacts:'While you play, the page asks other services for what it shows: the weather (Open-Meteo), SL timetables, flights, exchange rates, fonts (Google Fonts) and the map data from this site.',pvNoTrack:'No advertising, no tracking cookies and no analytics.',pvDownload:'Download my data',pvDownloaded:'Saved to your downloads',pvDelete:'Delete my data',
+  pvDelTitle:'Delete everything?',pvDelBody:'This removes all your saved lives, backups and settings from this device. It cannot be undone. Download your data first if you want to keep it.',pvDelType:'To confirm, type',pvDelWord:'DELETE',pvDelGo:'Delete my data now',pvKeep:'Keep my data',
+  hlBtn:'Help and support',hlTitle:'Help and support',hlReportD:'Found a bug? Report it on GitHub (a free account is needed). Your technical details are added. They contain no name and no saved life.',hlReport:'Report a problem',hlCopy:'Copy my details',hlCopied:'Copied',hlCopyFail:'Could not copy. Select the text on the report page instead.',
+  faq:[['Is my life saved?','Yes, in this browser, in five slots. Clearing your browser data, or using another device, loses it. Use Saved games to make a backup.'],['Is the time real?','Yes. The game follows Stockholm time, daylight saving included, whatever your device clock says.'],['Where does the weather come from?','Live from Open-Meteo for Stockholm. Without internet the game makes up the weather.'],['How do I move around?','Use the joystick or WASD to walk, tap a street to auto-walk, and tap a shop to look inside.'],['Why is the game in English?','The menus are in Swedish and English. Translating the whole game is being done step by step.'],['Something looks wrong.','Reload the page first. If it stays, use Report a problem below.']],
+  nwBtn:'What\'s new',nwTitle:'What\'s new',instBtn:'Install the app',instHow:'iPhone or iPad: tap Share, then Add to Home Screen. Android: open the browser menu and choose Install app.',
+  stSoon:'Coming soon',stGet:'Get it on',
   sound:'Sound',soundD:'Station sounds and announcements at Stockholm Central.',reloadNow:'Apply now (reloads the page)',resetSet:'Reset to defaults',done:'Done',slot:'Slot',
   acSignIn:'Sign in',acLogin:'Log in',acCreate:'Create account',acWith:'Continue with',acSoonBadge:'Soon',acOr:'or',acName:'Display name',acEmail:'E-mail',acAge:'I am at least 13 years old',acTerms:'I accept the privacy policy and terms',
   acLink:'Send me a log-in link',acCreateBtn:'Create account',acGuest:'Continue as guest',acNote:'Accounts are not switched on yet. Nothing was sent or stored. You can play as a guest: your life saves in this browser.',
@@ -5687,6 +5766,13 @@ const TXT={
  sv:{tag:'Lev ditt liv i Stockholm. Riktig karta, riktig tid, riktigt väder.',start:'Starta',cont:'Fortsätt',newlife:'Nytt liv',options:'Alternativ',how:'Så spelar du',settings:'Inställningar',saves:'Sparade liv',
   next:'Nästa',skip:'Hoppa över',back:'Tillbaka',
   aboutBtn:'Om och tack',abMap:'Karta och platser',abContrib:'-bidragsgivare',abPlaces:'Länder och hemorter',abWeather:'Väder',abTransit:'Kollektivtrafik',abMoney:'Växelkurser',abVia:'via',abFlights:'Flyg',abRoutes:'rutter från',abType:'Typsnitt',abEngine:'3D-motor',
+  accBtn:'Tillgänglighet',axTitle:'Tillgänglighet',axText:'Textstorlek',axTextD:'Gör menyer och dialogrutor större eller mindre.',tzSmall:'Liten',tzNormal:'Normal',tzLarge:'Stor',tzXL:'Extra stor',axContrast:'Hög kontrast',axContrastD:'Tydligare kanter och enkla bakgrunder.',axMotion:'Minska rörelse',axMotionD:'Stänger av glidande och tonande effekter.',axNote:'Gäller menyer och dialogrutor. 3D-staden följer din grafikinställning.',
+  pvBtn:'Integritet och mina data',pvTitle:'Integritet och mina data',pvStored:'Dina liv, inställningar och ditt språk sparas på den här enheten, i din webbläsare. Det finns inget konto, och ingenting skickas till oss.',pvContacts:'När du spelar hämtar sidan det den visar från andra tjänster: vädret (Open-Meteo), SL:s tidtabeller, flyg, växelkurser, typsnitt (Google Fonts) och kartdata från den här webbplatsen.',pvNoTrack:'Ingen reklam, inga spårningskakor och ingen analys.',pvDownload:'Ladda ner mina data',pvDownloaded:'Sparat bland dina nedladdningar',pvDelete:'Radera mina data',
+  pvDelTitle:'Radera allt?',pvDelBody:'Det här tar bort alla dina sparade liv, säkerhetskopior och inställningar från den här enheten. Det går inte att ångra. Ladda ner dina data först om du vill behålla dem.',pvDelType:'Skriv för att bekräfta',pvDelWord:'RADERA',pvDelGo:'Radera mina data nu',pvKeep:'Behåll mina data',
+  hlBtn:'Hjälp och support',hlTitle:'Hjälp och support',hlReportD:'Hittat ett fel? Rapportera det på GitHub (ett gratis konto behövs). Dina tekniska uppgifter läggs till. De innehåller inget namn och inget sparat liv.',hlReport:'Rapportera ett problem',hlCopy:'Kopiera mina uppgifter',hlCopied:'Kopierat',hlCopyFail:'Det gick inte att kopiera. Markera texten på rapportsidan i stället.',
+  faq:[['Sparas mitt liv?','Ja, i den här webbläsaren, på fem platser. Om du rensar webbläsarens data, eller byter enhet, försvinner det. Gör en säkerhetskopia under Sparade spel.'],['Är tiden verklig?','Ja. Spelet följer Stockholmstid, med sommartid, oavsett vad enhetens klocka visar.'],['Varifrån kommer vädret?','Live från Open-Meteo för Stockholm. Utan internet hittar spelet på vädret.'],['Hur rör jag mig?','Använd joysticken eller WASD för att gå, tryck på en gata för att gå dit, och tryck på en butik för att titta in.'],['Varför är spelet på engelska?','Menyerna finns på svenska och engelska. Att översätta hela spelet görs steg för steg.'],['Något ser fel ut.','Ladda om sidan först. Om det består, använd Rapportera ett problem nedan.']],
+  nwBtn:'Nytt',nwTitle:'Nytt',instBtn:'Installera appen',instHow:'iPhone eller iPad: tryck på Dela och sedan Lägg till på hemskärmen. Android: öppna webbläsarens meny och välj Installera app.',
+  stSoon:'Kommer snart',stGet:'Hämta på',
   sound:'Ljud',soundD:'Ljud och utrop på Stockholms central.',reloadNow:'Verkställ nu (laddar om sidan)',resetSet:'Återställ standard',done:'Klar',slot:'Plats',
   acSignIn:'Logga in',acLogin:'Logga in',acCreate:'Skapa konto',acWith:'Fortsätt med',acSoonBadge:'Snart',acOr:'eller',acName:'Visningsnamn',acEmail:'E-post',acAge:'Jag är minst 13 år',acTerms:'Jag godkänner integritetspolicyn och villkoren',
   acLink:'Skicka en inloggningslänk',acCreateBtn:'Skapa konto',acGuest:'Fortsätt som gäst',acNote:'Konton är inte aktiverade ännu. Ingenting skickades eller sparades. Du kan spela som gäst: ditt liv sparas i den här webbläsaren.',
@@ -5719,6 +5805,8 @@ const TXT={
 const tt=k=>(TXT[LANG]&&TXT[LANG][k])||TXT.en[k]||k;
 const FLAG_SV='<svg viewBox="0 0 22 15" aria-hidden="true"><rect width="22" height="15" fill="#006aa7"/><rect x="6" width="3.2" height="15" fill="#fecc02"/><rect y="5.9" width="22" height="3.2" fill="#fecc02"/></svg>';
 const FLAG_EN='<svg viewBox="0 0 22 15" aria-hidden="true"><rect width="22" height="15" fill="#012169"/><path d="M0 0 22 15M22 0 0 15" stroke="#fff" stroke-width="3"/><path d="M0 0 22 15M22 0 0 15" stroke="#c8102e" stroke-width="1.2"/><path d="M11 0v15M0 7.5h22" stroke="#fff" stroke-width="5"/><path d="M11 0v15M0 7.5h22" stroke="#c8102e" stroke-width="3"/></svg>';
+const TIPS={en:['Shops and offices keep real Stockholm opening hours.','Tap a street to auto-walk, or use WASD.','Your phone has chats, mail, maps, SL and banking.','Not sure what to do? The Next up card shows the next step.','The time is Stockholm\'s, whatever your device clock says.'],
+  sv:['Butiker och kontor har riktiga öppettider i Stockholm.','Tryck på en gata för att gå dit, eller använd WASD.','I telefonen finns chatt, post, kartor, SL och bank.','Osäker på vad du ska göra? Kortet Nästa steg visar vad som kommer.','Tiden är Stockholms, oavsett vad enhetens klocka visar.']};
 const seenIntro=()=>{try{return localStorage.getItem(SEENKEY)==='1'}catch(e){return false}};
 const markIntro=()=>{try{localStorage.setItem(SEENKEY,'1')}catch(e){}};
 const TITLE={cur:null,timer:0,screen:''};
@@ -5732,11 +5820,17 @@ function titleGo(fn){TITLE.cur=fn;TITLE.screen='';fn()}
 function titleHide(){const t=$('title');if(!t)return;t.classList.add('out');setTimeout(()=>{if(t.classList.contains('out')){t.hidden=true;t.classList.remove('out');$('titleCard').innerHTML='';document.body.classList.remove('titleopen')}},450)}
 function titleShow(html,bind,bare){const t=$('title'),c=$('titleCard');c.innerHTML=`<div class="card${bare?'':' panel'}">${html}</div>`;t.hidden=false;t.classList.remove('out');document.body.classList.add('titleopen');titleChrome();bind&&bind(c);const f=c.querySelector('button.primary')||c.querySelector('button');f&&f.focus({preventScroll:true})}
 function showTitle(fresh){titleGo(()=>titleMain(fresh))}
+const STORE={ios:'',android:''};// put the App Store and Google Play addresses here when the apps are published; until then the badges say "coming soon" and are not links
+// The stores' own badges, unchanged (assets/stores/README.md). Until an app is live its badge is a plain image under "Coming soon"; with an address it is the link.
+const storeHtml=()=>{const L=LANG==='sv'?'sv':'en',B=[['ios','App Store','Download on the App Store','assets/stores/app-store-'+L+'.svg','st-ios'],['android','Google Play','Get it on Google Play','assets/stores/google-play-'+L+'.png','st-play']];
+  const img=(alt,src,cls)=>`<img class="${cls}" src="${src}" alt="${alt}" draggable="false">`;
+  return `<p class="stsoon">${STORE.ios||STORE.android?'':tt('stSoon')}</p><div class="storerow">${B.map(([k,n,alt,src,cls])=>STORE[k]?`<a class="store" href="${STORE[k]}" target="_blank" rel="noopener" aria-label="${alt}">${img(alt,src,cls)}</a>`:`<span class="store pending" role="group" aria-label="${n}: ${tt('stSoon')}">${img(alt,src,cls)}</span>`).join('')}</div>`};
 function titleMain(fresh){
   const started=!!(S&&S.flags&&S.flags.started)&&!fresh;
   titleShow(`<h1>Stockholms<span>liv</span></h1><p class="tag">${tt('tag')}</p>
     <div class="btns"><button class="primary" id="tPlay">${tt('start')}</button>
-    <button id="tOpt">${tt('options')}</button><button id="tHow">${tt('how')}</button></div>`,t=>{
+    <button id="tOpt">${tt('options')}</button><button id="tHow">${tt('how')}</button></div>
+    <div class="stores">${storeHtml()}</div>`,t=>{
     t.querySelector('#tPlay').onclick=()=>titleGo(()=>startChoice(fresh));
     t.querySelector('#tOpt').onclick=()=>titleGo(()=>optionsScreen(()=>titleGo(()=>titleMain(fresh))));
     t.querySelector('#tHow').onclick=()=>titleGo(()=>introSlides(()=>titleGo(()=>titleMain(fresh)),true));
@@ -5867,6 +5961,68 @@ function newLifeForm(back,step){
       else{const nm=worldCountry(NL.iso);F.kind='abroad';F.nat=nm;F.from=nm;F.route=0;F.status=NL.status==='eu'?'':NL.status;F.purpose=NL.status==='student'?'study':'work'}
       const go=()=>{titleHide();lifeFromForm(F)};if(!seenIntro())titleGo(()=>introSlides(go));else go()}})}
 
+/* ---------- more menus: accessibility, privacy and my data, help, what's new, install ---------- */
+const STORE_PREFIXES=['stockholm-life','stockholmsliv-','sl-'];
+const storeKeys=()=>{const out=[];try{for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&STORE_PREFIXES.some(p=>k.startsWith(p)))out.push(k)}}catch(e){}return out};
+const TZ_SCALE=[0.9,1,1.15,1.3],TZ_NAMES=['tzSmall','tzNormal','tzLarge','tzXL'];
+function applyA11y(){const r=document.documentElement;r.style.setProperty('--tz',String(TZ_SCALE[SET.tz]||1));document.body.classList.toggle('hc',!!SET.hc);document.body.classList.toggle('rm',!!SET.rm)}
+const menuRow=(id,label)=>`<button type="button" class="mrow" id="${id}"><span>${label}</span><i aria-hidden="true">›</i></button>`;
+let INSTALL=null;window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();INSTALL=e});
+function accessScreen(back){
+  titleShow(`<h2>${tt('axTitle')}</h2>
+    <div class="setrow col"><div><b>${tt('axText')}</b><small>${tt('axTextD')}</small></div>
+      <div class="slider"><input type="range" id="axTz" min="0" max="3" step="1" value="${SET.tz}" aria-label="${tt('axText')}" aria-valuetext="${tt(TZ_NAMES[SET.tz])}">
+        <div class="ticks" aria-hidden="true">${TZ_NAMES.map((k,i)=>`<span data-i="${i}">${tt(k)}</span>`).join('')}</div></div></div>
+    <div class="setrow"><div><b>${tt('axContrast')}</b><small>${tt('axContrastD')}</small></div>${togHtml('hc',tt('axContrast'))}</div>
+    <div class="setrow"><div><b>${tt('axMotion')}</b><small>${tt('axMotionD')}</small></div>${togHtml('rm',tt('axMotion'))}</div>
+    <small>${tt('axNote')}</small><small id="axNote" role="status" class="saved"></small>
+    <div class="actions"><button class="primary" id="axBack">${tt('done')}</button></div>`,t=>{
+    const sq=t.querySelector('#axTz'),paint=()=>{const i=+sq.value;sq.style.setProperty('--p',(i*100/3)+'%');sq.setAttribute('aria-valuetext',tt(TZ_NAMES[i]));t.querySelectorAll('.ticks span').forEach(x=>x.classList.toggle('on',+x.dataset.i===i))};
+    paint();sq.addEventListener('input',()=>{SET.tz=+sq.value;setSave();applyA11y();paint();t.querySelector('#axNote').textContent=tt('savedNow')});
+    t.querySelectorAll('.ticks span').forEach(x=>x.onclick=()=>{sq.value=x.dataset.i;sq.dispatchEvent(new Event('input'))});
+    segBind(t,()=>{applyA11y();t.querySelector('#axNote').textContent=tt('savedNow')});
+    t.querySelector('#axBack').onclick=back})}
+function dataDownload(){const keys={};for(const k of storeKeys()){try{keys[k]=localStorage.getItem(k)}catch(e){}}
+  const blob=new Blob([JSON.stringify({app:'stockholmsliv',exported:new Date().toISOString(),keys},null,1)],{type:'application/json'}),a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);a.download='stockholmsliv-data-'+new Date().toISOString().slice(0,10)+'.json';document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1500);return Object.keys(keys).length}
+function privacyScreen(back){
+  titleShow(`<h2>${tt('pvTitle')}</h2><p class="tag">${tt('pvStored')}</p><p class="tag">${tt('pvContacts')}</p><p class="tag">${tt('pvNoTrack')}</p>
+    <small id="pvNote" role="status" class="saved"></small>
+    <button type="button" id="pvDownload">${tt('pvDownload')}</button><button type="button" id="pvDelete" class="danger">${tt('pvDelete')}</button>
+    <div class="actions"><button class="primary" id="pvBack">${tt('back')}</button></div>`,t=>{
+    t.querySelector('#pvDownload').onclick=()=>{const n=dataDownload();t.querySelector('#pvNote').textContent='✓ '+tt('pvDownloaded')+' ('+n+')'};
+    t.querySelector('#pvDelete').onclick=()=>titleGo(()=>privacyDelete(back));
+    t.querySelector('#pvBack').onclick=back})}
+function privacyDelete(back){
+  titleShow(`<h2>${tt('pvDelTitle')}</h2><p class="tag">${tt('pvDelBody')}</p>
+    <div class="frow"><label for="pvConfirm">${tt('pvDelType')} <b>${tt('pvDelWord')}</b></label><input id="pvConfirm" autocomplete="off" autocapitalize="characters" spellcheck="false"></div>
+    <p class="nferr" id="pvErr" role="alert"></p>
+    <button type="button" id="pvDoDelete" class="danger" disabled>${tt('pvDelGo')}</button>
+    <div class="actions"><button class="primary" id="pvCancel">${tt('pvKeep')}</button></div>`,t=>{
+    const inp=t.querySelector('#pvConfirm'),go=t.querySelector('#pvDoDelete');inp.addEventListener('input',()=>{go.disabled=inp.value.trim().toUpperCase()!==tt('pvDelWord')});
+    go.onclick=()=>{if(inp.value.trim().toUpperCase()!==tt('pvDelWord'))return;for(const k of storeKeys()){try{localStorage.removeItem(k)}catch(e){}}location.reload()};
+    t.querySelector('#pvCancel').onclick=()=>titleGo(()=>privacyScreen(back))})}
+function diagText(){return ['Stockholmsliv '+APP_VERSION,'Language: '+LANG,'Browser: '+(navigator.userAgent||'').slice(0,120),'Screen: '+innerWidth+'x'+innerHeight+' @'+(devicePixelRatio||1),'Settings: '+JSON.stringify({quality:SET.quality,live:SET.live,tz:SET.tz,hc:SET.hc,rm:SET.rm}),'Real time: '+REALTIME,'Time offset (ms): '+STIME.getOffset()].join('\n')}
+function helpScreen(back){
+  const faq=tt('faq'),body=encodeURIComponent('What happened?\n\n\nWhat did you expect?\n\n\n---\n'+diagText()),href='https://github.com/seunajetomobi/stockholm-life/issues/new?title='+encodeURIComponent('Problem: ')+'&body='+body;
+  titleShow(`<h2>${tt('hlTitle')}</h2>${faq.map(([q,a])=>`<details><summary>${q}</summary><p>${a}</p></details>`).join('')}
+    <small>${tt('hlReportD')}</small><a class="abtn" id="hlReport" href="${href}" target="_blank" rel="noopener">${tt('hlReport')}</a><button type="button" id="hlCopy">${tt('hlCopy')}</button><small id="hlNote" role="status" class="saved"></small>
+    <div class="actions"><button class="primary" id="hlBack">${tt('back')}</button></div>`,t=>{
+    t.querySelector('#hlCopy').onclick=async()=>{let ok=false;try{await navigator.clipboard.writeText(diagText());ok=true}catch(e){}t.querySelector('#hlNote').textContent=ok?'✓ '+tt('hlCopied'):tt('hlCopyFail')};
+    t.querySelector('#hlBack').onclick=back})}
+function newsScreen(back){
+  titleShow(`<h2>${tt('nwTitle')}</h2>${CHANGELOG.map(c=>`<div class="setrow col"><div><b>${c.d}</b><ul>${c[LANG].map(x=>`<li>${x}</li>`).join('')}</ul></div></div>`).join('')}
+    <div class="actions"><button class="primary" id="nwBack">${tt('back')}</button></div>`,t=>{t.querySelector('#nwBack').onclick=back})}
+const APP_VERSION='2026-11-23';
+const CHANGELOG=[{d:'2026-11-23',
+  en:['A new title page, introduction and menus, in Swedish and English.','Start a new life: every country, a home town, education, languages and about you.','Stockholm time whatever your device clock says.','Options: accessibility, privacy and your data, help, and this list.'],
+  sv:['En ny startsida, introduktion och nya menyer, på svenska och engelska.','Starta ett nytt liv: alla länder, en hemort, utbildning, språk och om dig.','Stockholmstid oavsett vad enhetens klocka visar.','Alternativ: tillgänglighet, integritet och dina data, hjälp och den här listan.']}];
+function installTry(note){if(INSTALL){const p=INSTALL;INSTALL=null;p.prompt();return}note.textContent=tt('instHow')}
+function titleKey(e){
+  if(e.key==='Escape'){const b=document.querySelector('#titleCard #cBack,#titleCard #oBack,#titleCard #sBack,#titleCard #lBack,#titleCard #abBack,#titleCard #acGuest,#titleCard #nfBack,#titleCard #axBack,#titleCard #pvBack,#titleCard #pvCancel,#titleCard #hlBack,#titleCard #nwBack');if(b){e.preventDefault();b.click()}return}
+  if(e.key==='Tab'){const root=$('title'),f=[...root.querySelectorAll('button,input,select,textarea,a[href],summary')].filter(x=>!x.disabled&&!x.hidden&&x.offsetParent!==null);if(!f.length)return;
+    const first=f[0],last=f[f.length-1],a=document.activeElement;if(!root.contains(a)){e.preventDefault();first.focus();return}
+    if(e.shiftKey&&a===first){e.preventDefault();last.focus()}else if(!e.shiftKey&&a===last){e.preventDefault();first.focus()}}}
 function aboutScreen(back){
   const row=(h,b)=>`<div class="setrow col"><div><b>${h}</b><small>${b}</small></div></div>`;
   titleShow(`<h2>${tt('aboutBtn')}</h2>
@@ -5899,12 +6055,15 @@ function optionsScreen(back){
     <div class="setrow"><div><b>${tt('hints')}</b><small>${tt('hintsD')}</small></div>${togHtml('hints',tt('hints'))}</div>
     <div class="setrow"><div><b>${tt('tips')}</b><small>${tt('tipsD')}</small></div>${togHtml('tips',tt('tips'))}</div>
     <div class="setrow"><div><b>${tt('sound')}</b><small>${tt('soundD')}</small></div>${togHtml('sound',tt('sound'))}</div>
-    <div class="btns"><button id="oSet">${tt('settings')}</button><button id="oSaves">${tt('savedGames')}</button><button id="oAcct">${tt('acSignIn')}</button><button id="oAbout">${tt('aboutBtn')}</button></div>
-    <p class="tag" style="margin:8px 0 0;font-size:13px">${tt('langNote')}</p>
-    <button class="primary" id="oBack">${tt('back')}</button><small id="oNote" role="status" class="saved"></small>`,t=>{
+    <nav class="menulist" aria-label="${tt('optTitle')}">${menuRow('oAcc',tt('accBtn'))}${menuRow('oSet',tt('settings'))}${menuRow('oSaves',tt('savedGames'))}${menuRow('oAcct',tt('acSignIn'))}${menuRow('oPriv',tt('pvBtn'))}${menuRow('oHelp',tt('hlBtn'))}${menuRow('oNew',tt('nwBtn'))}${menuRow('oAbout',tt('aboutBtn'))}${menuRow('oInst',tt('instBtn'))}</nav>
+    <p class="tag" style="margin:8px 0 0;font-size:13px">${tt('langNote')}</p><small id="oNote" role="status" class="saved"></small>
+    <div class="actions"><button class="primary" id="oBack">${tt('back')}</button></div>`,t=>{
     segBind(t,k=>{if(k==='hints')applyHints();if(k==='sound'){try{localStorage.setItem('sl-cs-sound',SET.sound?'1':'0')}catch(e){}window.dispatchEvent(new CustomEvent('stockholmsliv-sound',{detail:!!SET.sound}))}t.querySelector('#oNote').textContent=tt('savedNow')});
     t.querySelector('#oSet').onclick=()=>titleGo(()=>settingsScreen(()=>titleGo(()=>optionsScreen(back))));
     t.querySelector('#oSaves').onclick=()=>titleGo(()=>loadScreen(()=>titleGo(()=>optionsScreen(back))));
+    const sub=fn=>()=>titleGo(()=>fn(()=>titleGo(()=>optionsScreen(back))));
+    t.querySelector('#oAcc').onclick=sub(accessScreen);t.querySelector('#oPriv').onclick=sub(privacyScreen);t.querySelector('#oHelp').onclick=sub(helpScreen);t.querySelector('#oNew').onclick=sub(newsScreen);
+    t.querySelector('#oInst').onclick=()=>installTry(t.querySelector('#oNote'));
     t.querySelector('#oAbout').onclick=()=>titleGo(()=>aboutScreen(()=>titleGo(()=>optionsScreen(back))));
     t.querySelector('#oAcct').onclick=()=>titleGo(()=>accountScreen('login',()=>titleGo(()=>optionsScreen(back))));
     t.querySelector('#oBack').onclick=back})}
@@ -5927,7 +6086,9 @@ function settingsScreen(back){
     t.querySelector('#sReplay').onclick=()=>{try{localStorage.removeItem(SEENKEY)}catch(e){}t.querySelector('#sNote').textContent=tt('replayed')};
     t.querySelector('#sBack').onclick=back})}
 document.addEventListener('click',e=>{if(e.target.closest&&e.target.closest('#menuBtn')&&S)showTitle(false)});
-async function start(data){uiInit();await Promise.race([TIMESYNC,new Promise(r=>setTimeout(r,3000))]);// a new life must start on the true Stockholm time
+async function start(data){uiInit();applyA11y();
+  {const tips=TIPS[LANG]||TIPS.en,el=$('loadtip');let i=0;if(el){el.textContent=tips[0];const tm=setInterval(()=>{if(!document.getElementById('loading')){clearInterval(tm);return}el.textContent=tips[++i%tips.length]},3500)}}
+await Promise.race([TIMESYNC,new Promise(r=>setTimeout(r,3000))]);// a new life must start on the true Stockholm time
 
   const hot=data&&data.S&&data.S.flags&&data.S.flags.started?data.S:null;
   slotsInit();

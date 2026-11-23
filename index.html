@@ -102,6 +102,20 @@ button:focus-visible,[tabindex]:focus-visible,input:focus-visible,select:focus-v
 .drivehud{font:600 18px var(--mono)}
 .inhud button,.drivehud button{font:700 13px var(--display);letter-spacing:.08em;text-transform:uppercase;border:0;border-radius:8px;padding:8px 14px;background:var(--amber);color:#0A1219}
 .inact{position:absolute;left:50%;bottom:calc(150px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);display:none;font:700 16px var(--display);letter-spacing:.06em;text-transform:uppercase;padding:14px 22px;border-radius:12px;border:0;background:var(--amber);color:#0A1219;box-shadow:0 8px 24px rgba(0,0,0,.4);z-index:5}
+.title{position:fixed;inset:0;z-index:18;display:grid;place-items:center;padding:16px;background:radial-gradient(ellipse at 50% 30%,rgba(18,34,58,.72),rgba(6,11,19,.94));color:#e6eae5;opacity:1;transition:opacity .45s}
+.title[hidden]{display:none}.title.out{opacity:0;pointer-events:none}
+.title .card{width:min(420px,100%);display:flex;flex-direction:column;gap:10px;text-align:center}
+.title h1{margin:0;font:700 clamp(34px,9vw,52px)/1 var(--display);letter-spacing:.05em;text-transform:uppercase;background:linear-gradient(90deg,#fff,#cfe8ff);-webkit-background-clip:text;background-clip:text;color:transparent}
+.title h1 span{color:#ffcd3c;-webkit-text-fill-color:#ffcd3c}.title .tag{margin:0 0 14px;color:#aab6c6;font-size:14px;line-height:1.45}
+.title button{font:600 15px var(--body,inherit);padding:13px 16px;border-radius:12px;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.07);color:inherit;cursor:pointer}
+.title button.primary{background:#ffcd3c;color:#111;border-color:#ffcd3c;font-size:17px;padding:15px 16px}
+.title button:hover,.title button:focus-visible{outline:2px solid #7fb8ff;outline-offset:2px}.title .row{display:flex;gap:10px}.title .row button{flex:1}
+.title small{color:#7f8c9d;font-size:11.5px;margin-top:10px}
+.slides{min-height:150px;display:flex;flex-direction:column;gap:8px;text-align:left}.slides h3{margin:0;font-size:18px}.slides p{margin:0;color:#c9d2dc;font-size:14.5px;line-height:1.5}
+.dots{display:flex;gap:6px;justify-content:center;margin:6px 0}.dots i{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.25)}.dots i.on{background:#ffcd3c}
+.setrow{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 0;border-top:1px solid rgba(255,255,255,.1);text-align:left}.setrow b{display:block;font-size:14px}.setrow small{margin:2px 0 0;display:block}
+.seg{display:flex;gap:4px}.seg button{padding:7px 11px;font-size:13px;border-radius:9px}.seg button.on{background:#ffcd3c;color:#111;border-color:#ffcd3c}
+.brandbtn{all:unset;cursor:pointer}.brandbtn:focus-visible{outline:2px solid #7fb8ff;outline-offset:3px}
 .loading{position:absolute;inset:0;display:grid;place-items:center;background:#0b1424;color:#e6eae5;z-index:8;transition:opacity .6s}
 .loading .box{display:grid;gap:10px;justify-items:center;text-align:center;padding:20px}
 .loading b{font:700 28px var(--display);letter-spacing:.06em;text-transform:uppercase}
@@ -412,7 +426,7 @@ h2.hero{font-size:34px;background:linear-gradient(90deg,var(--sweblue),#3a86ff 4
   <div class="ridechip" id="ride"></div>
   <div class="places" id="places" aria-label="Your places"></div>
   <div class="hint" id="hint">Joystick or WASD to walk · tap a street to auto-walk · tap a shop to look · drag to turn</div>
-  <div class="ctrls"><button id="zfind" aria-label="Find shops and places">⌕</button><button id="zin" aria-label="Zoom in">+</button><button id="zout" aria-label="Zoom out">−</button><button id="zme" aria-label="Center on you" style="font-size:16px">◎</button></div>
+  <div class="ctrls"><button id="menuBtn" aria-label="Menu: title page, settings, how to play">☰</button><button id="zfind" aria-label="Find shops and places">⌕</button><button id="zin" aria-label="Zoom in">+</button><button id="zout" aria-label="Zoom out">−</button><button id="zme" aria-label="Center on you" style="font-size:16px">◎</button></div>
   <div class="inhud" id="inhud"><b id="inTitle"></b><button id="inLeave">Leave</button></div><button class="inact" id="inAct"></button><div class="csprompt" id="csPrompt" role="dialog" aria-live="polite"></div><div class="cshud" id="csHud"></div><div class="csline" id="csLine" aria-live="polite"></div><div class="cscine" id="csCine"><span></span><button>Skip ▸▸</button></div>
   <div class="drivehud" id="drivehud"><span class="limit" id="lim">50</span><span id="spd">0 km/h</span><span id="coach"></span><button id="park">Park</button></div>
   <div class="joy" id="joy" aria-label="Move joystick"><div class="knob" id="knob"></div></div>
@@ -448,6 +462,7 @@ h2.hero{font-size:34px;background:linear-gradient(90deg,var(--sweblue),#3a86ff 4
     <div class="pane" data-pane="diary" hidden><div class="sec"><ul class="log" id="log"></ul></div></div>
   </div>
 </aside>
+<div class="title" id="title" hidden></div>
 <div id="modalRoot"></div>
 <div id="saveStatus" role="status" hidden></div>
 
@@ -2492,7 +2507,7 @@ function buildWorld(){
   const stage=$('stage');
   // retry without antialiasing: some GPUs/drivers refuse the heavier context
   let renderer;try{renderer=new THREE.WebGLRenderer({antialias:true,logarithmicDepthBuffer:true})}catch(e){try{renderer=new THREE.WebGLRenderer({antialias:false,logarithmicDepthBuffer:true,powerPreference:'low-power'})}catch(e2){return null}}
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,{low:1,auto:2,high:3}[SET.quality]||2));
   renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.0;
   stage.prepend(renderer.domElement);
   const scene=new THREE.Scene();scene.fog=new THREE.Fog(0xbfe3ff,30,90);
@@ -5499,6 +5514,56 @@ async function loadCity(){
 function matchServices(){if(!CITY)return;const pois=CITY.m.pois.map((p,i)=>({i,cat:p[0],catName:CITY.m.cats[p[0]],type:p[1],name:p[2],x:p[3]/100,z:p[4]/100,hours:p[5]||'',addr:p[6]||''}));
   for(const k in SVC){const s=SVC[k];let best=null,bd=1e9;for(const p of pois){if(!s.find(p))continue;const d=Math.hypot(p.x-s.near[0],p.z-s.near[1]);if(d<bd){bd=d;best=p}}
     if(best&&bd<25){s.poi=best;s.oh=parseHours(best.hours)}}}
+
+/* ---------- title page, introduction and settings ---------- */
+const SETKEY='stockholmsliv-settings',SEENKEY='stockholmsliv-intro-seen';
+const SET=(()=>{const d={quality:'auto',live:true};try{const v=JSON.parse(localStorage.getItem(SETKEY)||'{}');return{quality:['low','auto','high'].includes(v.quality)?v.quality:d.quality,live:v.live!==false}}catch(e){return d}})();
+const setSave=()=>{try{localStorage.setItem(SETKEY,JSON.stringify(SET))}catch(e){}};
+const TITLE_ON=(()=>{try{return localStorage.getItem('stockholmsliv-title')!=='0'}catch(e){return true}})();
+const INTRO_SLIDES=[
+  ['A real city','Stockholmsliv is built on OpenStreetMap: real streets, stations and shops. The clock follows Stockholm time, and the weather and SL departures are live when you are online.'],
+  ['Get your life started','Energy, mood, food, hygiene, fun and social fall as time passes. Money, papers and a home come first. The Next up card shows what to do next.'],
+  ['Move and act','Walk with the joystick or WASD, tap a street to auto-walk, tap a shop to look inside. Your phone has chats, mail, maps, SL and banking.'],
+  ['Your life is saved here','Saves stay in this browser. Use Saves on the title page to keep several lives, export a backup or restore one.']];
+const seenIntro=()=>{try{return localStorage.getItem(SEENKEY)==='1'}catch(e){return false}};
+const markIntro=()=>{try{localStorage.setItem(SEENKEY,'1')}catch(e){}};
+function titleRoot(){return $('title')}
+function titleHide(){const t=titleRoot();if(!t)return;t.classList.add('out');setTimeout(()=>{if(t.classList.contains('out')){t.hidden=true;t.classList.remove('out');t.innerHTML=''}},450)}
+function titleShow(html,bind){const t=titleRoot();t.innerHTML=`<div class="card">${html}</div>`;t.hidden=false;t.classList.remove('out');bind&&bind(t);const f=t.querySelector('button.primary')||t.querySelector('button');f&&f.focus()}
+function showTitle(fresh){
+  const started=!!(S&&S.flags&&S.flags.started)&&!fresh;
+  titleShow(`<h1>Stockholms<span>liv</span></h1><p class="tag">Live a life in Stockholm. Real map, real time, real weather.</p>
+    <button class="primary" id="tPlay">${started?'Continue':'Start'}</button>
+    ${started?'<button id="tNew">New life</button>':''}
+    <div class="row"><button id="tHow">How to play</button><button id="tSet">Settings</button></div><button id="tSaves">Saves</button>
+    <small>© OpenStreetMap contributors · © 2026 Helekt</small>`,t=>{
+    t.querySelector('#tPlay').onclick=()=>{if(started){titleHide();return}const go=()=>{titleHide();intro(REALTIME)};if(!seenIntro())introSlides(go);else go()};
+    const nw=t.querySelector('#tNew');if(nw)nw.onclick=()=>titleNewLife();
+    t.querySelector('#tHow').onclick=()=>introSlides(()=>showTitle(fresh),true);
+    t.querySelector('#tSet').onclick=()=>settingsScreen(()=>showTitle(fresh));
+    t.querySelector('#tSaves').onclick=()=>{t.hidden=true;openSaveFile(false);const mo=$('modalRoot');const w=setInterval(()=>{if(!mo.innerHTML){clearInterval(w);t.hidden=false}},400)}})}
+function titleNewLife(){titleShow(`<h1>New life?</h1><p class="tag">Your current life in Stockholm will be lost. Export a backup from Saves first if you want to keep it.</p>
+  <button class="primary" id="tYes">Start a new life</button><button id="tNo">Keep playing</button>`,t=>{
+  t.querySelector('#tNo').onclick=()=>showTitle(false);
+  t.querySelector('#tYes').onclick=()=>{const r=$('restart');if(r)r.click();titleHide()}})}
+function introSlides(done,fromTitle){
+  let i=0;const draw=()=>{const last=i===INTRO_SLIDES.length-1,[h,b]=INTRO_SLIDES[i];
+    titleShow(`<div class="slides"><h3>${h}</h3><p>${b}</p></div><div class="dots">${INTRO_SLIDES.map((_,k)=>`<i class="${k===i?'on':''}"></i>`).join('')}</div>
+      <button class="primary" id="iNext">${last?(fromTitle?'Back':'Start'):'Next'}</button><button id="iSkip">${fromTitle?'Back':'Skip'}</button>`,t=>{
+      t.querySelector('#iNext').onclick=()=>{if(last){markIntro();done()}else{i++;draw()}};
+      t.querySelector('#iSkip').onclick=()=>{markIntro();done()}})};draw()}
+function settingsScreen(back){
+  const seg=(key,opts)=>`<div class="seg" data-k="${key}">${opts.map(([v,l])=>`<button data-v="${v}" class="${String(SET[key])===String(v)?'on':''}">${l}</button>`).join('')}</div>`;
+  titleShow(`<h1 style="font-size:30px">Settings</h1>
+    <div class="setrow"><div><b>Graphics</b><small>Low saves battery; High is sharper on a good screen. Applies after a reload.</small></div>${seg('quality',[['low','Low'],['auto','Auto'],['high','High']])}</div>
+    <div class="setrow"><div><b>Live data</b><small>Weather, flights and departures from the internet. Off keeps the game offline-friendly.</small></div>${seg('live',[[true,'On'],[false,'Off']])}</div>
+    <div class="setrow"><div><b>Introduction</b><small>See the how-to-play slides again on the next new life.</small></div><div class="seg"><button id="sReplay">Replay</button></div></div>
+    <p class="tag" style="margin-top:12px">Time follows Stockholm. The map is © OpenStreetMap contributors. Weather from Open-Meteo.</p>
+    <button class="primary" id="sBack">Back</button><small id="sNote"></small>`,t=>{
+    t.querySelectorAll('.seg[data-k]').forEach(g=>g.querySelectorAll('button').forEach(b=>b.onclick=()=>{const k=g.dataset.k,v=b.dataset.v==='true'?true:b.dataset.v==='false'?false:b.dataset.v;SET[k]=v;setSave();g.querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b));t.querySelector('#sNote').textContent='Saved. Reload the page to apply.'}));
+    t.querySelector('#sReplay').onclick=()=>{try{localStorage.removeItem(SEENKEY)}catch(e){}t.querySelector('#sNote').textContent='The introduction will show on your next new life.'};
+    t.querySelector('#sBack').onclick=back})}
+document.addEventListener('click',e=>{if(e.target.closest&&e.target.closest('#menuBtn')&&S)showTitle(false)});
 async function start(data){uiInit();
   const hot=data&&data.S&&data.S.flags&&data.S.flags.started?data.S:null;
   slotsInit();
@@ -5514,8 +5579,8 @@ async function start(data){uiInit();
   if(!CITY){const n=document.createElement('div');n.className='nogl';n.style.cssText='inset:auto;top:160px;left:50%;transform:translateX(-50%);width:min(440px,calc(100% - 32px));background:var(--glass);border-radius:12px;z-index:5;line-height:1.45';n.textContent=location.protocol==='file:'?'The city cannot load when index.html is opened from disk. Run ./start.sh in this folder and open http://localhost:8000 instead.':'Could not load the city data from the data/ folder, so the map is empty. Check that ./start.sh is running in the game folder, then reload.';$('stage').appendChild(n)}
   if(!W){const n=document.createElement('div');n.className='nogl';n.style.cssText='inset:auto;top:160px;left:50%;transform:translateX(-50%);width:min(440px,calc(100% - 32px));background:var(--glass);border-radius:12px;z-index:5;line-height:1.45';n.textContent='Your browser could not start 3D graphics (WebGL), so the city cannot be drawn. The game still works from the panels. Fix: quit the browser completely and reopen it (after a graphics crash Chrome blocks 3D until restart), and check that "Use graphics acceleration" is on in its settings.';$('stage').appendChild(n)}
   else{W.placeAvatar(S.pos.x,S.pos.z,true);if(!S.addr&&S.home!=='none'){assignAddress();save()}W.setHome();W.syncCar();if(!S.wants.length)rollWants();if(S.flags&&S.flags.arlanda&&W.enterAirport)setTimeout(()=>W.enterAirport(),600);else if(resume&&W.restorePlace)setTimeout(()=>W.restorePlace(resume),600)}
-  syncClock();render();if(fresh)intro(REALTIME);if(REALTIME)setInterval(()=>{if(!S)return;if(syncClock())render();else $('time').textContent=hhmm(S.hour)},1000);
-  fetchLiveWeather().then(ok=>{if(ok)setTimeout(()=>wearTip(true),fresh?20000:2500)});setInterval(fetchLiveWeather,10*60e3);if(FLIGHT_RELAY){fetchFlights();setInterval(fetchFlights,10000)}setInterval(()=>{if(Math.random()<0.35)incomingCall()},150000);
+  syncClock();render();if(TITLE_ON)showTitle(fresh);else if(fresh)intro(REALTIME);if(REALTIME)setInterval(()=>{if(!S)return;if(syncClock())render();else $('time').textContent=hhmm(S.hour)},1000);
+  if(SET.live){fetchLiveWeather().then(ok=>{if(ok)setTimeout(()=>wearTip(true),fresh?20000:2500)});setInterval(fetchLiveWeather,10*60e3);if(FLIGHT_RELAY){fetchFlights();setInterval(fetchFlights,10000)}}setInterval(()=>{if(Math.random()<0.35)incomingCall()},150000);
 }
 window.claude?.hot?.snapshot?.(()=>({S}));
 window.claude?.hot?.ready?window.claude.hot.ready(start):start(window.claude?.hot?.data??{});

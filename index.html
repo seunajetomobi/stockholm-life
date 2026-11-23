@@ -393,6 +393,35 @@ h2.hero{font-size:34px;background:linear-gradient(90deg,var(--sweblue),#3a86ff 4
 .dep.fl{border:0;width:100%;text-align:left;cursor:pointer;font:inherit}.dep .dst{font-size:13.5px;line-height:1.25}.dep .dst small{display:block;color:#9fb0bd;font-size:11px}.dep .tm{font:600 14px "IBM Plex Mono",monospace;color:var(--amber);text-align:right}.dep .tm small{display:block}.dep .late{color:#ff8a80;font-size:11px}.dep.can .dst,.dep.can .tm{text-decoration:line-through;opacity:.6}
 .devs p{margin:6px 0 0;font-size:12px;color:var(--warn)}
 .wxdays{width:100%;border-collapse:collapse;font-size:12.5px}.wxdays td{padding:4px 3px;border-top:1px solid var(--line)}.wxdays td:nth-child(2){font-size:16px}.wxdays td:last-child,.wxdays td:nth-child(5){color:var(--muted);text-align:right}
+
+/* ===== Interface v2: the screen belongs to the city =====
+   Zones: top edge = clock, place and money; under it one goal line, then your places as round icons; needs as small rings on the left edge;
+   bottom = joystick (left), the one action (centre), map buttons (right), then the dock. Light glass with Swedish blue and yellow accents. */
+:root{--g2:rgba(255,255,255,.88);--g2ink:#0b1b2b;--g2mute:#5d6b79;--g2line:rgba(11,27,43,.12);--sweblue:#006aa7;--sweyellow:#fecc02}
+.board{display:flex;align-items:center;gap:8px;min-height:46px;padding:0;background:none!important;box-shadow:none!important;border-radius:0;backdrop-filter:none;-webkit-backdrop-filter:none;z-index:3}
+.board .brand,.board .daytrack,.board .skymeta,.b-where small,.board::after{display:none!important}
+.b-time,.b-where,.b-money{background:var(--g2);color:var(--g2ink);border:1px solid rgba(255,255,255,.7);box-shadow:0 6px 20px rgba(11,27,43,.18);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-radius:99px;height:46px;align-content:center}
+.b-time{display:flex;align-items:baseline;gap:9px;padding:0 16px}
+.b-time #time{font:600 20px var(--body);color:var(--g2ink);letter-spacing:.01em}.b-time #date{font-size:12.5px;color:var(--g2mute);opacity:1}
+.b-where{flex:0 1 auto;max-width:min(440px,45vw);padding:0 16px;display:flex;align-items:center;min-width:0}.b-where #where{font:500 14px var(--body)}
+.b-money{margin-left:auto;padding:0 16px;display:flex;align-items:center;gap:8px;text-align:left}.b-money #money{font:600 16px var(--body);color:var(--g2ink)}.b-money #jobline{display:none}
+@media (max-width:640px){.b-where{display:none}.b-time{padding:0 14px}.b-time #date{display:none}}
+.needs{position:fixed;left:var(--gut);top:calc(var(--boardH,46px) + 140px + env(safe-area-inset-top,0px));flex-direction:column;gap:7px;padding:8px 6px;border-radius:99px;background:var(--g2);border:1px solid rgba(255,255,255,.7);box-shadow:0 6px 20px rgba(11,27,43,.18);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);pointer-events:auto;z-index:3}
+.need{width:32px;flex:none}.need svg{width:32px;height:32px}.need .rb{stroke:rgba(11,27,43,.12)}.need text{fill:var(--g2ink);font:600 10.5px var(--body)}.need span{display:none}.need.lo{animation:needpulse 1.6s infinite}@keyframes needpulse{50%{transform:scale(1.14)}}
+.next{height:56px;top:calc(var(--boardH,46px) + 18px + env(safe-area-inset-top,0px));border-radius:16px;background:var(--g2);color:var(--g2ink);border:1px solid rgba(255,255,255,.7);border-left:5px solid var(--sweyellow);box-shadow:0 6px 20px rgba(11,27,43,.18);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);width:min(380px,calc(100% - 2*var(--gut,16px)))}
+.next .stub{display:none}.next .body{padding:6px 12px;align-content:center;flex:1}.next b{font:600 14px var(--body);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.next small{color:var(--g2mute);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.next button{margin:8px 8px 8px 0;border-radius:99px;background:var(--sweblue)!important;color:#fff!important;padding:0 16px;font:600 13px var(--body);letter-spacing:.02em;text-transform:none}
+.places{top:calc(var(--boardH,46px) + 82px + env(safe-area-inset-top,0px));display:flex;gap:7px;grid-auto-flow:unset;bottom:auto}
+.places button{display:grid;grid-template-columns:40px;padding:3px;border-radius:99px;background:var(--g2);border:1px solid rgba(255,255,255,.7);box-shadow:0 4px 14px rgba(11,27,43,.18)}.places button span{display:none}.places button i{width:40px;height:40px}.places button svg{width:20px;height:20px}
+.ctrls button,.runbtn{background:var(--g2);color:var(--g2ink);border:1px solid rgba(255,255,255,.7);box-shadow:0 4px 14px rgba(11,27,43,.18);border-radius:50%}.runbtn{border-radius:99px;padding:8px 14px}.runbtn.on{background:var(--sweyellow);color:var(--g2ink)}
+.joy{background:rgba(255,255,255,.28);border-color:rgba(255,255,255,.85)}
+.dock{background:var(--g2)!important;border:1px solid rgba(255,255,255,.7);border-radius:99px;padding:6px;box-shadow:0 8px 26px rgba(11,27,43,.22)}
+.dock button{color:var(--g2mute)!important;border-radius:99px;min-width:62px}.dock button.on{background:var(--g2ink)!important;color:#fff!important;box-shadow:none!important}.dock button.on svg{stroke:#fff!important}.dock span{font:600 10.5px var(--body);letter-spacing:.04em;text-transform:none}
+.inact{border-radius:99px;background:var(--g2ink);color:#fff;font:600 15px var(--body);letter-spacing:.01em;text-transform:none}.inact kbd{background:rgba(255,255,255,.2)!important}
+.inhud,.drivehud,.ridechip{background:var(--g2);color:var(--g2ink);border:1px solid rgba(255,255,255,.7);border-radius:99px;box-shadow:0 6px 20px rgba(11,27,43,.18)}.inhud button,.drivehud button{background:var(--sweblue);color:#fff;border-radius:99px;text-transform:none;letter-spacing:.02em;font-weight:600}
+body.inside .needs{display:none!important}@media (max-width:1100px){body.inside .next{display:none!important}}
+@media (max-width:899px){body.drawer-open .needs,body.drawer-open .places{display:none}}
+@media (max-width:640px){.next{width:calc(100% - 2*var(--gut,16px))}.needs{top:calc(var(--boardH,46px) + 146px + env(safe-area-inset-top,0px))}}
 </style>
 </head>
 <body>
@@ -1764,7 +1793,7 @@ function renderPlaces(){const el=document.getElementById('places');if(!el||!S)re
   if(!el.dataset.built){el.innerHTML=PLACEBTN.map(([k,g,c,l])=>`<button data-pl="${k}" style="--c:${c}" title="${l}"><i>${glyphSVG(g)}</i><span>${l}</span></button>`).join('');el.dataset.built=1;
     el.querySelectorAll('[data-pl]').forEach(b=>b.onclick=()=>{if(busy){toast('You are on the move');return}const f=PLACEBTN.find(x=>x[0]===b.dataset.pl);f&&f[4]()})}
   const lbl={home:S.home==='none'?'No home':'Home',work:S.job&&JOBS[S.job]?'Work':'Find work',inv:(()=>{const t=S.inv?invTotal().v:0;return t>1?kr(Math.round(t)):'Invest'})()};
-  el.querySelectorAll('[data-pl]').forEach(b=>{const t=lbl[b.dataset.pl];if(t)b.querySelector('span').textContent=t})}
+  el.querySelectorAll('[data-pl]').forEach(b=>{const t=lbl[b.dataset.pl];if(t)b.querySelector('span').textContent=t;const n=b.querySelector('span').textContent;b.setAttribute('aria-label',n);b.title=n})}
 
 /* =================== PHONE CALLS, 112, CARE GUIDANCE AND SWEDISH EVERYDAY APPS =================== */
 // ---------- calls: ring someone, or get rung up ----------

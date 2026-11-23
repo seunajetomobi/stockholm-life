@@ -233,7 +233,7 @@ def test_no_room_fallback(browser):
     """At 640x360 (a phone on its side) a three-line message fits nowhere between the ride HUD, the joystick, Run, the
     zoom buttons and the dock. The strip then shares space with as little as it can, beneath it: the control stays
     drawn on top and takes the taps."""
-    ctx, page, err = game.new_page(browser, 640, 360, mobile=True, hook=True)
+    ctx, page, err = game.new_page(browser, 520, 300, mobile=True, hook=True)
     try:
         game.boot(page)
         if game.intro_shown(page):
@@ -278,8 +278,8 @@ def test_strip_follows_layout_changes(browser):
             f'start: strip {d["line"]} should be clear in its CSS place {covered(d)}'
         page.evaluate("() => { __T.CS.hudT = 1e9 }")  # the periodic HUD update can no longer place the strip
         changes = [
-            ('top bar 100 px taller (the HUD moves down through --boardH)',
-             "const e = document.createElement('div'); e.style.cssText = 'height:100px;grid-column:1/-1'; document.getElementById('board').appendChild(e)"),
+            ('top bar 220 px taller (the HUD moves down through --boardH)',
+             "const e = document.createElement('div'); e.style.cssText = 'height:220px;flex:1 0 100%'; document.getElementById('board').appendChild(e)"),
             ('ride HUD 60 px taller', "document.getElementById('csHud').style.paddingBottom = '60px'"),
             ('screen resized to 390x844', None),
         ]

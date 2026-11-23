@@ -63,8 +63,8 @@ def test_background_photos_are_there_in_three_sizes_and_credited():
         assert f'assets/title/stadshuset-{name}.jpg' in html
     # the 4K picture stays a sensible download
     assert (root / 'assets' / 'title' / 'stadshuset-3840.jpg').stat().st_size < 2_000_000
-    # the picture is an AI-generated image provided by the owner, and the page says so in both languages
-    assert "imgcredit:'Background image: AI-generated'" in html and "imgcredit:'Bakgrundsbild: AI-genererad'" in html
+    # the owner asked for no label on the title page; the origin is recorded in assets/title/CREDITS.md
+    assert 'imgcredit' not in html  # no label on the page (assets/title/CREDITS.md still records where the picture came from)
 
 
 def test_title_is_one_row_on_a_phone(browser, server):
@@ -82,19 +82,20 @@ def test_title_is_one_row_on_a_phone(browser, server):
 
 
 def test_top_widgets_language_and_options(browser, server):
-    """The weather top left (no date), SV | EN top right, an Options screen (reference design from the owner)."""
+    """SV | EN top right, map credit bottom left, an Options screen (reference design from the owner)."""
     ctx, page, err = game.new_page(browser, hook=True, realtime=True, title=True)
     page.set_default_timeout(90000)
     try:
         game.boot(page)
         assert game.wait_for(page, "() => { const t = document.getElementById('title'); return t && !t.hidden && /Start/.test(t.innerText) }", 60)
         now = page.evaluate(STOCKHOLM_NOW)
-        # top left: only the weather, in the game's own style (icon, temperature, condition); no date or clock there
-        box = page.evaluate("() => document.getElementById('tWx').innerText")
-        assert str(now['y']) not in box, box
-        assert not __import__('re').search(r'\d\d:\d\d', box), box
-        if box:
-            assert '\u00b0' in box or 'offline' in box.lower(), box
+        # nothing top left any more: no date, clock or weather box
+        assert page.evaluate("() => !document.getElementById('tWx')")
+        # the map credit sits in the bottom-left corner and the AI label is gone
+        r = page.evaluate("() => { const e = document.getElementById('tOsm'), b = e.getBoundingClientRect(); return {l: b.left, bot: innerHeight - b.bottom, txt: e.innerText, all: document.getElementById('title').innerText} }")
+        assert r['l'] < 40 and r['bot'] < 40, r
+        assert 'OpenStreetMap' in r['txt'] and 'contributors' in r['txt'], r
+        assert 'AI' not in r['all'] and 'generated' not in r['all'].lower(), r
         # five buttons, in the order of the design
         order = page.evaluate("() => [...document.querySelectorAll('#titleCard button')].map(b => b.id)")
         assert order == ['tPlay', 'tOpt', 'tHow', 'tSet', 'tSaves'], order
@@ -123,6 +124,33 @@ def test_title_name_uses_the_swedish_flag_colours(browser, server):
         c = page.evaluate("() => { const h = document.querySelector('#title h1'), s = h.querySelector('span'), g = e => getComputedStyle(e); return {a: g(h).color, as: g(h).webkitTextStrokeColor, b: g(s).color, bs: g(s).webkitTextStrokeColor} }")
         assert c['a'] == 'rgb(254, 204, 2)' and c['as'] == 'rgb(0, 106, 167)', c   # STOCKHOLMS: flag yellow, flag-blue outline
         assert c['b'] == 'rgb(0, 106, 167)' and c['bs'] == 'rgb(254, 204, 2)', c   # LIV: flag blue, flag-yellow outline
+        assert err.uncaught == [], err.uncaught
+    finally:
+        ctx.close()
+
+
+def test_title_blocks_the_game_and_buttons_animate(browser, server):
+    """Until the player chooses on the title page nothing else answers; the buttons animate on hover."""
+    ctx, page, err = game.new_page(browser, hook=True, realtime=True, title=True)
+    page.set_default_timeout(90000)
+    try:
+        game.boot(page)
+        assert game.wait_for(page, "() => { const t = document.getElementById('title'); return t && !t.hidden && /Start/.test(t.innerText) && window.__TS && window.__TS.S }", 60)
+        before = page.evaluate("() => JSON.stringify(window.__TS.S.pos)")
+        for k in ('w', 'a', 's', 'd', 'e', 'ArrowUp'):
+            page.keyboard.down(k)
+        page.wait_for_timeout(1500)
+        for k in ('w', 'a', 's', 'd', 'e', 'ArrowUp'):
+            page.keyboard.up(k)
+        assert page.evaluate("() => JSON.stringify(window.__TS.S.pos)") == before, 'the avatar moved behind the title page'
+        assert page.evaluate("() => document.body.classList.contains('titleopen')")
+        assert page.evaluate("() => !document.querySelector('.modal')"), 'a dialog opened behind the title page'
+        # hover: the button lifts and widens its lettering
+        t0 = page.evaluate("() => { const b = document.getElementById('tOpt'); const s = getComputedStyle(b); return [s.transform, s.letterSpacing] }")
+        page.hover('#tOpt')
+        page.wait_for_timeout(500)
+        t1 = page.evaluate("() => { const b = document.getElementById('tOpt'); const s = getComputedStyle(b); return [s.transform, s.letterSpacing] }")
+        assert t0 != t1 and t1[0] != 'none', (t0, t1)
         assert err.uncaught == [], err.uncaught
     finally:
         ctx.close()

@@ -108,8 +108,6 @@ button:focus-visible,[tabindex]:focus-visible,input:focus-visible,select:focus-v
 @media (min-width:1700px),(min-width:701px) and (min-resolution:2dppx){.title{--bg:url(assets/title/stadshuset-3840.jpg)}}
 .title[hidden]{display:none}.title.out{opacity:0;pointer-events:none}
 .title .glass{position:fixed;top:max(14px,env(safe-area-inset-top,0px));z-index:1;background:rgba(255,255,255,.17);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.3);color:#fff;text-shadow:0 1px 6px rgba(0,0,0,.35)}
-.title .tl{left:max(14px,env(safe-area-inset-left,0px));border-radius:18px;padding:9px 15px;font-size:15px;line-height:1.5;min-width:0;max-width:calc(100vw - 150px)}
-.title .tl{cursor:pointer}.title .tl:focus-visible{outline:2px solid #fff;outline-offset:2px}.title .tl div{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .title .tr{right:max(14px,env(safe-area-inset-right,0px));border-radius:999px;padding:6px 8px;display:flex;align-items:center;gap:2px}
 .title .tr i{width:1px;height:18px;background:rgba(255,255,255,.4)}
 .title .tr button{display:inline-flex;align-items:center;gap:6px;background:none;border:0;color:#fff;font:600 14px var(--body,inherit);padding:7px 9px;border-radius:999px;cursor:pointer;backdrop-filter:none}
@@ -122,7 +120,18 @@ button:focus-visible,[tabindex]:focus-visible,input:focus-visible,select:focus-v
 .title .tag{margin:2px 0 14px;color:#fff;font-size:15.5px;line-height:1.45;text-shadow:0 1px 10px rgba(0,0,0,.55)}
 .title button{font:500 17px var(--body,inherit);padding:15px 18px;border-radius:999px;border:1px solid rgba(255,255,255,.14);background:rgba(16,26,44,.58);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);color:#fff;cursor:pointer;box-shadow:0 4px 18px rgba(0,0,0,.18)}
 .title button.primary{background:#fbc02d;color:#1b1b1b;border-color:#fbc02d;font-weight:600}
-.title button:hover{filter:brightness(1.12)}.title button:focus-visible{outline:2px solid #fff;outline-offset:2px}
+.title button{position:relative;overflow:hidden;transition:transform .2s cubic-bezier(.2,.8,.2,1),box-shadow .2s ease,letter-spacing .2s ease,background-color .2s ease}
+.title button::after{content:"";position:absolute;inset:0;background:linear-gradient(105deg,transparent 30%,rgba(255,255,255,.3) 50%,transparent 70%);transform:translateX(-130%);pointer-events:none}
+.title button:hover,.title button:focus-visible{transform:translateY(-2px) scale(1.03);letter-spacing:.05em;box-shadow:0 10px 26px rgba(0,0,0,.32);background-color:rgba(36,52,84,.72)}
+.title button.primary:hover,.title button.primary:focus-visible{background-color:#ffd24d}
+.title button:hover::after,.title button:focus-visible::after{transform:translateX(130%);transition:transform .7s ease}
+.title button:active{transform:translateY(0) scale(.99)}
+.title button:focus-visible{outline:2px solid #fff;outline-offset:2px}
+.title .seg button:hover,.title .seg button:focus-visible{letter-spacing:.02em;transform:translateY(-1px) scale(1.04)}
+@media (prefers-reduced-motion:reduce){.title button,.title button::after{transition:none!important}.title button:hover,.title button:focus-visible{transform:none;letter-spacing:normal}.title button:hover::after{transform:translateX(-130%)}}
+.title .tosm,.title .thel{position:fixed;bottom:max(10px,env(safe-area-inset-bottom,0px));z-index:1;font-size:12px;line-height:1.4;color:#e9eef6;text-shadow:0 1px 8px rgba(0,0,0,.7)}
+.title .tosm{left:max(14px,env(safe-area-inset-left,0px))}.title .thel{right:max(14px,env(safe-area-inset-right,0px))}.title .tosm a{color:inherit}
+body.titleopen .stage,body.titleopen .dock,body.titleopen #drawer,body.titleopen .joy,body.titleopen .runbtn{pointer-events:none}
 .title small{color:#e9eef6;font-size:12px;margin-top:6px;text-shadow:0 1px 8px rgba(0,0,0,.6);line-height:1.5}.title small a{color:inherit}
 .slides{min-height:150px;display:flex;flex-direction:column;gap:8px;text-align:left}.slides h3{margin:0;font-size:19px}.slides p{margin:0;color:#e1e8f2;font-size:15px;line-height:1.5}
 .dots{display:flex;gap:6px;justify-content:center;margin:6px 0}.dots i{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.3)}.dots i.on{background:#fbc02d}
@@ -476,7 +485,7 @@ h2.hero{font-size:34px;background:linear-gradient(90deg,var(--sweblue),#3a86ff 4
     <div class="pane" data-pane="diary" hidden><div class="sec"><ul class="log" id="log"></ul></div></div>
   </div>
 </aside>
-<div class="title" id="title" hidden><div class="glass tl" id="tWx" role="button" tabindex="0" aria-label="Weather" hidden></div><div class="glass tr" id="tLang" role="group" aria-label="Language"></div><div class="stack" id="titleCard"></div></div>
+<div class="title" id="title" hidden><div class="glass tr" id="tLang" role="group" aria-label="Language"></div><div class="stack" id="titleCard"></div><div class="tosm" id="tOsm"></div><div class="thel">© 2026 Helekt</div></div>
 <div id="modalRoot"></div>
 <div id="saveStatus" role="status" hidden></div>
 
@@ -1354,7 +1363,7 @@ function openSaveFile(fromIntro,note){const back=()=>{closeModal();if(fromIntro)
       let r;try{r=await importCheck(await file.text())}catch(x){r={err:'This file could not be read.'}}if(r.err){msg(r.err);return}const g=r.game,id=tgt,inf=slotInfo(id),occ=inf.st!=='empty';
       slotConfirm({title:'Carry on this life?',body:`<b>${esc2(g.name)}</b> · day ${g.day} · ${kr(g.money)}<br>${occ?`This replaces what is in ${esc2(inf.title)}. A copy of it is kept first.`:'This life will be put in the empty slot.'}`,word:occ?inf.title:'',btn:'Carry on this life',back:()=>again(),
         go:()=>importApply(g,id),done:()=>{if(id===SL.id)location.reload();else again('The life was imported.')}})}})}
-function toast(t){const el=document.createElement('div');el.className='toast';el.textContent=t;document.body.appendChild(el);setTimeout(()=>el.remove(),2400)}
+function toast(t){if(titleOpen())return;const el=document.createElement('div');el.className='toast';el.textContent=t;document.body.appendChild(el);setTimeout(()=>el.remove(),2400)}
 function apply(e){for(const k in e){if(k==='money')S.money+=e[k];else S[k]=clamp(S[k]+e[k],0,k==='energy'&&S.sick>S.day?60:100)}}
 function spendTime(h){needsTick(h);if(REALTIME){syncClock();return}S.hour+=h;if(S.hour>=24){log('You stayed out past midnight and nodded off on the night bus.','minus');sleep(true)}}
 
@@ -1830,7 +1839,7 @@ function callPerson(c){const late=S.hour>=23||S.hour<7,p=c.p;const answers=!late
       const bb=m.querySelector('#b');if(bb)bb.onclick=()=>{closeModal();const h=friendHome(p);openTravel(null,{x:h.x,z:h.z,name:p.n+"'s place",blurb:addrLine(h),arrive:()=>friendVisit(p)})}})},
     answers?null:()=>{toast(late?`${c.n} doesn't pick up: it's the middle of the night`:`${c.n} doesn't answer. Try again later.`)})}
 // someone rings you now and then (family, friends, your manager, or a telemarketer)
-function incomingCall(){if(!S||busy||document.querySelector('.modal')||document.querySelector('.callscr,.ringing')||S.hour>=23||S.hour<8)return;const L=contactsForCall();
+function incomingCall(){if(titleOpen()||!S||busy||document.querySelector('.modal')||document.querySelector('.callscr,.ringing')||S.hour>=23||S.hour<8)return;const L=contactsForCall();
   const r=Math.random();const c=r<0.12?{id:'tm',n:'Okänt nummer',what:'Unknown number'}:L.length?L[Math.floor(Math.random()*L.length)]:null;if(!c)return;
   const el=document.createElement('div');el.className='ringing';el.innerHTML=`<div><small>Incoming call</small><b>${esc2(c.n)}</b><span>${esc2(c.what)}</span><div class="row2"><button class="ok">Answer</button><button class="no">Decline</button></div></div>`;document.body.appendChild(el);
   const kill=()=>el.remove();const t=setTimeout(()=>{kill();if(c.id!=='tm'){toast(`Missed call from ${c.n}`);if(c.p)c.p.fr=Math.max(0,c.p.fr-1)}},15000);
@@ -1916,7 +1925,7 @@ const APPX={weather:['Weather','sun','#f0a020'],chat:['Chatt','chat','#1faa59'],
   people:['Contacts','people','#2a8a52'],dating:['Dating','heart','#d6336c'],jobs:['Jobs','brief','#0b5fa5'],courses:['Courses','cap','#6c3fb5'],housing:['Housing','house','#a84b32'],health:['1177','health','#0b7a75'],
   weather:['Weather','sun','#f0a020'],find:['Find','search','#3b4a57'],vote:['Election','ballot','#1f3f7a'],move:['Movement','fist','#c8342c'],rights:['Rights','scale','#566573'],wait:['Wait 1 h','clock','#23824f']};
 let notifBox=null;
-function notify(app,title,body,open){try{_notify(app,title,body,open)}catch(e){}}
+function notify(app,title,body,open){if(titleOpen())return;try{_notify(app,title,body,open)}catch(e){}}
 function _notify(app,title,body,open){if(!document.body)return;if(!notifBox){notifBox=document.createElement('div');notifBox.className='notifs';document.body.appendChild(notifBox)}
   const a=APPX[app]||APPX.mail;const el=document.createElement('button');el.className='notif';el.innerHTML=`<span class="nic" style="background:${a[2]}">${glyphSVG(a[1])}</span><span class="nt"><b>${esc2(a[0])} · ${esc2(title)}</b><small>${esc2(body)}</small></span><em>now</em>`;
   el.onclick=()=>{el.remove();if(open)open()};notifBox.prepend(el);while(notifBox.children.length>3)notifBox.lastChild.remove();setTimeout(()=>el.classList.add('out'),6000);setTimeout(()=>el.remove(),6500);badges()}
@@ -2403,7 +2412,7 @@ function pickEvent(){
   const m=dt.getMonth(),pool=EVENTS.filter(e=>(!e.months||e.months.includes(m))&&(!e.cond||e.cond()));
   let r=Math.random()*pool.reduce((a,e)=>a+e.w,0);for(const e of pool){r-=e.w;if(r<=0)return e}return null;
 }
-function showEvent(ev){modal(`<h2>${ev.t}</h2><p>${ev.b}</p><div class="choices">${ev.c.map((c,i)=>`<button class="choice" data-i="${i}"><b>${c.l}</b></button>`).join('')}</div>`,m=>{
+function showEvent(ev){if(titleOpen())return;modal(`<h2>${ev.t}</h2><p>${ev.b}</p><div class="choices">${ev.c.map((c,i)=>`<button class="choice" data-i="${i}"><b>${c.l}</b></button>`).join('')}</div>`,m=>{
   m.querySelectorAll('.choice').forEach(b=>b.onclick=()=>{const res=ev.c[+b.dataset.i].fx();closeModal();if(res)log(ev.t+': '+res);after()})})}
 
 /* ---------- jobs & housing ---------- */
@@ -5534,6 +5543,8 @@ const SETKEY='stockholmsliv-settings',SEENKEY='stockholmsliv-intro-seen',LANGKEY
 const SET=(()=>{const d={quality:'auto',live:true,hints:true,tips:true};try{const v=JSON.parse(localStorage.getItem(SETKEY)||'{}');return{quality:['low','auto','high'].includes(v.quality)?v.quality:d.quality,live:v.live!==false,hints:v.hints!==false,tips:v.tips!==false}}catch(e){return d}})();
 const setSave=()=>{try{localStorage.setItem(SETKEY,JSON.stringify(SET))}catch(e){}};
 const applyHints=()=>document.body.classList.toggle('nohints',!SET.hints);applyHints();
+const titleOpen=()=>{const t=document.getElementById('title');return !!t&&!t.hidden};// while the title page is open nothing else in the game answers
+['keydown','keyup','keypress'].forEach(ev=>window.addEventListener(ev,e=>{if(titleOpen())e.stopPropagation()},true));
 const TITLE_ON=(()=>{try{return localStorage.getItem('stockholmsliv-title')!=='0'}catch(e){return true}})();
 let LANG=(()=>{try{const v=localStorage.getItem(LANGKEY);if(v==='sv'||v==='en')return v}catch(e){}return /^sv/i.test(navigator.language||'')?'sv':'en'})();
 const TXT={
@@ -5548,7 +5559,7 @@ const TXT={
    ['Get your life started','Energy, mood, food, hygiene, fun and social fall as time passes. Money, papers and a home come first. The Next up card shows what to do next.'],
    ['Move and act','Walk with the joystick or WASD, tap a street to auto-walk, tap a shop to look inside. Your phone has chats, mail, maps, SL and banking.'],
    ['Your life is saved here','Saves stay in this browser. Use Saves on the title page to keep several lives, export a backup or restore one.']],
-  imgcredit:'Background image: AI-generated',map:'Map © OpenStreetMap contributors',offline:'Weather unavailable offline'},
+  map1:'Map ©',map2:' contributors'},
  sv:{tag:'Lev ditt liv i Stockholm. Riktig karta, riktig tid, riktigt väder.',start:'Starta',cont:'Fortsätt',newlife:'Nytt liv',options:'Alternativ',how:'Så spelar du',settings:'Inställningar',saves:'Sparade liv',
   next:'Nästa',skip:'Hoppa över',back:'Tillbaka',
   newTitle:'Nytt liv?',newBody:'Ditt nuvarande liv i Stockholm går förlorat. Exportera en säkerhetskopia under Sparade liv först om du vill behålla det.',newYes:'Starta ett nytt liv',newNo:'Fortsätt spela',
@@ -5560,24 +5571,20 @@ const TXT={
    ['Kom igång med livet','Energi, humör, mat, hygien, nöje och socialt sjunker med tiden. Pengar, papper och en bostad kommer först. Kortet Nästa steg visar vad du ska göra.'],
    ['Rör dig och agera','Gå med joysticken eller WASD, tryck på en gata för att gå dit, tryck på en butik för att titta in. I telefonen finns chatt, post, kartor, SL och bank.'],
    ['Ditt liv sparas här','Sparade liv finns kvar i den här webbläsaren. Under Sparade liv kan du ha flera liv, exportera en säkerhetskopia eller återställa en.']],
-  imgcredit:'Bakgrundsbild: AI-genererad',map:'Karta © OpenStreetMap-bidragsgivare',offline:'Vädret är inte tillgängligt offline'}};
+  map1:'Karta ©',map2:'-bidragsgivare'}};
 const tt=k=>(TXT[LANG]&&TXT[LANG][k])||TXT.en[k]||k;
-const SV_WX={0:'Klart',1:'Mestadels klart',2:'Delvis molnigt',3:'Mulet',45:'Dimma',48:'Rimfrostdimma',51:'Lätt duggregn',53:'Duggregn',55:'Kraftigt duggregn',56:'Underkylt duggregn',57:'Underkylt duggregn',61:'Lätt regn',63:'Regn',65:'Kraftigt regn',66:'Underkylt regn',67:'Underkylt regn',71:'Lätt snöfall',73:'Snöfall',75:'Kraftigt snöfall',77:'Snökorn',80:'Lätta regnskurar',81:'Regnskurar',82:'Kraftiga regnskurar',85:'Snöbyar',86:'Kraftiga snöbyar',95:'Åska',96:'Åska med hagel',99:'Åska med hagel'};
 const FLAG_SV='<svg viewBox="0 0 22 15" aria-hidden="true"><rect width="22" height="15" fill="#006aa7"/><rect x="6" width="3.2" height="15" fill="#fecc02"/><rect y="5.9" width="22" height="3.2" fill="#fecc02"/></svg>';
 const FLAG_EN='<svg viewBox="0 0 22 15" aria-hidden="true"><rect width="22" height="15" fill="#012169"/><path d="M0 0 22 15M22 0 0 15" stroke="#fff" stroke-width="3"/><path d="M0 0 22 15M22 0 0 15" stroke="#c8102e" stroke-width="1.2"/><path d="M11 0v15M0 7.5h22" stroke="#fff" stroke-width="5"/><path d="M11 0v15M0 7.5h22" stroke="#c8102e" stroke-width="3"/></svg>';
 const seenIntro=()=>{try{return localStorage.getItem(SEENKEY)==='1'}catch(e){return false}};
 const markIntro=()=>{try{localStorage.setItem(SEENKEY,'1')}catch(e){}};
 const TITLE={cur:null,timer:0};
-function tWxDraw(){const el=$('tWx');if(!el)return;const sv=LANG==='sv';let w='';
-  if(SET.live){if(liveFresh()){const n=LIVEWX.now,d=sv?(SV_WX[n.code]||wmo(n.code)[0]):wmo(n.code)[0];w=`${WXICON(n.code)} ${Math.round(n.t)}° ${d}`}else w=tt('offline')}
-  el.hidden=!w;el.innerHTML=w?`<div>${w}</div>`:''}
 function titleModal(open){const t=$('title');t.hidden=true;open();const mo=$('modalRoot');const w=setInterval(()=>{if(!mo.innerHTML){clearInterval(w);t.hidden=false}},400)}
 function titleChrome(){const l=$('tLang');l.innerHTML=`<button data-l="sv" aria-pressed="${LANG==='sv'}" aria-label="Svenska">${FLAG_SV} SV</button><i></i><button data-l="en" aria-pressed="${LANG==='en'}" aria-label="English">${FLAG_EN} EN</button>`;
   l.querySelectorAll('button').forEach(b=>b.onclick=()=>{LANG=b.dataset.l;try{localStorage.setItem(LANGKEY,LANG)}catch(e){}if(TITLE.cur)TITLE.cur()});
-  tWxDraw();clearInterval(TITLE.timer);TITLE.timer=setInterval(tWxDraw,30000);const wx=$('tWx');wx.onclick=()=>{if(liveFresh())titleModal(()=>openWeather())};wx.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();wx.onclick()}};if(SET.live&&!liveFresh())fetchLiveWeather().then(tWxDraw)}
+  $('tOsm').innerHTML=`${tt('map1')} <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>${tt('map2')}`}
 function titleGo(fn){TITLE.cur=fn;fn()}
-function titleHide(){const t=$('title');if(!t)return;clearInterval(TITLE.timer);t.classList.add('out');setTimeout(()=>{if(t.classList.contains('out')){t.hidden=true;t.classList.remove('out');$('titleCard').innerHTML=''}},450)}
-function titleShow(html,bind,bare){const t=$('title'),c=$('titleCard');c.innerHTML=`<div class="card${bare?'':' panel'}">${html}</div>`;t.hidden=false;t.classList.remove('out');titleChrome();bind&&bind(c);const f=c.querySelector('button.primary')||c.querySelector('button');f&&f.focus({preventScroll:true})}
+function titleHide(){const t=$('title');if(!t)return;t.classList.add('out');setTimeout(()=>{if(t.classList.contains('out')){t.hidden=true;t.classList.remove('out');$('titleCard').innerHTML='';document.body.classList.remove('titleopen')}},450)}
+function titleShow(html,bind,bare){const t=$('title'),c=$('titleCard');c.innerHTML=`<div class="card${bare?'':' panel'}">${html}</div>`;t.hidden=false;t.classList.remove('out');document.body.classList.add('titleopen');titleChrome();bind&&bind(c);const f=c.querySelector('button.primary')||c.querySelector('button');f&&f.focus({preventScroll:true})}
 function showTitle(fresh){titleGo(()=>titleMain(fresh))}
 function titleMain(fresh){
   const started=!!(S&&S.flags&&S.flags.started)&&!fresh;
@@ -5585,7 +5592,7 @@ function titleMain(fresh){
     <button class="primary" id="tPlay">${started?tt('cont'):tt('start')}</button>
     ${started?`<button id="tNew">${tt('newlife')}</button>`:''}
     <button id="tOpt">${tt('options')}</button><button id="tHow">${tt('how')}</button><button id="tSet">${tt('settings')}</button><button id="tSaves">${tt('saves')}</button>
-    <small>${tt('map')} · © 2026 Helekt<br>${tt('imgcredit')}</small>`,t=>{
+`,t=>{
     t.querySelector('#tPlay').onclick=()=>{if(started){titleHide();return}const go=()=>{titleHide();intro(REALTIME)};if(!seenIntro())titleGo(()=>introSlides(go));else go()};
     const nw=t.querySelector('#tNew');if(nw)nw.onclick=()=>titleGo(()=>titleNewLife());
     t.querySelector('#tOpt').onclick=()=>titleGo(()=>optionsScreen(()=>titleGo(()=>titleMain(fresh))));

@@ -7,7 +7,7 @@
 <title>Stockholmsliv</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Familjen+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Jost:wght@400;500;600&family=Familjen+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
 <style>
 /* Layout: the city fills the screen. A departure-board strip (time, place, money, need gauges) runs across the top,
    a "Next up" ticket sits under it, and a five-tab dock opens one panel: a drawer on the right on wide screens, a sheet on phones. */
@@ -102,51 +102,127 @@ button:focus-visible,[tabindex]:focus-visible,input:focus-visible,select:focus-v
 .drivehud{font:600 18px var(--mono)}
 .inhud button,.drivehud button{font:700 13px var(--display);letter-spacing:.08em;text-transform:uppercase;border:0;border-radius:8px;padding:8px 14px;background:var(--amber);color:#0A1219}
 .inact{position:absolute;left:50%;bottom:calc(150px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);display:none;font:700 16px var(--display);letter-spacing:.06em;text-transform:uppercase;padding:14px 22px;border-radius:12px;border:0;background:var(--amber);color:#0A1219;box-shadow:0 8px 24px rgba(0,0,0,.4);z-index:5}
-/* Title page: a photograph of Stockholm City Hall at blue hour (credited on the page and in assets/title/CREDITS.md). 4K for big or sharp screens, 1080p by default, 720p for small phones. */
-.title{--bg:url(assets/title/stadshuset-1920.jpg);position:fixed;inset:0;z-index:18;display:grid;place-items:center;align-content:safe center;overflow-y:auto;padding:76px 16px 28px;background:linear-gradient(180deg,rgba(3,8,20,.22),rgba(3,8,20,0) 32%,rgba(3,8,20,.5)),var(--bg) 58% 62%/cover no-repeat,#0c2c62;color:#fff;opacity:1;transition:opacity .45s}
+/* Title page. Design: Swedish and simple. Warm paper, ink-blue text, Swedish blue and yellow used sparingly, geometric Jost lettering, plenty of air.
+   A photograph of Stockholm City Hall at blue hour behind it (assets/title/CREDITS.md). 4K for big or sharp screens, 1080p by default, 720p for small phones. */
+.title{--bg:url(assets/title/stadshuset-1920.jpg);--blue:#006aa7;--yellow:#fecc02;--paper:#faf8f3;--ink:#14233a;--mute:#5d6b80;--line:#dcd8cc;
+  font-family:'Jost','Futura','Century Gothic',system-ui,sans-serif;position:fixed;inset:0;z-index:18;display:grid;place-items:center;align-content:safe center;overflow-y:auto;padding:76px 16px 28px;
+  background:linear-gradient(180deg,rgba(4,12,28,.16),rgba(4,12,28,0) 34%,rgba(4,12,28,.42)),var(--bg) 58% 62%/cover no-repeat,#0c2c62;color:#fff;opacity:1;transition:opacity .45s}
 @media (max-width:700px){.title{--bg:url(assets/title/stadshuset-1280.jpg)}}
 @media (min-width:1700px),(min-width:701px) and (min-resolution:2dppx){.title{--bg:url(assets/title/stadshuset-3840.jpg)}}
-.title[hidden]{display:none}.title.out{opacity:0;pointer-events:none}
-.title .glass{position:fixed;top:max(14px,env(safe-area-inset-top,0px));z-index:1;background:rgba(255,255,255,.17);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.3);color:#fff;text-shadow:0 1px 6px rgba(0,0,0,.35)}
-.title .tr{right:max(14px,env(safe-area-inset-right,0px));border-radius:999px;padding:6px 8px;display:flex;align-items:center;gap:2px}
-.title .tr i{width:1px;height:18px;background:rgba(255,255,255,.4)}
-.title .tr button{display:inline-flex;align-items:center;gap:6px;background:none;border:0;color:#fff;font:600 14px var(--body,inherit);padding:7px 9px;border-radius:999px;cursor:pointer;backdrop-filter:none}
-.title .tr button[aria-pressed=true]{background:rgba(255,255,255,.26)}.title .tr svg{width:22px;height:15px;border-radius:2px;display:block}
-.title .stack{width:min(400px,100%);margin:auto}
-.title .card{display:flex;flex-direction:column;gap:11px;text-align:center}
-.title .btns{width:min(260px,100%);margin:0 auto;display:flex;flex-direction:column;gap:9px}.title .btns button{padding:12px 16px;font-size:16px}
-.title .card.panel{background:rgba(8,16,32,.6);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);padding:22px;border-radius:22px;border:1px solid rgba(255,255,255,.16)}
-.title h1{margin:0;white-space:nowrap;font:700 clamp(32px,11vw,72px)/1 var(--display);letter-spacing:.04em;text-transform:uppercase;color:#fecc02;-webkit-text-stroke:max(2px,.045em) #006aa7;paint-order:stroke fill;filter:drop-shadow(0 3px 14px rgba(0,0,0,.45))}
-.title .stack{width:min(440px,100%)}.title h1 span{color:#006aa7;-webkit-text-stroke:max(3px,.075em) #fecc02}
-.title .tag{margin:2px 0 14px;color:#fff;font-size:15.5px;line-height:1.45;text-shadow:0 1px 10px rgba(0,0,0,.55)}
-.title button{font:500 17px var(--body,inherit);padding:15px 18px;border-radius:999px;border:1px solid rgba(255,255,255,.14);background:rgba(16,26,44,.58);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);color:#fff;cursor:pointer;box-shadow:0 4px 18px rgba(0,0,0,.18)}
-.title button.primary{background:#fbc02d;color:#1b1b1b;border-color:#fbc02d;font-weight:600}
-.title button{position:relative;overflow:hidden;transition:transform .2s cubic-bezier(.2,.8,.2,1),box-shadow .2s ease,letter-spacing .2s ease,background-color .2s ease}
-.title button::after{content:"";position:absolute;inset:0;background:linear-gradient(105deg,transparent 30%,rgba(255,255,255,.3) 50%,transparent 70%);transform:translateX(-130%);pointer-events:none}
-.title button:hover,.title button:focus-visible{transform:translateY(-2px) scale(1.03);letter-spacing:.05em;box-shadow:0 10px 26px rgba(0,0,0,.32);background-color:rgba(36,52,84,.72)}
-.title button.primary:hover,.title button.primary:focus-visible{background-color:#ffd24d}
+.title[hidden]{display:none}.title.out{opacity:0;pointer-events:none}.title [hidden]{display:none!important}
+.title button,.title input,.title select,.title textarea{font-family:inherit}
+/* language switch, top right: a paper pill */
+.title .ttop{position:fixed;top:max(14px,env(safe-area-inset-top,0px));right:max(14px,env(safe-area-inset-right,0px));z-index:1;display:flex;align-items:center;gap:8px}
+.title .glass{position:static;background:rgba(250,248,243,.94);border:1px solid rgba(255,255,255,.6);color:var(--ink);box-shadow:0 6px 24px rgba(5,15,35,.25)}
+.title .tl{border-radius:999px;padding:5px 6px;display:flex;align-items:center}
+.title .ttop>.glass{flex:0 0 auto}.title .tl button{flex:0 0 auto;white-space:nowrap}.title .tl .alabel{flex:0 0 auto;white-space:nowrap}
+@media (max-width:480px){.title .tl .alabel{display:none}.title .tl button{padding:8px 10px}}
+.title .tl button{display:inline-flex;align-items:center;gap:7px;background:none;border:0;color:var(--ink);font:500 14px/1 'Jost',sans-serif;letter-spacing:.06em;padding:8px 12px;border-radius:999px;cursor:pointer;box-shadow:none}
+.title .tr{border-radius:999px;padding:5px 6px;display:flex;align-items:center;gap:2px}
+.title .tr i{width:1px;height:18px;background:var(--line)}
+.title .tr button{display:inline-flex;align-items:center;gap:6px;background:none;border:0;color:var(--ink);font:500 14px/1 'Jost',sans-serif;letter-spacing:.06em;padding:8px 10px;border-radius:999px;cursor:pointer;box-shadow:none}
+.title .tr button[aria-pressed=true]{background:var(--yellow)}.title .tr svg{width:22px;height:15px;border-radius:2px;display:block;box-shadow:0 0 0 1px rgba(20,35,58,.15)}
+.title .stack{width:min(760px,100%);margin:auto}
+.title .card{display:flex;flex-direction:column;gap:12px;text-align:center}
+.title .card.panel{width:min(440px,100%);margin:0 auto}
+/* the name */
+.title h1{margin:0;white-space:nowrap;font:600 clamp(26px,8.6vw,64px)/1 'Jost',sans-serif;letter-spacing:.06em;text-transform:uppercase;color:var(--yellow);-webkit-text-stroke:max(2px,.045em) var(--blue);paint-order:stroke fill;filter:drop-shadow(0 3px 14px rgba(0,0,0,.4))}
+.title h1 span{color:var(--blue);-webkit-text-stroke:max(3px,.075em) var(--yellow)}
+.title .card:not(.panel) .tag{margin:0 0 14px;color:#fff;font-size:16px;font-weight:400;letter-spacing:.02em;line-height:1.45;text-shadow:0 1px 12px rgba(0,0,0,.55)}
+/* buttons: round, quiet, one yellow call to action */
+.title .btns{width:min(260px,100%);margin:0 auto;display:flex;flex-direction:column;gap:10px}
+.title button{position:relative;overflow:hidden;font:500 16px/1.2 'Jost',sans-serif;letter-spacing:.03em;padding:13px 18px;border-radius:999px;border:1px solid rgba(255,255,255,.55);background:rgba(250,248,243,.92);color:var(--ink);cursor:pointer;box-shadow:0 4px 16px rgba(5,15,35,.2);
+  transition:transform .2s cubic-bezier(.2,.8,.2,1),box-shadow .2s ease,letter-spacing .2s ease,background-color .2s ease}
+.title button.primary{background:var(--yellow);border-color:var(--yellow);font-weight:600}
+.title button::after{content:"";position:absolute;inset:0;background:linear-gradient(105deg,transparent 30%,rgba(255,255,255,.55) 50%,transparent 70%);transform:translateX(-130%);pointer-events:none}
+.title button:hover,.title button:focus-visible{transform:translateY(-2px) scale(1.03);letter-spacing:.07em;box-shadow:0 12px 28px rgba(5,15,35,.3);background-color:#fff}
+.title button.primary:hover,.title button.primary:focus-visible{background-color:#ffd83a}
 .title button:hover::after,.title button:focus-visible::after{transform:translateX(130%);transition:transform .7s ease}
 .title button:active{transform:translateY(0) scale(.99)}
-.title button:focus-visible{outline:2px solid #fff;outline-offset:2px}
-.title .seg button:hover,.title .seg button:focus-visible{letter-spacing:.02em;transform:translateY(-1px) scale(1.04)}
-@media (prefers-reduced-motion:reduce){.title button,.title button::after{transition:none!important}.title button:hover,.title button:focus-visible{transform:none;letter-spacing:normal}.title button:hover::after{transform:translateX(-130%)}}
-.title .tosm,.title .thel{position:fixed;bottom:max(10px,env(safe-area-inset-bottom,0px));z-index:1;font-size:12px;line-height:1.4;color:#e9eef6;text-shadow:0 1px 8px rgba(0,0,0,.7)}
+.title button:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+@media (prefers-reduced-motion:reduce){.title button,.title button::after{transition:none!important}.title button:hover,.title button:focus-visible{transform:none;letter-spacing:.03em}.title button:hover::after{transform:translateX(-130%)}}
+/* panels (choice, form, options, slides): a Swedish-blue gradient with a thin flag-coloured edge, paper-white fields, one yellow action */
+.title{--panel-top:#1767b5;--panel-mid:#2c7bc3;--panel-bot:#4a8fcd}
+.title .card.panel{position:relative;overflow-y:auto;overscroll-behavior:contain;max-height:calc(100vh - 90px);max-height:calc(100dvh - 96px);background:linear-gradient(180deg,var(--panel-top) 0%,var(--panel-mid) 55%,var(--panel-bot) 100%);color:#fff;padding:30px 26px 22px;border-radius:20px;border:0;box-shadow:0 24px 64px rgba(4,12,28,.42);text-align:left;gap:14px;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.55) transparent}
+.title .card.panel>*{flex-shrink:0}
+.title .card.panel::before{content:"";position:absolute;left:0;right:0;top:0;height:5px;background:linear-gradient(90deg,var(--yellow) 0 32%,#fff 32% 36%,var(--yellow) 36% 100%);opacity:.95}
+.title .card.panel h2{margin:0;font:600 24px/1.15 'Jost',sans-serif;letter-spacing:.01em;text-transform:none;text-align:left;color:#fff}
+.title .card.panel .tag{margin:0;color:rgba(255,255,255,.88);font-size:14.5px;line-height:1.5;text-shadow:none}
+.title .card.panel .btns{width:100%}
+.title .card.panel button{box-shadow:none;border:1px solid rgba(255,255,255,.55);background:rgba(255,255,255,.12);color:#fff}
+.title .card.panel button.primary{background:var(--yellow);border-color:var(--yellow);color:var(--ink)}
+.title .card.panel button:hover,.title .card.panel button:focus-visible{box-shadow:0 8px 20px rgba(4,12,28,.22);background-color:rgba(255,255,255,.26);border-color:#fff}
+.title .card.panel button.primary:hover,.title .card.panel button.primary:focus-visible{background-color:#ffd83a;border-color:#ffd83a}
+.title .card.panel button::after{background:linear-gradient(105deg,transparent 30%,rgba(255,255,255,.4) 50%,transparent 70%)}
+.title .card.panel button:focus-visible{outline:2px solid #fff;outline-offset:2px}
+.title .steps{margin:-8px 0 0;font-size:12.5px;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.82);text-align:left}
+.title .frow{display:flex;flex-direction:column;gap:6px;text-align:left}.title .frow.two{flex-direction:row;gap:12px}.title .frow.two>div{flex:1;display:flex;flex-direction:column;gap:6px;min-width:0}
+.title label{font-size:12px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:rgba(255,255,255,.9)}
+.title label em{font-style:normal;text-transform:none;letter-spacing:0;color:rgba(255,255,255,.7);font-weight:400}
+.title input,.title select,.title textarea{font:400 16px 'Jost',sans-serif;padding:11px 13px;border-radius:10px;border:1px solid transparent;background:#fff;color:var(--ink);min-width:0;width:100%}
+.title textarea{resize:vertical;min-height:72px;line-height:1.4}
+.title input::placeholder,.title textarea::placeholder{color:#8794a6}
+.title input:focus-visible,.title select:focus-visible,.title textarea:focus-visible{outline:0;border-color:var(--yellow);box-shadow:0 0 0 3px rgba(254,204,2,.45)}
+.title select option{color:var(--ink)}
+.title .nfnote{font-size:14px;color:var(--ink);background:#fff4c2;border-radius:10px;padding:9px 12px;text-align:left}
+.title .nferr{margin:0;color:#ffe3de;font-size:14px;font-weight:500;min-height:1.2em;text-align:left}
+.title .frow small,.title .card.panel small{margin:2px 0 0;color:rgba(255,255,255,.85);text-align:left;font-size:12.5px;line-height:1.5;text-shadow:none}
+.chips{display:flex;flex-wrap:wrap;gap:7px}
+.title .chips button{padding:7px 13px;font-size:14px;border-radius:999px;box-shadow:none;letter-spacing:.01em}
+.title .card.panel .chips button[aria-pressed=true]{background:var(--yellow);border-color:var(--yellow);color:var(--ink);font-weight:500}
+.title .chips button[aria-pressed=true]::after{display:none}
+.title .langadd{display:flex;gap:8px}.title .langadd select{flex:1}.title .langadd select#nfLangLv{flex:0 0 112px}
+.title .card.panel .langadd button{flex:0 0 auto;padding:10px 16px;border-radius:10px;background:#fff;border-color:#fff;color:var(--ink);font-weight:500}
+.title .card.panel .langadd button:hover{background-color:var(--yellow);border-color:var(--yellow)}
+.title .setrow{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 0;border-top:1px solid rgba(255,255,255,.25);text-align:left}.title .setrow b{display:block;font-size:15.5px;font-weight:600}
+.title .setrow small{display:block}
+.title .seg{display:flex;gap:5px}.title .seg button{padding:8px 13px;font-size:13.5px;border-radius:999px;box-shadow:none;letter-spacing:.01em}
+.title .card.panel .seg button.on{background:var(--yellow);border-color:var(--yellow);color:var(--ink);font-weight:500}
+.title .slides{min-height:140px;display:flex;flex-direction:column;gap:8px;text-align:left}.title .slides h3{margin:0;font:600 21px 'Jost',sans-serif;color:#fff}.title .slides p{margin:0;color:rgba(255,255,255,.94);font-size:16px;line-height:1.55}
+.title .dots{display:flex;gap:7px;justify-content:center;margin:4px 0}.title .dots i{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.4)}.title .dots i.on{background:var(--yellow)}
+/* account screen */
+.title .tabs{width:100%}.title .tabs button{flex:1}
+.title .provs{display:flex;flex-direction:column;gap:8px}
+.title .card.panel .prov{display:flex;align-items:center;gap:12px;justify-content:flex-start;padding:10px 14px;border-radius:12px;background:#fff;border-color:#fff;color:var(--ink);text-align:left}
+.title .prov i{flex:0 0 26px;height:26px;border-radius:50%;display:grid;place-items:center;font:600 14px/1 'Jost',sans-serif;font-style:normal}
+.title .prov span{flex:1}.title .soon{font-style:normal;font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;background:#fff4c2;color:#6b5800;border-radius:999px;padding:3px 8px}
+.title .or{display:flex;align-items:center;gap:10px;color:rgba(255,255,255,.85);font-size:13px;letter-spacing:.08em;text-transform:uppercase}.title .or::before,.title .or::after{content:"";flex:1;height:1px;background:rgba(255,255,255,.35)}
+.title .chk{display:flex;gap:10px;align-items:flex-start;text-transform:none;letter-spacing:0;font-size:14.5px;font-weight:400;color:#fff}.title .chk input{width:20px;height:20px;flex:0 0 20px;margin:1px 0 0;accent-color:var(--yellow)}
+.title .acnote{margin:0;color:#fff;background:rgba(255,255,255,.16);border-radius:10px;padding:0;font-size:14px;line-height:1.5}.title .acnote:not(:empty){padding:10px 12px}
+/* the form's buttons stay in view at the bottom while the fields scroll */
+.title .actions{position:sticky;bottom:-22px;margin:2px -26px -22px;padding:14px 26px 22px;display:flex;flex-direction:column;gap:10px;background:linear-gradient(180deg,rgba(74,143,205,0),var(--panel-bot) 26%)}
+/* resume card and saved status */
+.title .resume{display:flex;flex-direction:column;gap:2px;background:rgba(255,255,255,.16);border-radius:12px;padding:12px 14px}.title .resume b{font-size:18px;font-weight:600}.title .resume span{font-size:14px;color:rgba(255,255,255,.88)}
+.title small.saved:not(:empty){display:inline-block;align-self:flex-start;background:rgba(254,204,2,.18);color:#fff;border-radius:999px;padding:5px 12px;font-size:13px}
+.title .card.panel small a{color:#fff;text-decoration:underline}
+/* slider (graphics) */
+.title .setrow.col{flex-direction:column;align-items:stretch;gap:10px}
+.title .slider{display:flex;flex-direction:column;gap:6px;padding:0 4px}
+.title .slider input[type=range]{--p:50%;-webkit-appearance:none;appearance:none;width:100%;height:28px;padding:0;margin:0;background:transparent;border:0;cursor:pointer}
+.title .slider input[type=range]::-webkit-slider-runnable-track{height:6px;border-radius:999px;background:linear-gradient(90deg,var(--yellow) var(--p),rgba(255,255,255,.32) var(--p))}
+.title .slider input[type=range]::-moz-range-track{height:6px;border-radius:999px;background:rgba(255,255,255,.32)}
+.title .slider input[type=range]::-moz-range-progress{height:6px;border-radius:999px;background:var(--yellow)}
+.title .slider input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:24px;height:24px;margin-top:-9px;border-radius:50%;background:#fff;border:0;box-shadow:0 1px 6px rgba(4,12,28,.4);transition:transform .15s ease}
+.title .slider input[type=range]::-moz-range-thumb{width:24px;height:24px;border-radius:50%;background:#fff;border:0;box-shadow:0 1px 6px rgba(4,12,28,.4)}
+.title .slider input[type=range]:hover::-webkit-slider-thumb{transform:scale(1.1)}
+.title .slider input[type=range]:focus-visible{outline:0}
+.title .slider input[type=range]:focus-visible::-webkit-slider-thumb{box-shadow:0 0 0 4px rgba(254,204,2,.55),0 1px 6px rgba(4,12,28,.4)}
+.title .slider input[type=range]:focus-visible::-moz-range-thumb{box-shadow:0 0 0 4px rgba(254,204,2,.55),0 1px 6px rgba(4,12,28,.4)}
+.title .ticks{display:flex;justify-content:space-between;font-size:13px;letter-spacing:.04em;color:rgba(255,255,255,.75)}
+.title .ticks span{cursor:pointer;padding:2px 4px}.title .ticks span.on{color:#fff;font-weight:600}
+@media (prefers-reduced-motion:reduce){.title .slider input[type=range]::-webkit-slider-thumb{transition:none}}
+/* toggle switches (on and off settings) */
+.title .card.panel .tog{position:relative;flex:0 0 auto;width:52px;height:30px;padding:0;border-radius:999px;border:1px solid rgba(255,255,255,.6);background:rgba(255,255,255,.18);box-shadow:none;overflow:hidden;cursor:pointer;transition:background-color .2s ease,border-color .2s ease}
+.title .card.panel .tog::after{display:none}
+.title .card.panel .tog::before{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;box-shadow:0 1px 4px rgba(4,12,28,.35);transition:transform .2s cubic-bezier(.2,.8,.2,1)}
+.title .card.panel .tog[aria-checked=true]{background:var(--yellow);border-color:var(--yellow)}
+.title .card.panel .tog[aria-checked=true]::before{transform:translateX(22px)}
+.title .card.panel .tog:hover,.title .card.panel .tog:focus-visible{transform:none;letter-spacing:normal;box-shadow:0 0 0 3px rgba(255,255,255,.28);background-color:rgba(255,255,255,.3)}
+.title .card.panel .tog[aria-checked=true]:hover,.title .card.panel .tog[aria-checked=true]:focus-visible{background-color:#ffd83a}
+@media (prefers-reduced-motion:reduce){.title .card.panel .tog,.title .card.panel .tog::before{transition:none}}
+/* corners */
+.title .tosm,.title .thel{position:fixed;bottom:max(10px,env(safe-area-inset-bottom,0px));z-index:1;font-size:12px;line-height:1.4;color:#fff;text-shadow:0 1px 8px rgba(0,0,0,.7)}
 .title .tosm{left:max(14px,env(safe-area-inset-left,0px))}.title .thel{right:max(14px,env(safe-area-inset-right,0px))}.title .tosm a{color:inherit}
-
-.title .frow{display:flex;flex-direction:column;gap:5px;text-align:left}.title .frow.two{flex-direction:row;gap:10px}.title .frow.two>div{flex:1;display:flex;flex-direction:column;gap:5px;min-width:0}
-.title [hidden]{display:none!important}
-.title textarea{font:500 15px var(--body,inherit);padding:11px 13px;border-radius:12px;border:1px solid rgba(255,255,255,.22);background:rgba(10,18,34,.72);color:#fff;width:100%;resize:vertical;min-height:70px}
-.title input::placeholder,.title textarea::placeholder{color:#9fb0c8}.title .steps{font-size:12.5px;letter-spacing:.12em;text-transform:uppercase;color:#d7e0ee;margin-top:-6px}
-.title label em{font-style:normal;text-transform:none;letter-spacing:0;color:#aebbd0;font-weight:500}
-.chips{display:flex;flex-wrap:wrap;gap:6px}.title .chips button{padding:7px 12px;font-size:13.5px;border-radius:999px;box-shadow:none}.title .chips button[aria-pressed=true]{background:#fbc02d;color:#1b1b1b;border-color:#fbc02d;font-weight:600}
-.title .card.panel{max-height:calc(100vh - 90px);overflow-y:auto}
-.title label{font-size:12.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#d7e0ee}
-.title input,.title select{font:500 16px var(--body,inherit);padding:11px 13px;border-radius:12px;border:1px solid rgba(255,255,255,.22);background:rgba(10,18,34,.72);color:#fff;min-width:0;width:100%}
-.title input:focus-visible,.title select:focus-visible{outline:2px solid #fbc02d;outline-offset:1px}.title select option{color:#111}
-.title .nfnote{font-size:14px;color:#fff;background:rgba(251,192,45,.16);border:1px solid rgba(251,192,45,.4);border-radius:12px;padding:9px 12px;text-align:left}
-.title .nferr{margin:0;color:#ffb4a8;font-size:13.5px;min-height:1.2em}
-.title .frow small{margin:2px 0 0;color:#cfd8e6;text-align:left}
-.title .card.panel .primary,.title .card.panel>button{align-self:stretch}
 body.titleopen .stage,body.titleopen .dock,body.titleopen #drawer,body.titleopen .joy,body.titleopen .runbtn{pointer-events:none}
 .title small{color:#e9eef6;font-size:12px;margin-top:6px;text-shadow:0 1px 8px rgba(0,0,0,.6);line-height:1.5}.title small a{color:inherit}
 .slides{min-height:150px;display:flex;flex-direction:column;gap:8px;text-align:left}.slides h3{margin:0;font-size:19px}.slides p{margin:0;color:#e1e8f2;font-size:15px;line-height:1.5}
@@ -501,7 +577,7 @@ h2.hero{font-size:34px;background:linear-gradient(90deg,var(--sweblue),#3a86ff 4
     <div class="pane" data-pane="diary" hidden><div class="sec"><ul class="log" id="log"></ul></div></div>
   </div>
 </aside>
-<div class="title" id="title" hidden><div class="glass tr" id="tLang" role="group" aria-label="Language"></div><div class="stack" id="titleCard"></div><div class="tosm" id="tOsm"></div><div class="thel">© 2026 Helekt</div></div>
+<div class="title" id="title" hidden><div class="ttop"><div class="glass tl" id="tAcct"></div><div class="glass tr" id="tLang" role="group" aria-label="Language"></div></div><div class="stack" id="titleCard"></div><div class="tosm" id="tOsm"></div><div class="thel">© 2026 Helekt</div></div>
 <div id="modalRoot"></div>
 <div id="saveStatus" role="status" hidden></div>
 
@@ -2098,7 +2174,7 @@ const TRAITS_ME=[['outgoing','Outgoing',{social:10,charisma:8}],['shy','Shy',{ch
   ['creative','Creative',{fun:5,charisma:3}],['practical','Practical',{skill:3}],['funny','Funny',{charisma:6}],['kind','Kind',{social:5}],['romantic','Romantic',{charisma:2}],['sporty','Sporty',{fitness:12}]];
 const HOBBIES=['Football','Gym','Running','Music','Dancing','Cooking','Gaming','Reading','Hiking','Art','Photography','Tech','Fashion','Faith community','Volunteering','Movies'];
 const MARITAL=[['single','Single'],['relationship','In a relationship'],['married','Married'],['divorced','Divorced'],['widowed','Widowed']];
-const EDU=[['basic','Compulsory school',0],['upper','Upper secondary (gymnasium)',4],['uni','University degree',10],['phd','PhD',16]];
+const EDU=[['none','No formal education',0],['basic','Compulsory school',0],['upper','Upper secondary (gymnasium)',4],['uni','University degree',10],['phd','PhD',16]];
 const introDefaults=()=>({kind:'stockholm',over:false,city:SWE_CITIES[0][0],nat:'Nigeria',from:'Nigeria',route:0,purpose:'work',name:'Alex',age:27,gender:'m',marital:'single',kids:0,edu:'upper',prof:'',eng:'good',traits:['kind'],hobbies:['Music'],bio:'',look:'',skin:'',height:'avg',build:'avg',hair:'auto',headw:'none',headCol:'0x1d2733',beard:'none',glasses:'no',pref:'any',asp:''});
 function lifeFromForm(F){const natG=(COUNTRIES.find(c=>c[0]===F.nat)||[])[2];
         const bg=F.kind==='stockholm'?(F.over?'over':'local'):F.kind==='sweden'?'domestic':natG==='se'?'domestic':F.status==='student'||F.purpose==='study'?'student':F.status==='asylum'?'asylum':F.status==='permanent'?'permanent':'newcomer';
@@ -2155,8 +2231,8 @@ function intro(auto){const F=introDefaults();
       m.querySelectorAll('.pill[data-h]').forEach(b=>b.onclick=()=>{const k=b.dataset.h;F.hobbies=F.hobbies.includes(k)?F.hobbies.filter(x=>x!==k):[...F.hobbies,k];b.classList.toggle('on',F.hobbies.includes(k))});
       m.querySelector('#go').onclick=()=>{sync();closeModal();finish()}})};
   draw()}
-function applyMe(o){const me={age:o.age,gender:o.gender,genderLabel:o.genderLabel||'',nat:o.kind==='abroad'?o.nat:'Sweden',bornSweden:o.kind!=='abroad',homeTown:o.homeTown||'',skills:o.skills||[],marital:o.marital,kids:o.kids,edu:o.edu,prof:o.prof,eng:o.eng,traits:o.traits,hobbies:o.hobbies,bio:o.bio};S.me=me;
-  S.skill=clamp(S.skill+2*(me.skills||[]).length,0,100);if(o.svLevel&&S.svenska<100)S.svenska=Math.max(S.svenska,({none:0,basic:15,some:40,fluent:80})[o.svLevel]||0);
+function applyMe(o){const me={age:o.age,gender:o.gender,genderLabel:o.genderLabel||'',nat:o.kind==='abroad'?o.nat:'Sweden',bornSweden:o.kind!=='abroad',homeTown:o.homeTown||'',skills:o.skills||[],languages:o.languages||[],marital:o.marital,kids:o.kids,edu:o.edu,prof:o.prof,eng:o.eng,traits:o.traits,hobbies:o.hobbies,bio:o.bio};S.me=me;
+  S.skill=clamp(S.skill+2*(me.skills||[]).length,0,100);if(o.svLevel&&S.svenska<100)S.svenska=Math.max(S.svenska,({none:0,basic:15,good:40,some:40,fluent:80})[o.svLevel]||0);S.skill=clamp(S.skill+Math.min(3,(me.languages||[]).filter(x=>x.lv==='fluent').length),0,100);
   const e=EDU.find(x=>x[0]===o.edu);if(e)S.skill=clamp(S.skill+e[2],0,100);if(/develop|program|engineer|it\b|data/i.test(o.prof||''))S.skill=clamp(S.skill+8,0,100);
   for(const t of o.traits||[]){const T=TRAITS_ME.find(x=>x[0]===t);if(T)for(const k in T[2])S[k]=clamp((S[k]||0)+T[2][k],0,100)}
   if(o.eng==='fluent')S.skill=clamp(S.skill+3,0,100);
@@ -2283,7 +2359,7 @@ function airportSpot(what){if(!S.flags.arlanda)return;
 
 function renderAbout(){const el=document.getElementById('aboutSec');if(!el||!S)return;const me=S.me;if(!me){el.innerHTML='';return}const nat=COUNTRIES.find(c=>c[0]===me.nat);const p=partner()||S.people.find(q=>q.st==='married');
   el.innerHTML=`<h3>About ${esc2(S.name)}</h3><div class="aboutme"><div>${nat?nat[1]+' ':''}${esc2(me.nat)} · ${me.age} years · ${esc2(me.genderLabel||({m:'man',f:'woman',x:'non-binary'})[me.gender]||'')}${me.prof?' · '+esc2(me.prof):''}${me.homeTown?' · from '+esc2(me.homeTown):''}</div>
-    <div>${(MARITAL.find(x=>x[0]===me.marital)||['',''])[1]}${p?` (${esc2(p.n)}${p.away?', in '+esc2(p.away):''})`:''}${me.kids?` · ${me.kids} child${me.kids>1?'ren':''}`:''} · ${(EDU.find(x=>x[0]===me.edu)||['',''])[1]} · English: ${me.eng}</div>
+    <div>${(MARITAL.find(x=>x[0]===me.marital)||['',''])[1]}${p?` (${esc2(p.n)}${p.away?', in '+esc2(p.away):''})`:''}${me.kids?` · ${me.kids} child${me.kids>1?'ren':''}`:''} · ${(EDU.find(x=>x[0]===me.edu)||['',''])[1]} · ${(me.languages&&me.languages.length)?'Languages: '+me.languages.map(x=>esc2(x.l)+' ('+x.lv+')').join(', '):'English: '+me.eng}</div>
     ${S.route?`<div>Arrived: ${esc2(S.route)}</div>`:S.from?`<div>From ${esc2(S.from)}</div>`:''}
     <div class="tags">${(me.traits||[]).map(t=>`<i class="t">${(TRAITS_ME.find(x=>x[0]===t)||['',t])[1]}</i>`).join('')}${(me.skills||[]).map(h=>`<i class="t">${esc2(h)}</i>`).join('')}${(me.hobbies||[]).map(h=>`<i>${esc2(h)}</i>`).join('')}</div>${me.bio?`<div class="note">"${esc2(me.bio)}"</div>`:''}</div>`}
 lifeMailHooks();
@@ -4645,6 +4721,7 @@ const POSTERS_CITY=[['#f2b705','#1b1b1b','KANELBULLE','Färskt varje morgon','Ba
     doors:()=>{for(let i=0;i<5;i++)tone(1250,i*0.26,0.14,0.06,'square')},ding:()=>{tone(1046,0,0.8,0.09);tone(1318,0.2,0.9,0.08)},clack:()=>{tone(70,0,0.12,0.12,'triangle');tone(62,0.09,0.12,0.1,'triangle')}};
   function say(t){if(!AUD.on||!window.speechSynthesis)return;try{const u=new SpeechSynthesisUtterance(t),v=speechSynthesis.getVoices().find(v=>/^sv/i.test(v.lang));if(v){u.voice=v;u.lang=v.lang}else u.lang='sv-SE';u.rate=0.95;speechSynthesis.cancel();speechSynthesis.speak(u)}catch(e){}}
   function audToggle(){AUD.on=!AUD.on;try{localStorage.setItem('sl-cs-sound',AUD.on?'1':'0')}catch(e){}if(AUD.on)audInit();else{['crowd','rumble','wind'].forEach(n=>audSet(n,0));try{speechSynthesis.cancel()}catch(e){}}csHudSync(true)}
+  window.addEventListener('stockholmsliv-sound',e=>{const on=!!e.detail;if(AUD.on===on)return;AUD.on=on;if(on)audInit();else{['crowd','rumble','wind'].forEach(n=>audSet(n,0));try{speechSynthesis.cancel()}catch(x){}}});
   function fadeDo(fn,hold){fadeEl.classList.add('on');setTimeout(()=>{try{fn()}catch(e){console.error(e)}setTimeout(()=>fadeEl.classList.remove('on'),hold||140)},380)}
 
   // ---------- building helpers (geometry merged per material, canvas signs) ----------
@@ -5577,6 +5654,11 @@ let LANG=(()=>{try{const v=localStorage.getItem(LANGKEY);if(v==='sv'||v==='en')r
 const TXT={
  en:{tag:'Live a life in Stockholm. Real map, real time, real weather.',start:'Start',cont:'Continue',newlife:'New life',options:'Options',how:'How to Play',settings:'Settings',saves:'Saves',
   next:'Next',skip:'Skip',back:'Back',
+  aboutBtn:'About and credits',abMap:'Map and places',abContrib:'contributors',abPlaces:'Countries and home towns',abWeather:'Weather',abTransit:'Public transport',abMoney:'Exchange rates',abVia:'via',abFlights:'Flights',abRoutes:'routes from',abType:'Lettering',abEngine:'3D engine',
+  sound:'Sound',soundD:'Station sounds and announcements at Stockholm Central.',reloadNow:'Apply now (reloads the page)',resetSet:'Reset to defaults',done:'Done',slot:'Slot',
+  acSignIn:'Sign in',acLogin:'Log in',acCreate:'Create account',acWith:'Continue with',acSoonBadge:'Soon',acOr:'or',acName:'Display name',acEmail:'E-mail',acAge:'I am at least 13 years old',acTerms:'I accept the privacy policy and terms',
+  acLink:'Send me a log-in link',acCreateBtn:'Create account',acGuest:'Continue as guest',acNote:'Accounts are not switched on yet. Nothing was sent or stored. You can play as a guest: your life saves in this browser.',
+  errEmail:'Enter a valid e-mail address.',errAcName:'Fill in a display name.',errTicks:'Please tick both boxes to continue.',acCloud:'Sign in to keep your lives safe in the cloud (coming soon).',
   choose:'What would you like to do?',contLife:'Continue your life',savedGames:'Saved games',newLifeGo:'Start a new life',
   loadTitle:'Saved games',empty:'Empty',ended:'Ended',unreadable:'Cannot be read',load:'Load',current:'Current',dayN:'Day',noSaves:'No saved lives yet.',manage:'Manage saves (backup, import)',
   formTitle:'Your details',fName:'Name',fAge:'Age',fGender:'Gender',male:'Male',female:'Female',other:'Other',fNat:'Nationality',bornYes:'Born in Sweden: yes',bornNo:'Born in Sweden: no (you were born abroad)',fTown:'Home town',fStatus:'Immigration status',
@@ -5588,14 +5670,14 @@ const TXT={
   sn_eu:'EU/EEA citizens do not need a residence permit. First step: register at Skatteverket.',
   fGo:'Start my life',errName:'Please enter a name.',errAge:'Please select your age.',
   step:'Step',phName:'Fill in your name',phAge:'Select your age',phGender:'Select your gender identity',fGenderText:'Your gender identity, in your own words',fTownAbroad:'Home town (in your country)',townOther:'Other (write it in)',townWrite:'Your home town',
-  fEdu:'Education',fProf:'Profession or field',phProf:'For example nurse, developer, cook',fSkills:'Skills',upTo:'up to',fEng:'English',fSv:'Swedish',fTraits:'About you: personality',fHobbies:'Interests',fMarital:'Relationship',fKids:'Children',fBio:'About you, in your own words',phBio:'A few lines about who you are and what you hope for in Stockholm',
+  fEdu:'Education',fProf:'Profession or field',phProf:'For example nurse, developer, cook',fSkills:'Skills',upTo:'up to',fLangs:'Languages',langHint:'add every language you speak',fLevel:'Level',add:'Add',removeLang:'Tap to remove',fTraits:'About you: personality',fHobbies:'Interests',fMarital:'Relationship',fKids:'Children',fBio:'About you, in your own words',phBio:'A few lines about who you are and what you hope for in Stockholm',
   tooMany:'You have chosen the most you can. Tap one to remove it first.',errGender:'Please select your gender identity.',errTown:'Please write your home town.',
 
 
   newTitle:'New life?',newBody:'Your current life in Stockholm will be lost. Export a backup from Saves first if you want to keep it.',newYes:'Start a new life',newNo:'Keep playing',
   optTitle:'Options',hints:'Control hints',hintsD:'The line of tips at the bottom of the screen.',tips:'Weather tips',tipsD:'A short message about what to wear when the weather changes.',on:'On',off:'Off',
   setTitle:'Settings',gfx:'Graphics',gfxD:'Low saves battery; High is sharper on a good screen. Applies after a reload.',low:'Low',auto:'Auto',high:'High',live:'Live data',liveD:'Weather, flights and departures from the internet. Off keeps the game offline-friendly.',
-  intro:'Introduction',introD:'See the how-to-play slides again on the next new life.',replay:'Replay',saved:'Saved. Reload the page to apply.',savedNow:'Saved.',replayed:'The introduction will show on your next new life.',
+  intro:'Introduction',introD:'See the how-to-play slides again on the next new life.',replay:'Replay',saved:'✓ Saved. Graphics and live data apply after a reload.',savedNow:'✓ Saved',replayed:'The introduction will show on your next new life.',
   about:'Time follows Stockholm. The map is © OpenStreetMap contributors. Weather from Open-Meteo.',langNote:'The title page, introduction and menus are in your language. The game itself is in English for now.',
   slides:[['A real city','Stockholmsliv is built on OpenStreetMap: real streets, stations and shops. The clock follows Stockholm time, and the weather and SL departures are live when you are online.'],
    ['Get your life started','Energy, mood, food, hygiene, fun and social fall as time passes. Money, papers and a home come first. The Next up card shows what to do next.'],
@@ -5604,6 +5686,11 @@ const TXT={
   map1:'Map ©',map2:' contributors'},
  sv:{tag:'Lev ditt liv i Stockholm. Riktig karta, riktig tid, riktigt väder.',start:'Starta',cont:'Fortsätt',newlife:'Nytt liv',options:'Alternativ',how:'Så spelar du',settings:'Inställningar',saves:'Sparade liv',
   next:'Nästa',skip:'Hoppa över',back:'Tillbaka',
+  aboutBtn:'Om och tack',abMap:'Karta och platser',abContrib:'-bidragsgivare',abPlaces:'Länder och hemorter',abWeather:'Väder',abTransit:'Kollektivtrafik',abMoney:'Växelkurser',abVia:'via',abFlights:'Flyg',abRoutes:'rutter från',abType:'Typsnitt',abEngine:'3D-motor',
+  sound:'Ljud',soundD:'Ljud och utrop på Stockholms central.',reloadNow:'Verkställ nu (laddar om sidan)',resetSet:'Återställ standard',done:'Klar',slot:'Plats',
+  acSignIn:'Logga in',acLogin:'Logga in',acCreate:'Skapa konto',acWith:'Fortsätt med',acSoonBadge:'Snart',acOr:'eller',acName:'Visningsnamn',acEmail:'E-post',acAge:'Jag är minst 13 år',acTerms:'Jag godkänner integritetspolicyn och villkoren',
+  acLink:'Skicka en inloggningslänk',acCreateBtn:'Skapa konto',acGuest:'Fortsätt som gäst',acNote:'Konton är inte aktiverade ännu. Ingenting skickades eller sparades. Du kan spela som gäst: ditt liv sparas i den här webbläsaren.',
+  errEmail:'Ange en giltig e-postadress.',errAcName:'Fyll i ett visningsnamn.',errTicks:'Kryssa i båda rutorna för att fortsätta.',acCloud:'Logga in för att spara dina liv säkert i molnet (kommer snart).',
   choose:'Vad vill du göra?',contLife:'Fortsätt ditt liv',savedGames:'Sparade spel',newLifeGo:'Starta ett nytt liv',
   loadTitle:'Sparade spel',empty:'Tom',ended:'Avslutat',unreadable:'Kan inte läsas',load:'Ladda',current:'Aktuellt',dayN:'Dag',noSaves:'Inga sparade liv ännu.',manage:'Hantera sparade liv (säkerhetskopia, import)',
   formTitle:'Dina uppgifter',fName:'Namn',fAge:'Ålder',fGender:'Kön',male:'Man',female:'Kvinna',other:'Annat',fNat:'Nationalitet',bornYes:'Född i Sverige: ja',bornNo:'Född i Sverige: nej (du är född utomlands)',fTown:'Hemort',fStatus:'Migrationsstatus',
@@ -5615,14 +5702,14 @@ const TXT={
   sn_eu:'EU/EES-medborgare behöver inget uppehållstillstånd. Första steget: folkbokför dig hos Skatteverket.',
   fGo:'Starta mitt liv',errName:'Skriv ett namn.',errAge:'Välj din ålder.',
   step:'Steg',phName:'Fyll i ditt namn',phAge:'Välj din ålder',phGender:'Välj din könsidentitet',fGenderText:'Din könsidentitet, med egna ord',fTownAbroad:'Hemort (i ditt land)',townOther:'Annan (skriv in)',townWrite:'Din hemort',
-  fEdu:'Utbildning',fProf:'Yrke eller område',phProf:'Till exempel sjuksköterska, utvecklare, kock',fSkills:'Färdigheter',upTo:'högst',fEng:'Engelska',fSv:'Svenska',fTraits:'Om dig: personlighet',fHobbies:'Intressen',fMarital:'Relation',fKids:'Barn',fBio:'Om dig, med egna ord',phBio:'Några rader om vem du är och vad du hoppas på i Stockholm',
+  fEdu:'Utbildning',fProf:'Yrke eller område',phProf:'Till exempel sjuksköterska, utvecklare, kock',fSkills:'Färdigheter',upTo:'högst',fLangs:'Språk',langHint:'lägg till alla språk du talar',fLevel:'Nivå',add:'Lägg till',removeLang:'Tryck för att ta bort',fTraits:'Om dig: personlighet',fHobbies:'Intressen',fMarital:'Relation',fKids:'Barn',fBio:'Om dig, med egna ord',phBio:'Några rader om vem du är och vad du hoppas på i Stockholm',
   tooMany:'Du har valt så många du kan. Tryck på en för att ta bort den först.',errGender:'Välj din könsidentitet.',errTown:'Skriv din hemort.',
 
 
   newTitle:'Nytt liv?',newBody:'Ditt nuvarande liv i Stockholm går förlorat. Exportera en säkerhetskopia under Sparade liv först om du vill behålla det.',newYes:'Starta ett nytt liv',newNo:'Fortsätt spela',
   optTitle:'Alternativ',hints:'Kontrolltips',hintsD:'Tipsraden längst ned på skärmen.',tips:'Vädertips',tipsD:'Ett kort meddelande om vad du ska ha på dig när vädret ändras.',on:'På',off:'Av',
   setTitle:'Inställningar',gfx:'Grafik',gfxD:'Låg sparar batteri; Hög är skarpare på en bra skärm. Gäller efter omladdning.',low:'Låg',auto:'Auto',high:'Hög',live:'Live-data',liveD:'Väder, flyg och avgångar från internet. Av gör spelet mer offlinevänligt.',
-  intro:'Introduktion',introD:'Se bilderna om hur man spelar igen vid nästa nya liv.',replay:'Visa igen',saved:'Sparat. Ladda om sidan för att använda det.',savedNow:'Sparat.',replayed:'Introduktionen visas vid ditt nästa nya liv.',
+  intro:'Introduktion',introD:'Se bilderna om hur man spelar igen vid nästa nya liv.',replay:'Visa igen',saved:'✓ Sparat. Grafik och live-data gäller efter en omladdning.',savedNow:'✓ Sparat',replayed:'Introduktionen visas vid ditt nästa nya liv.',
   about:'Tiden följer Stockholm. Kartan är © OpenStreetMap-bidragsgivare. Väder från Open-Meteo.',langNote:'Startsidan, introduktionen och menyerna är på ditt språk. Själva spelet är på engelska tills vidare.',
   slides:[['En riktig stad','Stockholmsliv bygger på OpenStreetMap: riktiga gator, stationer och butiker. Klockan följer Stockholmstid, och vädret och SL-avgångarna är live när du är online.'],
    ['Kom igång med livet','Energi, humör, mat, hygien, nöje och socialt sjunker med tiden. Pengar, papper och en bostad kommer först. Kortet Nästa steg visar vad du ska göra.'],
@@ -5634,12 +5721,14 @@ const FLAG_SV='<svg viewBox="0 0 22 15" aria-hidden="true"><rect width="22" heig
 const FLAG_EN='<svg viewBox="0 0 22 15" aria-hidden="true"><rect width="22" height="15" fill="#012169"/><path d="M0 0 22 15M22 0 0 15" stroke="#fff" stroke-width="3"/><path d="M0 0 22 15M22 0 0 15" stroke="#c8102e" stroke-width="1.2"/><path d="M11 0v15M0 7.5h22" stroke="#fff" stroke-width="5"/><path d="M11 0v15M0 7.5h22" stroke="#c8102e" stroke-width="3"/></svg>';
 const seenIntro=()=>{try{return localStorage.getItem(SEENKEY)==='1'}catch(e){return false}};
 const markIntro=()=>{try{localStorage.setItem(SEENKEY,'1')}catch(e){}};
-const TITLE={cur:null,timer:0};
+const TITLE={cur:null,timer:0,screen:''};
 function titleModal(open){const t=$('title');t.hidden=true;open();const mo=$('modalRoot');const w=setInterval(()=>{if(!mo.innerHTML){clearInterval(w);t.hidden=false}},400)}
 function titleChrome(){const l=$('tLang');l.innerHTML=`<button data-l="sv" aria-pressed="${LANG==='sv'}" aria-label="Svenska">${FLAG_SV} SV</button><i></i><button data-l="en" aria-pressed="${LANG==='en'}" aria-label="English">${FLAG_EN} EN</button>`;
   l.querySelectorAll('button').forEach(b=>b.onclick=()=>{LANG=b.dataset.l;try{localStorage.setItem(LANGKEY,LANG)}catch(e){}if(TITLE.cur)TITLE.cur()});
+  const ac=$('tAcct');ac.innerHTML=`<button type="button" id="tAcctBtn" aria-label="${tt('acSignIn')}"><svg viewBox="0 0 22 22" width="18" height="18" aria-hidden="true"><circle cx="11" cy="7.5" r="3.6" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M3.8 19c.9-3.7 3.7-5.4 7.2-5.4s6.3 1.7 7.2 5.4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><span class="alabel">${tt('acSignIn')}</span></button>`;
+  ac.querySelector('button').onclick=()=>{if(TITLE.screen==='account')return;const prev=TITLE.cur;titleGo(()=>accountScreen('login',()=>titleGo(prev)))};
   $('tOsm').innerHTML=`${tt('map1')} <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>${tt('map2')}`}
-function titleGo(fn){TITLE.cur=fn;fn()}
+function titleGo(fn){TITLE.cur=fn;TITLE.screen='';fn()}
 function titleHide(){const t=$('title');if(!t)return;t.classList.add('out');setTimeout(()=>{if(t.classList.contains('out')){t.hidden=true;t.classList.remove('out');$('titleCard').innerHTML='';document.body.classList.remove('titleopen')}},450)}
 function titleShow(html,bind,bare){const t=$('title'),c=$('titleCard');c.innerHTML=`<div class="card${bare?'':' panel'}">${html}</div>`;t.hidden=false;t.classList.remove('out');document.body.classList.add('titleopen');titleChrome();bind&&bind(c);const f=c.querySelector('button.primary')||c.querySelector('button');f&&f.focus({preventScroll:true})}
 function showTitle(fresh){titleGo(()=>titleMain(fresh))}
@@ -5655,30 +5744,59 @@ function titleMain(fresh){
 
 function lifeSlot(){const rows=SLOT_IDS.map(slotInfo);return rows.find(r=>r.active&&r.st==='life')||rows.find(r=>r.st==='life')||null}
 function startChoice(fresh){const here=!!(S&&S.flags&&S.flags.started)&&!fresh,other=here?null:lifeSlot(),canCont=here||!!other,back=()=>titleGo(()=>titleMain(fresh));
-  titleShow(`<h2>${tt('choose')}</h2><div class="btns">${canCont?`<button class="primary" id="cCont">${tt('contLife')}</button>`:''}
+  const who=here?{n:S.name,d:S.day,m:S.money}:other?{n:other.title||other.name||'',d:other.day,m:other.money}:null;
+  titleShow(`<h2>${tt('choose')}</h2>${who?`<div class="resume"><b>${esc2(who.n)}</b><span>${tt('dayN')} ${who.d} · ${kr(who.m)}</span></div>`:''}<div class="btns">${canCont?`<button class="primary" id="cCont">${tt('contLife')}</button>`:''}
     <button ${canCont?'':'class="primary" '}id="cNew">${tt('newLifeGo')}</button><button id="cBack">${tt('back')}</button></div><small id="cNote"></small>`,t=>{
     const c=t.querySelector('#cCont');if(c)c.onclick=()=>{if(here){titleHide();return}const e=slotSwitch(other.id);if(e)t.querySelector('#cNote').textContent=e};
     t.querySelector('#cNew').onclick=()=>titleGo(()=>newLifeForm(()=>titleGo(()=>startChoice(fresh))));
     t.querySelector('#cBack').onclick=back})}
 function loadScreen(back){
-  const rows=SLOT_IDS.map(slotInfo),any=rows.some(r=>r.st!=='empty');
+  const all=SLOT_IDS.map(slotInfo),rows=all.filter(r=>r.st!=='empty'),any=rows.length>0;
   const label=r=>r.st==='life'?`${tt('dayN')} ${r.day} · ${kr(r.money)}`:r.st==='ended'?tt('ended'):r.st==='unreadable'?tt('unreadable'):tt('empty');
   titleShow(`<h2>${tt('loadTitle')}</h2>${any?'':`<p class="tag">${tt('noSaves')}</p>`}
-    ${rows.map(r=>`<div class="setrow"><div><b>${r.id}. ${r.st==='life'?(r.title||''):''}${r.st==='life'?'':'—'}</b><small>${label(r)}${r.active&&r.st==='life'?' · '+tt('current'):''}</small></div>${r.st==='life'?(r.active?`<div class="seg"><button class="lcur" data-id="${r.id}">${tt('cont')}</button></div>`:`<div class="seg"><button class="lload" data-id="${r.id}">${tt('load')}</button></div>`):''}</div>`).join('')}
-    <button class="primary" id="lBack">${tt('back')}</button><button id="lManage">${tt('manage')}</button><small id="lNote"></small>`,t=>{
+    ${rows.map(r=>`<div class="setrow"><div><b>${tt('slot')} ${r.id}${r.st==='life'&&r.title?' · '+esc2(r.title):''}</b><small>${label(r)}${r.active&&r.st==='life'?' · '+tt('current'):''}</small></div>${r.st==='life'?(r.active?`<div class="seg"><button class="lcur" data-id="${r.id}">${tt('cont')}</button></div>`:`<div class="seg"><button class="lload" data-id="${r.id}">${tt('load')}</button></div>`):''}</div>`).join('')}
+    <small>${tt('acCloud')}</small><small id="lNote" role="status"></small><button id="lManage">${tt('manage')}</button><button class="primary" id="lBack">${tt('back')}</button>`,t=>{
     t.querySelectorAll('.lload').forEach(b=>b.onclick=()=>{const e=slotSwitch(+b.dataset.id);if(e)t.querySelector('#lNote').textContent=e});
     t.querySelectorAll('.lcur').forEach(b=>b.onclick=()=>titleHide());
     t.querySelector('#lManage').onclick=()=>titleModal(()=>openSaveFile(false));
     t.querySelector('#lBack').onclick=back})}
-const NL={name:'',age:'',gender:'',genderText:'',iso:'SE',town:'Stockholm',townText:'',status:'temporary',edu:'upper',prof:'',skills:[],eng:'good',svLevel:'none',traits:[],hobbies:[],bio:'',marital:'single',kids:0};
+
+const AC={tab:'login',email:'',name:''};
+function accountScreen(tab,back){
+  AC.tab=tab||AC.tab;const create=AC.tab==='create',esc=x=>String(x).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+  const PROV=[['google','Google','G','#fff','#ea4335'],['facebook','Facebook','f','#fff','#1877f2'],['apple','Apple','A','#fff','#111'],['microsoft','Microsoft','M','#fff','#2f2f2f']];
+  titleShow(`<h2>${create?tt('acCreate'):tt('acLogin')}</h2>
+    <div class="seg tabs" role="tablist"><button type="button" role="tab" id="acTabLogin" class="${create?'':'on'}" aria-selected="${!create}">${tt('acLogin')}</button><button type="button" role="tab" id="acTabCreate" class="${create?'on':''}" aria-selected="${create}">${tt('acCreate')}</button></div>
+    <div class="provs">${PROV.map(([k,n,g,fg,bg])=>`<button type="button" class="prov" data-p="${k}"><i style="background:${bg};color:${fg}" aria-hidden="true">${g}</i><span>${tt('acWith')} ${n}</span><em class="soon">${tt('acSoonBadge')}</em></button>`).join('')}</div>
+    <div class="or"><span>${tt('acOr')}</span></div>
+    ${create?`<div class="frow"><label for="acName">${tt('acName')}</label><input id="acName" maxlength="30" autocomplete="nickname" value="${esc(AC.name)}"></div>`:''}
+    <div class="frow"><label for="acEmail">${tt('acEmail')}</label><input id="acEmail" type="email" inputmode="email" autocomplete="email" placeholder="name@example.com" value="${esc(AC.email)}"></div>
+    ${create?`<label class="chk"><input type="checkbox" id="acAge"><span>${tt('acAge')}</span></label><label class="chk"><input type="checkbox" id="acTerms"><span>${tt('acTerms')}</span></label>`:''}
+    <p class="nferr" id="acErr" role="alert"></p><p class="acnote" id="acNote" role="status"></p>
+    <div class="actions"><button class="primary" type="button" id="acGo">${create?tt('acCreateBtn'):tt('acLink')}</button><button type="button" id="acGuest">${tt('acGuest')}</button></div>`,t=>{
+    TITLE.screen='account';const $q=q=>t.querySelector(q);
+    const keep=()=>{const e=$q('#acEmail');AC.email=e?e.value:'';const n=$q('#acName');if(n)AC.name=n.value};
+    $q('#acTabLogin').onclick=()=>{keep();titleGo(()=>accountScreen('login',back))};$q('#acTabCreate').onclick=()=>{keep();titleGo(()=>accountScreen('create',back))};
+    const soon=()=>{$q('#acErr').textContent='';$q('#acNote').textContent=tt('acNote')};
+    t.querySelectorAll('.prov').forEach(b=>b.onclick=()=>{keep();soon()});
+    $q('#acGo').onclick=()=>{keep();const err=$q('#acErr');err.textContent='';$q('#acNote').textContent='';
+      if(create&&!AC.name.trim()){err.textContent=tt('errAcName');return}
+      if(!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(AC.email.trim())){err.textContent=tt('errEmail');return}
+      if(create&&!($q('#acAge').checked&&$q('#acTerms').checked)){err.textContent=tt('errTicks');return}
+      soon()};
+    $q('#acGuest').onclick=back})}
+const NL={name:'',age:'',gender:'',genderText:'',iso:'SE',town:'Stockholm',townText:'',status:'temporary',edu:'upper',prof:'',skills:[],langs:[],traits:[],hobbies:[],bio:'',marital:'single',kids:0};
 const GENDERS=[['woman','Woman','f'],['man','Man','m'],['nonbinary','Non-binary','x'],['transwoman','Trans woman','f'],['transman','Trans man','m'],['genderqueer','Genderqueer','x'],['genderfluid','Genderfluid','x'],['agender','Agender','x'],['bigender','Bigender','x'],['demigender','Demigender','x'],['twospirit','Two-Spirit','x'],['intersex','Intersex','x'],['questioning','Questioning','x'],['other','Other (write your own)','x'],['nosay','Prefer not to say','x']];
 const SKILLS=['Cooking','Driving licence','Customer service','Care work','IT and programming','Teaching','Construction','Cleaning','Sales','Languages','Music','Sports coaching'];
-const SVX={'Woman':'Kvinna','Man':'Man','Non-binary':'Icke-binär','Trans woman':'Transkvinna','Trans man':'Transman','Genderqueer':'Genderqueer','Genderfluid':'Genderfluid','Agender':'Agender','Bigender':'Bigender','Demigender':'Demigender','Two-Spirit':'Two-Spirit','Intersex':'Intersex','Questioning':'Ifrågasättande','Other (write your own)':'Annat (skriv själv)','Prefer not to say':'Vill inte ange',
+const SVX={'No formal education':'Ingen formell utbildning','Woman':'Kvinna','Man':'Man','Non-binary':'Icke-binär','Trans woman':'Transkvinna','Trans man':'Transman','Genderqueer':'Genderqueer','Genderfluid':'Genderfluid','Agender':'Agender','Bigender':'Bigender','Demigender':'Demigender','Two-Spirit':'Two-Spirit','Intersex':'Intersex','Questioning':'Ifrågasättande','Other (write your own)':'Annat (skriv själv)','Prefer not to say':'Vill inte ange',
  'Cooking':'Matlagning','Driving licence':'Körkort','Customer service':'Kundservice','Care work':'Vård och omsorg','IT and programming':'IT och programmering','Teaching':'Undervisning','Construction':'Bygg','Cleaning':'Städning','Sales':'Försäljning','Languages':'Språk','Music':'Musik','Sports coaching':'Idrottstränare',
  'Outgoing':'Utåtriktad','Shy':'Blyg','Organised':'Organiserad','Spontaneous':'Spontan','Ambitious':'Ambitiös','Laid-back':'Avslappnad','Creative':'Kreativ','Practical':'Praktisk','Funny':'Rolig','Kind':'Snäll','Romantic':'Romantisk','Sporty':'Sportig',
  'Football':'Fotboll','Gym':'Gym','Running':'Löpning','Dancing':'Dans','Gaming':'Spel','Reading':'Läsning','Hiking':'Vandring','Art':'Konst','Photography':'Fotografi','Tech':'Teknik','Fashion':'Mode','Faith community':'Trosgemenskap','Volunteering':'Volontärarbete','Movies':'Film',
  'Compulsory school':'Grundskola','Upper secondary (gymnasium)':'Gymnasium','University degree':'Universitetsexamen','PhD':'Doktorsexamen','Single':'Singel','In a relationship':'I en relation','Married':'Gift','Divorced':'Skild','Widowed':'Änka/änkling',
  'Basic':'Grundläggande','Good':'God','Fluent':'Flytande','None':'Ingen','Some':'Viss'};
+const LANG_CODES='en sv no da fi is de fr es pt it nl pl ru uk cs sk hu ro bg el tr ar fa ur hi bn pa ta te ml kn mr gu ne si th vi id ms fil zh ja ko my km lo mn ka hy az kk uz ps ku am ti so sw ha yo ig zu xh af he sq sr hr bs sl mk lt lv et mt ga cy ca eu gl lb la'.split(' ');
+const langName=(c,l)=>{try{return new Intl.DisplayNames([l||LANG],{type:'language'}).of(c)}catch(e){return c}};
+const LVLS=[['basic','Basic'],['good','Good'],['fluent','Fluent']];
 const lab=en=>LANG==='sv'?(SVX[en]||en):en;
 const natNameOf=iso=>{try{return new Intl.DisplayNames([LANG],{type:'region'}).of(iso)}catch(e){}return(WORLD.countries.find(c=>c[0]===iso)||[,iso])[1]};
 const isoFlag=iso=>[...iso].map(ch=>String.fromCodePoint(0x1F1E6+ch.charCodeAt(0)-65)).join('');
@@ -5708,18 +5826,20 @@ function newLifeForm(back,step){
   const page2=`<div class="frow"><label for="nfEdu">${tt('fEdu')}</label><select id="nfEdu">${EDU.map(e=>opt(e[0],lab(e[1]),NL.edu)).join('')}</select></div>
     <div class="frow"><label for="nfProf">${tt('fProf')}</label><input id="nfProf" maxlength="40" autocomplete="off" placeholder="${esc(tt('phProf'))}" value="${esc(NL.prof)}"></div>
     <div class="frow"><label>${tt('fSkills')} <em>${tt('upTo')} 4</em></label>${chips('skills',SKILLS.map(x=>[x,lab(x)]),4)}</div>
-    <div class="frow two"><div><label for="nfEng">${tt('fEng')}</label><select id="nfEng">${[['basic','Basic'],['good','Good'],['fluent','Fluent']].map(([v,l])=>opt(v,lab(l),NL.eng)).join('')}</select></div>
-      <div id="nfSvWrap"><label for="nfSv">${tt('fSv')}</label><select id="nfSv">${[['none','None'],['basic','Basic'],['some','Some'],['fluent','Fluent']].map(([v,l])=>opt(v,lab(l),NL.svLevel)).join('')}</select></div></div>
+    <div class="frow"><label for="nfLang">${tt('fLangs')} <em>${tt('langHint')}</em></label>
+      <div class="langadd"><select id="nfLang">${LANG_CODES.filter(c=>!NL.langs.some(x=>x.c===c)).map(c=>[c,langName(c)]).sort((a,b)=>a[1].localeCompare(b[1],LANG)).map(([c,n])=>opt(c,n,'')).join('')}</select>
+        <select id="nfLangLv" aria-label="${esc(tt('fLevel'))}">${LVLS.map(([v,l])=>opt(v,lab(l),'good')).join('')}</select><button type="button" id="nfLangAdd">${tt('add')}</button></div>
+      <div class="chips" id="nfLangList">${NL.langs.map(x=>`<button type="button" data-c="${x.c}" aria-pressed="true" title="${esc(tt('removeLang'))}">${esc(langName(x.c))} · ${esc(lab(LVLS.find(l=>l[0]===x.lv)[1]))} ×</button>`).join('')}</div></div>
     <div class="frow"><label>${tt('fTraits')} <em>${tt('upTo')} 3</em></label>${chips('traits',TRAITS_ME.map(t=>[t[0],lab(t[1])]),3)}</div>
     <div class="frow"><label>${tt('fHobbies')} <em>${tt('upTo')} 4</em></label>${chips('hobbies',HOBBIES.map(h=>[h,lab(h)]),4)}</div>
     <div class="frow two"><div><label for="nfMar">${tt('fMarital')}</label><select id="nfMar">${MARITAL.map(m=>opt(m[0],lab(m[1]),NL.marital)).join('')}</select></div>
       <div><label for="nfKids">${tt('fKids')}</label><select id="nfKids">${[0,1,2,3,4,5,6].map(k=>opt(k,k,NL.kids)).join('')}</select></div></div>
     <div class="frow"><label for="nfBio">${tt('fBio')}</label><textarea id="nfBio" maxlength="300" rows="3" placeholder="${esc(tt('phBio'))}">${esc(NL.bio)}</textarea></div>`;
   titleShow(`${heading}${step===1?page1:page2}<p class="nferr" id="nfErr" role="alert"></p>
-    <button class="primary" id="nfGo">${step===1?tt('next'):tt('fGo')}</button><button id="nfBack">${tt('back')}</button>`,t=>{
+    <div class="actions"><button class="primary" id="nfGo">${step===1?tt('next'):tt('fGo')}</button><button id="nfBack">${tt('back')}</button></div>`,t=>{
     const $q=q=>t.querySelector(q),val=q=>{const e=$q(q);return e?e.value:null};
     const read=()=>{if(step===1){NL.name=val('#nfName');NL.age=val('#nfAge')||'';NL.gender=val('#nfGender')||'';NL.genderText=val('#nfGenderText');NL.town=val('#nfTown')||NL.town;NL.townText=val('#nfTownText');if(!isSwe)NL.status=val('#nfStatus')||NL.status}
-      else{NL.edu=val('#nfEdu');NL.prof=val('#nfProf');NL.eng=val('#nfEng');NL.svLevel=val('#nfSv');NL.marital=val('#nfMar');NL.kids=+val('#nfKids');NL.bio=val('#nfBio')}};
+      else{NL.edu=val('#nfEdu');NL.prof=val('#nfProf');NL.marital=val('#nfMar');NL.kids=+val('#nfKids');NL.bio=val('#nfBio')}};
     t.querySelectorAll('input,select,textarea').forEach(e=>e.addEventListener('input',()=>{read();sync()}));
     t.querySelectorAll('.chips').forEach(c=>c.querySelectorAll('button').forEach(b=>b.onclick=()=>{const k=c.dataset.k,max=+c.dataset.max,v=b.dataset.v,i=NL[k].indexOf(v);
       if(i>=0)NL[k].splice(i,1);else if(NL[k].length<max)NL[k].push(v);else{$q('#nfErr').textContent=tt('tooMany');return}
@@ -5727,8 +5847,11 @@ function newLifeForm(back,step){
     const sync=()=>{if(step===1){$q('#nfBorn').textContent=isSwe?tt('bornYes'):tt('bornNo');
         $q('#nfGenderTextRow').hidden=NL.gender!=='other';$q('#nfStatusRow').hidden=isSwe;$q('#nfTownTextRow').hidden=NL.town!=='__other';
         if(!isSwe){const o=statusOpts(),se=$q('#nfStatus');if(!se.options.length)se.innerHTML=o.map(v=>opt(v,tt('st_'+v),NL.status)).join('');$q('#nfStatusNote').textContent=tt('sn_'+NL.status)}}
-      else{$q('#nfSvWrap').hidden=isSwe}};
+      };
     if(step===1)$q('#nfNat').onchange=()=>{read();NL.iso=$q('#nfNat').value;NL.town='';NL.townText='';newLifeForm(back,1)};
+    if(step===2){if(isSwe&&!NL.langs.length)NL.langs.push({c:'sv',lv:'fluent'});
+      const add=$q('#nfLangAdd');add.onclick=()=>{read();const c=$q('#nfLang').value,lv=$q('#nfLangLv').value;if(c&&!NL.langs.some(x=>x.c===c))NL.langs.push({c,lv});newLifeForm(back,2)};
+      $q('#nfLangList').querySelectorAll('button').forEach(b=>b.onclick=()=>{read();NL.langs=NL.langs.filter(x=>x.c!==b.dataset.c);newLifeForm(back,2)})}
     sync();
     $q('#nfBack').onclick=()=>{read();if(step===2)newLifeForm(back,1);else back()};
     $q('#nfGo').onclick=()=>{read();const err=$q('#nfErr');
@@ -5736,11 +5859,26 @@ function newLifeForm(back,step){
         if(NL.town==='__other'&&!NL.townText.trim()){err.textContent=tt('errTown');return}newLifeForm(back,2);return}
       const g=GENDERS.find(x=>x[0]===NL.gender)||GENDERS[14],F=introDefaults();
       F.name=NL.name.trim();F.age=+NL.age;F.gender=g[2];F.genderLabel=NL.gender==='other'&&NL.genderText.trim()?NL.genderText.trim():g[1];
-      F.edu=NL.edu;F.prof=NL.prof.trim();F.eng=NL.eng;F.svLevel=isSwe?'fluent':NL.svLevel;F.skills=NL.skills.map(x=>x);F.traits=NL.traits.map(x=>x);F.hobbies=NL.hobbies.map(x=>x);F.bio=NL.bio.trim();F.marital=NL.marital;F.kids=NL.kids;
+      const LVN={basic:15,good:40,fluent:80},svl=NL.langs.find(x=>x.c==='sv'),enl=NL.langs.find(x=>x.c==='en');
+      F.languages=NL.langs.map(x=>({l:langName(x.c,'en'),lv:x.lv}));F.eng=enl?enl.lv:'basic';F.svLevel=isSwe?'fluent':svl?svl.lv:'none';
+      F.edu=NL.edu;F.prof=NL.prof.trim();F.skills=NL.skills.map(x=>x);F.traits=NL.traits.map(x=>x);F.hobbies=NL.hobbies.map(x=>x);F.bio=NL.bio.trim();F.marital=NL.marital;F.kids=NL.kids;
       const town=NL.town==='__other'?NL.townText.trim():NL.town;F.homeTown=town;
       if(isSwe){F.nat='Sweden';F.from='Sweden';if(NL.town==='Stockholm'){F.kind='stockholm';F.over=false}else{F.kind='sweden';F.city=NL.town}}
       else{const nm=worldCountry(NL.iso);F.kind='abroad';F.nat=nm;F.from=nm;F.route=0;F.status=NL.status==='eu'?'':NL.status;F.purpose=NL.status==='student'?'study':'work'}
       const go=()=>{titleHide();lifeFromForm(F)};if(!seenIntro())titleGo(()=>introSlides(go));else go()}})}
+
+function aboutScreen(back){
+  const row=(h,b)=>`<div class="setrow col"><div><b>${h}</b><small>${b}</small></div></div>`;
+  titleShow(`<h2>${tt('aboutBtn')}</h2>
+    ${row(tt('abMap'),'© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> '+tt('abContrib')+' (ODbL)')}
+    ${row(tt('abPlaces'),'<a href="https://www.geonames.org" target="_blank" rel="noopener">GeoNames</a>, CC BY 4.0')}
+    ${row(tt('abWeather'),'<a href="https://open-meteo.com" target="_blank" rel="noopener">Open-Meteo</a>')}
+    ${row(tt('abTransit'),'SL, <a href="https://transport.integration.sl.se" target="_blank" rel="noopener">SL Transport API</a>')}
+    ${row(tt('abMoney'),'European Central Bank, '+tt('abVia')+' <a href="https://frankfurter.dev" target="_blank" rel="noopener">frankfurter.dev</a>')}
+    ${row(tt('abFlights'),'ADS-B, '+tt('abRoutes')+' <a href="https://www.adsbdb.com" target="_blank" rel="noopener">adsbdb.com</a>')}
+    ${row(tt('abType'),'Jost, Barlow Condensed, Familjen Grotesk, IBM Plex Mono (SIL Open Font License)')}
+    ${row(tt('abEngine'),'three.js (MIT)')}
+    <small>© 2026 Helekt</small><button class="primary" id="abBack">${tt('back')}</button>`,t=>{t.querySelector('#abBack').onclick=back})}
 function titleNewLife(){titleShow(`<h2>${tt('newTitle')}</h2><p class="tag">${tt('newBody')}</p>
   <button class="primary" id="tYes">${tt('newYes')}</button><button id="tNo">${tt('newNo')}</button>`,t=>{
   t.querySelector('#tNo').onclick=()=>titleGo(()=>titleMain(false));
@@ -5751,27 +5889,41 @@ function introSlides(done,fromTitle){
       <button class="primary" id="iNext">${last?(fromTitle?tt('back'):tt('start')):tt('next')}</button><button id="iSkip">${fromTitle?tt('back'):tt('skip')}</button>`,t=>{
       t.querySelector('#iNext').onclick=()=>{if(last){markIntro();done()}else{i++;TITLE.cur=draw;draw()}};
       t.querySelector('#iSkip').onclick=()=>{markIntro();done()}})};TITLE.cur=draw;draw()}
-const segHtml=(key,opts)=>`<div class="seg" data-k="${key}">${opts.map(([v,l])=>`<button data-v="${v}" class="${String(SET[key])===String(v)?'on':''}">${l}</button>`).join('')}</div>`;
-function segBind(t,after){t.querySelectorAll('.seg[data-k]').forEach(g=>g.querySelectorAll('button').forEach(b=>b.onclick=()=>{const k=g.dataset.k,v=b.dataset.v==='true'?true:b.dataset.v==='false'?false:b.dataset.v;SET[k]=v;setSave();g.querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b));after&&after(k)}))}
+const segHtml=(key,opts)=>`<div class="seg" data-k="${key}" role="group">${opts.map(([v,l])=>`<button type="button" data-v="${v}" class="${String(SET[key])===String(v)?'on':''}" aria-pressed="${String(SET[key])===String(v)}">${l}</button>`).join('')}</div>`;
+const togHtml=(key,label)=>`<button type="button" class="tog" role="switch" data-k="${key}" aria-checked="${!!SET[key]}" aria-label="${label}"></button>`;
+function segBind(t,after){
+  t.querySelectorAll('.tog[data-k]').forEach(b=>b.onclick=()=>{const k=b.dataset.k;SET[k]=!SET[k];if(k!=='sound')setSave();b.setAttribute('aria-checked',String(!!SET[k]));after&&after(k)});t.querySelectorAll('.seg[data-k]').forEach(g=>g.querySelectorAll('button').forEach(b=>b.onclick=()=>{const k=g.dataset.k,v=b.dataset.v==='true'?true:b.dataset.v==='false'?false:b.dataset.v;SET[k]=v;if(k!=='sound')setSave();g.querySelectorAll('button').forEach(x=>{x.classList.toggle('on',x===b);x.setAttribute('aria-pressed',String(x===b))});after&&after(k)}))}
 function optionsScreen(back){
+  try{SET.sound=localStorage.getItem('sl-cs-sound')!=='0'}catch(e){SET.sound=true}
   titleShow(`<h2>${tt('optTitle')}</h2>
-    <div class="setrow"><div><b>${tt('hints')}</b><small>${tt('hintsD')}</small></div>${segHtml('hints',[[true,tt('on')],[false,tt('off')]])}</div>
-    <div class="setrow"><div><b>${tt('tips')}</b><small>${tt('tipsD')}</small></div>${segHtml('tips',[[true,tt('on')],[false,tt('off')]])}</div>
-    <div class="btns"><button id="oSet">${tt('settings')}</button><button id="oSaves">${tt('savedGames')}</button></div>
+    <div class="setrow"><div><b>${tt('hints')}</b><small>${tt('hintsD')}</small></div>${togHtml('hints',tt('hints'))}</div>
+    <div class="setrow"><div><b>${tt('tips')}</b><small>${tt('tipsD')}</small></div>${togHtml('tips',tt('tips'))}</div>
+    <div class="setrow"><div><b>${tt('sound')}</b><small>${tt('soundD')}</small></div>${togHtml('sound',tt('sound'))}</div>
+    <div class="btns"><button id="oSet">${tt('settings')}</button><button id="oSaves">${tt('savedGames')}</button><button id="oAcct">${tt('acSignIn')}</button><button id="oAbout">${tt('aboutBtn')}</button></div>
     <p class="tag" style="margin:8px 0 0;font-size:13px">${tt('langNote')}</p>
-    <button class="primary" id="oBack">${tt('back')}</button><small id="oNote"></small>`,t=>{
-    segBind(t,k=>{if(k==='hints')applyHints();t.querySelector('#oNote').textContent=tt('savedNow')});
+    <button class="primary" id="oBack">${tt('back')}</button><small id="oNote" role="status" class="saved"></small>`,t=>{
+    segBind(t,k=>{if(k==='hints')applyHints();if(k==='sound'){try{localStorage.setItem('sl-cs-sound',SET.sound?'1':'0')}catch(e){}window.dispatchEvent(new CustomEvent('stockholmsliv-sound',{detail:!!SET.sound}))}t.querySelector('#oNote').textContent=tt('savedNow')});
     t.querySelector('#oSet').onclick=()=>titleGo(()=>settingsScreen(()=>titleGo(()=>optionsScreen(back))));
     t.querySelector('#oSaves').onclick=()=>titleGo(()=>loadScreen(()=>titleGo(()=>optionsScreen(back))));
+    t.querySelector('#oAbout').onclick=()=>titleGo(()=>aboutScreen(()=>titleGo(()=>optionsScreen(back))));
+    t.querySelector('#oAcct').onclick=()=>titleGo(()=>accountScreen('login',()=>titleGo(()=>optionsScreen(back))));
     t.querySelector('#oBack').onclick=back})}
 function settingsScreen(back){
   titleShow(`<h2>${tt('setTitle')}</h2>
-    <div class="setrow"><div><b>${tt('gfx')}</b><small>${tt('gfxD')}</small></div>${segHtml('quality',[['low',tt('low')],['auto',tt('auto')],['high',tt('high')]])}</div>
-    <div class="setrow"><div><b>${tt('live')}</b><small>${tt('liveD')}</small></div>${segHtml('live',[[true,tt('on')],[false,tt('off')]])}</div>
+    <div class="setrow col"><div><b>${tt('gfx')}</b><small>${tt('gfxD')}</small></div>
+      <div class="slider"><input type="range" id="sQ" min="0" max="2" step="1" value="${['low','auto','high'].indexOf(SET.quality)}" aria-label="${tt('gfx')}" aria-valuetext="${tt(SET.quality)}">
+        <div class="ticks" aria-hidden="true"><span data-i="0">${tt('low')}</span><span data-i="1">${tt('auto')}</span><span data-i="2">${tt('high')}</span></div></div></div>
+    <div class="setrow"><div><b>${tt('live')}</b><small>${tt('liveD')}</small></div>${togHtml('live',tt('live'))}</div>
     <div class="setrow"><div><b>${tt('intro')}</b><small>${tt('introD')}</small></div><div class="seg"><button id="sReplay">${tt('replay')}</button></div></div>
     <p class="tag" style="margin:8px 0 0;font-size:13px">${tt('about')}</p>
-    <button class="primary" id="sBack">${tt('back')}</button><small id="sNote"></small>`,t=>{
-    segBind(t,()=>{t.querySelector('#sNote').textContent=tt('saved')});
+    <small id="sNote" role="status" class="saved"></small><button type="button" id="sReload" hidden>${tt('reloadNow')}</button><button type="button" id="sReset">${tt('resetSet')}</button>
+    <button class="primary" id="sBack">${tt('done')}</button>`,t=>{
+    segBind(t,()=>{t.querySelector('#sNote').textContent=tt('saved');t.querySelector('#sReload').hidden=false});
+    const sq=t.querySelector('#sQ'),Q=['low','auto','high'],paint=()=>{const i=+sq.value;sq.style.setProperty('--p',(i*50)+'%');sq.setAttribute('aria-valuetext',tt(Q[i]));t.querySelectorAll('.ticks span').forEach(x=>x.classList.toggle('on',+x.dataset.i===i))};
+    paint();sq.addEventListener('input',()=>{SET.quality=Q[+sq.value];setSave();paint();t.querySelector('#sNote').textContent=tt('saved');t.querySelector('#sReload').hidden=false});
+    t.querySelectorAll('.ticks span').forEach(x=>x.onclick=()=>{sq.value=x.dataset.i;sq.dispatchEvent(new Event('input'))});
+    t.querySelector('#sReload').onclick=()=>{try{save()}catch(e){}location.reload()};
+    t.querySelector('#sReset').onclick=()=>{SET.quality='auto';SET.live=true;SET.hints=true;SET.tips=true;setSave();applyHints();settingsScreen(back);const n=document.querySelector('#sNote');if(n){n.textContent=tt('saved');const r=document.querySelector('#sReload');if(r)r.hidden=false}};
     t.querySelector('#sReplay').onclick=()=>{try{localStorage.removeItem(SEENKEY)}catch(e){}t.querySelector('#sNote').textContent=tt('replayed')};
     t.querySelector('#sBack').onclick=back})}
 document.addEventListener('click',e=>{if(e.target.closest&&e.target.closest('#menuBtn')&&S)showTitle(false)});

@@ -82,18 +82,19 @@ def test_title_is_one_row_on_a_phone(browser, server):
 
 
 def test_top_widgets_language_and_options(browser, server):
-    """Live Stockholm time and weather top left, SV | EN top right, an Options screen (reference design from the owner)."""
+    """The weather top left (no date), SV | EN top right, an Options screen (reference design from the owner)."""
     ctx, page, err = game.new_page(browser, hook=True, realtime=True, title=True)
     page.set_default_timeout(90000)
     try:
         game.boot(page)
         assert game.wait_for(page, "() => { const t = document.getElementById('title'); return t && !t.hidden && /Start/.test(t.innerText) }", 60)
-        # the time box shows Stockholm's own time (within two minutes) and the date
         now = page.evaluate(STOCKHOLM_NOW)
+        # top left: only the weather, in the game's own style (icon, temperature, condition); no date or clock there
         box = page.evaluate("() => document.getElementById('tWx').innerText")
-        hh, mm = box.split(' ')[0].split(':')
-        assert abs((int(hh) * 60 + int(mm)) - (now['h'] * 60 + now['min'])) <= 2, (box, now)
-        assert str(now['y']) in box, box
+        assert str(now['y']) not in box, box
+        assert not __import__('re').search(r'\d\d:\d\d', box), box
+        if box:
+            assert '\u00b0' in box or 'offline' in box.lower(), box
         # five buttons, in the order of the design
         order = page.evaluate("() => [...document.querySelectorAll('#titleCard button')].map(b => b.id)")
         assert order == ['tPlay', 'tOpt', 'tHow', 'tSet', 'tSaves'], order
@@ -108,6 +109,20 @@ def test_top_widgets_language_and_options(browser, server):
         page.click('.seg[data-k="hints"] button[data-v="false"]')
         assert page.evaluate("() => document.body.classList.contains('nohints')")
         assert page.evaluate("() => JSON.parse(localStorage.getItem('stockholmsliv-settings')).hints") is False
+        assert err.uncaught == [], err.uncaught
+    finally:
+        ctx.close()
+
+
+def test_title_name_uses_the_swedish_flag_colours(browser, server):
+    ctx, page, err = game.new_page(browser, hook=True, realtime=True, title=True)
+    page.set_default_timeout(90000)
+    try:
+        game.boot(page)
+        assert game.wait_for(page, "() => { const t = document.getElementById('title'); return t && !t.hidden && /Start/.test(t.innerText) }", 60)
+        c = page.evaluate("() => { const h = document.querySelector('#title h1'), s = h.querySelector('span'), g = e => getComputedStyle(e); return {a: g(h).color, as: g(h).webkitTextStrokeColor, b: g(s).color, bs: g(s).webkitTextStrokeColor} }")
+        assert c['a'] == 'rgb(254, 204, 2)' and c['as'] == 'rgb(0, 106, 167)', c   # STOCKHOLMS: flag yellow, flag-blue outline
+        assert c['b'] == 'rgb(0, 106, 167)' and c['bs'] == 'rgb(254, 204, 2)', c   # LIV: flag blue, flag-yellow outline
         assert err.uncaught == [], err.uncaught
     finally:
         ctx.close()

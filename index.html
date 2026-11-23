@@ -109,7 +109,7 @@ button:focus-visible,[tabindex]:focus-visible,input:focus-visible,select:focus-v
 .title[hidden]{display:none}.title.out{opacity:0;pointer-events:none}
 .title .glass{position:fixed;top:max(14px,env(safe-area-inset-top,0px));z-index:1;background:rgba(255,255,255,.17);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.3);color:#fff;text-shadow:0 1px 6px rgba(0,0,0,.35)}
 .title .tl{left:max(14px,env(safe-area-inset-left,0px));border-radius:18px;padding:9px 15px;font-size:15px;line-height:1.5;min-width:0;max-width:calc(100vw - 150px)}
-.title .tl div{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.title .tl{cursor:pointer}.title .tl:focus-visible{outline:2px solid #fff;outline-offset:2px}.title .tl div{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .title .tr{right:max(14px,env(safe-area-inset-right,0px));border-radius:999px;padding:6px 8px;display:flex;align-items:center;gap:2px}
 .title .tr i{width:1px;height:18px;background:rgba(255,255,255,.4)}
 .title .tr button{display:inline-flex;align-items:center;gap:6px;background:none;border:0;color:#fff;font:600 14px var(--body,inherit);padding:7px 9px;border-radius:999px;cursor:pointer;backdrop-filter:none}
@@ -117,8 +117,8 @@ button:focus-visible,[tabindex]:focus-visible,input:focus-visible,select:focus-v
 .title .stack{width:min(400px,100%);margin:auto}
 .title .card{display:flex;flex-direction:column;gap:11px;text-align:center}
 .title .card.panel{background:rgba(8,16,32,.6);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);padding:22px;border-radius:22px;border:1px solid rgba(255,255,255,.16)}
-.title h1{margin:0;white-space:nowrap;font:700 clamp(32px,11vw,72px)/1 var(--display);letter-spacing:.04em;text-transform:uppercase;color:#fff;filter:drop-shadow(0 3px 16px rgba(0,0,0,.5))}
-.title .stack{width:min(440px,100%)}.title h1 span{color:#ffc933}
+.title h1{margin:0;white-space:nowrap;font:700 clamp(32px,11vw,72px)/1 var(--display);letter-spacing:.04em;text-transform:uppercase;color:#fecc02;-webkit-text-stroke:max(2px,.045em) #006aa7;paint-order:stroke fill;filter:drop-shadow(0 3px 14px rgba(0,0,0,.45))}
+.title .stack{width:min(440px,100%)}.title h1 span{color:#006aa7;-webkit-text-stroke:max(3px,.075em) #fecc02}
 .title .tag{margin:2px 0 14px;color:#fff;font-size:15.5px;line-height:1.45;text-shadow:0 1px 10px rgba(0,0,0,.55)}
 .title button{font:500 17px var(--body,inherit);padding:15px 18px;border-radius:999px;border:1px solid rgba(255,255,255,.14);background:rgba(16,26,44,.58);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);color:#fff;cursor:pointer;box-shadow:0 4px 18px rgba(0,0,0,.18)}
 .title button.primary{background:#fbc02d;color:#1b1b1b;border-color:#fbc02d;font-weight:600}
@@ -476,7 +476,7 @@ h2.hero{font-size:34px;background:linear-gradient(90deg,var(--sweblue),#3a86ff 4
     <div class="pane" data-pane="diary" hidden><div class="sec"><ul class="log" id="log"></ul></div></div>
   </div>
 </aside>
-<div class="title" id="title" hidden><div class="glass tl" id="tWx" aria-live="off"></div><div class="glass tr" id="tLang" role="group" aria-label="Language"></div><div class="stack" id="titleCard"></div></div>
+<div class="title" id="title" hidden><div class="glass tl" id="tWx" role="button" tabindex="0" aria-label="Weather" hidden></div><div class="glass tr" id="tLang" role="group" aria-label="Language"></div><div class="stack" id="titleCard"></div></div>
 <div id="modalRoot"></div>
 <div id="saveStatus" role="status" hidden></div>
 
@@ -5568,13 +5568,13 @@ const FLAG_EN='<svg viewBox="0 0 22 15" aria-hidden="true"><rect width="22" heig
 const seenIntro=()=>{try{return localStorage.getItem(SEENKEY)==='1'}catch(e){return false}};
 const markIntro=()=>{try{localStorage.setItem(SEENKEY,'1')}catch(e){}};
 const TITLE={cur:null,timer:0};
-function tWxDraw(){const el=$('tWx');if(!el)return;const ms=STIME.nowMs(),sv=LANG==='sv',tz='Europe/Stockholm';
-  let hm='',dt='';try{hm=new Intl.DateTimeFormat('en-GB',{timeZone:tz,hour:'2-digit',minute:'2-digit',hour12:false}).format(ms);dt=new Intl.DateTimeFormat(sv?'sv-SE':'en-US',{timeZone:tz,weekday:'short',month:'short',day:'numeric',year:'numeric'}).format(ms)}catch(e){hm=hhmm(S?S.hour:8)}
-  let w='';if(!SET.live)w='';else if(liveFresh()){const n=LIVEWX.now,d=sv?(SV_WX[n.code]||wmo(n.code)[0]):wmo(n.code)[0].replace(/ and /i,' & ');w=`${WXICON(n.code)} ${Math.round(n.t)}°C ${d} · Stockholm`}else w=tt('offline');
-  el.innerHTML=`<div>${hm} · ${dt}</div>${w?`<div>${w}</div>`:''}`}
+function tWxDraw(){const el=$('tWx');if(!el)return;const sv=LANG==='sv';let w='';
+  if(SET.live){if(liveFresh()){const n=LIVEWX.now,d=sv?(SV_WX[n.code]||wmo(n.code)[0]):wmo(n.code)[0];w=`${WXICON(n.code)} ${Math.round(n.t)}° ${d}`}else w=tt('offline')}
+  el.hidden=!w;el.innerHTML=w?`<div>${w}</div>`:''}
+function titleModal(open){const t=$('title');t.hidden=true;open();const mo=$('modalRoot');const w=setInterval(()=>{if(!mo.innerHTML){clearInterval(w);t.hidden=false}},400)}
 function titleChrome(){const l=$('tLang');l.innerHTML=`<button data-l="sv" aria-pressed="${LANG==='sv'}" aria-label="Svenska">${FLAG_SV} SV</button><i></i><button data-l="en" aria-pressed="${LANG==='en'}" aria-label="English">${FLAG_EN} EN</button>`;
   l.querySelectorAll('button').forEach(b=>b.onclick=()=>{LANG=b.dataset.l;try{localStorage.setItem(LANGKEY,LANG)}catch(e){}if(TITLE.cur)TITLE.cur()});
-  tWxDraw();clearInterval(TITLE.timer);TITLE.timer=setInterval(tWxDraw,1000);if(SET.live&&!liveFresh())fetchLiveWeather().then(tWxDraw)}
+  tWxDraw();clearInterval(TITLE.timer);TITLE.timer=setInterval(tWxDraw,30000);const wx=$('tWx');wx.onclick=()=>{if(liveFresh())titleModal(()=>openWeather())};wx.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();wx.onclick()}};if(SET.live&&!liveFresh())fetchLiveWeather().then(tWxDraw)}
 function titleGo(fn){TITLE.cur=fn;fn()}
 function titleHide(){const t=$('title');if(!t)return;clearInterval(TITLE.timer);t.classList.add('out');setTimeout(()=>{if(t.classList.contains('out')){t.hidden=true;t.classList.remove('out');$('titleCard').innerHTML=''}},450)}
 function titleShow(html,bind,bare){const t=$('title'),c=$('titleCard');c.innerHTML=`<div class="card${bare?'':' panel'}">${html}</div>`;t.hidden=false;t.classList.remove('out');titleChrome();bind&&bind(c);const f=c.querySelector('button.primary')||c.querySelector('button');f&&f.focus({preventScroll:true})}
@@ -5591,7 +5591,7 @@ function titleMain(fresh){
     t.querySelector('#tOpt').onclick=()=>titleGo(()=>optionsScreen(()=>titleGo(()=>titleMain(fresh))));
     t.querySelector('#tHow').onclick=()=>titleGo(()=>introSlides(()=>titleGo(()=>titleMain(fresh)),true));
     t.querySelector('#tSet').onclick=()=>titleGo(()=>settingsScreen(()=>titleGo(()=>titleMain(fresh))));
-    t.querySelector('#tSaves').onclick=()=>{const tt0=$('title');tt0.hidden=true;openSaveFile(false);const mo=$('modalRoot');const w=setInterval(()=>{if(!mo.innerHTML){clearInterval(w);tt0.hidden=false}},400)}},true)}
+    t.querySelector('#tSaves').onclick=()=>titleModal(()=>openSaveFile(false))},true)}
 function titleNewLife(){titleShow(`<h2>${tt('newTitle')}</h2><p class="tag">${tt('newBody')}</p>
   <button class="primary" id="tYes">${tt('newYes')}</button><button id="tNo">${tt('newNo')}</button>`,t=>{
   t.querySelector('#tNo').onclick=()=>titleGo(()=>titleMain(false));

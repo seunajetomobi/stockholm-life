@@ -123,6 +123,8 @@ button:focus-visible,[tabindex]:focus-visible,input:focus-visible,select:focus-v
 .title .ttop{position:fixed;top:max(14px,env(safe-area-inset-top,0px));right:max(14px,env(safe-area-inset-right,0px));z-index:1;display:flex;align-items:center;gap:8px}
 .title .glass{position:static;background:rgba(250,248,243,.94);border:1px solid rgba(255,255,255,.6);color:var(--ink);box-shadow:0 6px 24px rgba(5,15,35,.25)}
 .title .tl{border-radius:999px;padding:5px 6px;display:flex;align-items:center}
+.title .ttop button{min-height:40px}
+@media (max-width:700px){.title .ttop button{min-height:44px}.title .tl button{min-width:44px;justify-content:center}}
 .title .ttop>.glass{flex:0 0 auto}.title .tl button{flex:0 0 auto;white-space:nowrap}.title .tl .alabel{flex:0 0 auto;white-space:nowrap}
 @media (max-width:480px){.title .tl .alabel{display:none}.title .tl button{padding:8px 10px}}
 .title .tl button{display:inline-flex;align-items:center;gap:7px;background:none;border:0;color:var(--ink);font:500 14px/1 'Jost',sans-serif;letter-spacing:.06em;padding:8px 12px;border-radius:999px;cursor:pointer;box-shadow:none}

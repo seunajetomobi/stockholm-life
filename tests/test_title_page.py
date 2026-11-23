@@ -14,20 +14,26 @@ def test_title_intro_settings_flow(browser, server):
         game.boot(page)
         assert game.wait_for(page, "() => { const t = document.getElementById('title'); return t && !t.hidden && /Start/.test(t.innerText) }", 60), 'no title page'
         text = page.evaluate(VISIBLE)
-        for word in ('Stockholms', 'Start', 'How to play', 'Settings', 'Saves'):
+        for word in ('Stockholms', 'Start', 'Options', 'How to play'):
             assert word.lower() in text.lower(), (word, text)
+        for gone in ('Settings', 'Saves', 'Load saved game'):
+            assert gone.lower() not in text.lower(), (gone, text)   # Settings and saved games are inside Options
         # Settings: choose Low graphics and Live data off; both are remembered and survive a reload
-        page.click('#tSet')
+        page.click('#tOpt')
+        page.click('#oSet')
         page.click('.seg[data-k="quality"] button[data-v="low"]')
         page.click('.seg[data-k="live"] button[data-v="false"]')
         saved = page.evaluate("() => JSON.parse(localStorage.getItem('stockholmsliv-settings'))")
         assert saved['quality'] == 'low' and saved['live'] is False, saved
         page.click('#sBack')
+        assert 'Control hints' in page.evaluate(VISIBLE)           # Back from Settings returns to Options
+        page.click('#oBack')
         assert 'Start' in page.evaluate(VISIBLE)
         # Start: the first time the introduction shows; Skip goes straight into the game
         page.click('#tPlay')
         page.click('#cNew')
-        page.fill('#nfName', 'Test Person')
+        _page1(page, name='Test Person')
+        page.click('#nfGo')
         page.click('#nfGo')
         assert game.wait_for(page, "() => { const t = document.getElementById('title'); return t && !t.hidden && /Skip/.test(t.innerText) }", 20), 'no introduction'
         page.screenshot(path='/tmp/title_intro.png')
@@ -104,7 +110,7 @@ def test_top_widgets_language_and_options(browser, server):
         assert 'AI' not in r['all'] and 'generated' not in r['all'].lower(), r
         # five buttons, in the order of the design
         order = page.evaluate("() => [...document.querySelectorAll('#titleCard button')].map(b => b.id)")
-        assert order == ['tPlay', 'tOpt', 'tHow', 'tSet', 'tSaves'], order
+        assert order == ['tPlay', 'tOpt', 'tHow'], order
         # language: Swedish changes the page and is remembered
         page.click('#tLang button[data-l="sv"]')
         assert 'Starta' in page.evaluate("() => document.getElementById('titleCard').innerText")
@@ -202,14 +208,26 @@ def test_title_buttons_are_a_narrow_column(browser, server):
         game.boot(page)
         assert game.wait_for(page, "() => { const t = document.getElementById('title'); return t && !t.hidden && /Start/.test(t.innerText) }", 60)
         w = page.evaluate("() => [...document.querySelectorAll('#titleCard .btns button')].map(b => b.offsetWidth)")  # layout width: a focused button is drawn slightly larger
-        assert len(w) == 5 and max(w) <= 262, w
+        assert len(w) == 3 and max(w) <= 262, w
         assert err.uncaught == [], err.uncaught
     finally:
         ctx.close()
 
 
+def _page1(page, nat='SE', status=None, name='Tester', age='30', gender='woman'):
+    page.fill('#nfName', name)
+    if age:
+        page.select_option('#nfAge', age)
+    if gender:
+        page.select_option('#nfGender', gender)
+    if nat != 'SE':
+        page.select_option('#nfNat', nat)
+        if status:
+            page.select_option('#nfStatus', status)
+
+
 def test_start_choice_load_and_new_life_form(browser, server):
-    """Start opens: load saved game or start a new life; Back returns; the form decides born-in-Sweden and the status."""
+    """Start opens: load saved game or start a new life; Back returns; the form decides born-in-Sweden, the home town and the status."""
     ctx, page, err = game.new_page(browser, hook=True, realtime=True, title=True)
     page.set_default_timeout(90000)
     try:
@@ -217,52 +235,88 @@ def test_start_choice_load_and_new_life_form(browser, server):
         assert game.wait_for(page, "() => { const t = document.getElementById('title'); return t && !t.hidden && /Start/.test(t.innerText) }", 60)
         page.click('#tPlay')
         txt = page.evaluate("() => document.getElementById('titleCard').innerText")
-        assert 'Load saved game' in txt and 'Start a new life' in txt and 'Back' in txt, txt
-        # Load saved game: a list of slots, nothing saved yet, Back goes to the choice again
-        page.click('#cLoad')
+        assert 'Start a new life' in txt and 'Back' in txt, txt
+        assert 'Load saved game' not in txt and 'Continue your life' not in txt, txt   # nothing saved yet: no Continue
+        # Saved games live inside Options: nothing saved yet, Back returns to Options
+        page.click('#cBack')
+        page.click('#tOpt')
+        page.click('#oSaves')
         assert 'No saved lives yet' in page.evaluate("() => document.getElementById('titleCard').innerText")
         page.click('#lBack')
-        assert page.evaluate("() => !!document.getElementById('cNew')")
-        # New life: Swedish nationality means born in Sweden, and no immigration status
+        assert 'Control hints' in page.evaluate("() => document.getElementById('titleCard').innerText")
+        page.click('#oBack')
+        page.click('#tPlay')
         page.click('#cNew')
-        assert page.evaluate("() => document.getElementById('nfBorn').innerText") == 'Born in Sweden: yes (the form starts with Sweden)' or 'Born in Sweden: yes' in page.evaluate("() => document.getElementById('nfBorn').innerText")
-        assert page.evaluate("() => getComputedStyle(document.getElementById('nfStatusRow')).display") == 'none'
-        assert page.evaluate("() => getComputedStyle(document.getElementById('nfTownRow')).display") != 'none'
-        # another nationality: born abroad, and the four statuses appear
-        page.select_option('#nfNat', 'Nigeria')
-        assert 'Born in Sweden: no' in page.evaluate("() => document.getElementById('nfBorn').innerText")
-        assert page.evaluate("() => getComputedStyle(document.getElementById('nfStatusRow')).display") != 'none'
-        assert page.evaluate("() => getComputedStyle(document.getElementById('nfTownRow')).display") == 'none', 'home town must be hidden for someone born abroad'
-        opts = page.evaluate("() => [...document.querySelectorAll('#nfStatus option')].map(o => o.value)")
-        assert opts == ['temporary', 'asylum', 'permanent', 'student'], opts
-        # an EU citizen gets the two statuses that make sense
-        page.select_option('#nfNat', 'Germany')
-        opts = page.evaluate("() => [...document.querySelectorAll('#nfStatus option')].map(o => o.value)")
-        assert opts == ['eu', 'student'], opts
-        # validation: an empty name and a bad age are refused with a message
-        page.fill('#nfName', '  ')
+        disp = lambda q: page.evaluate("(q) => getComputedStyle(document.querySelector(q)).display", q)
+        # placeholders: nothing is prefilled
+        assert page.evaluate("() => document.getElementById('nfName').placeholder") == 'Fill in your name'
+        assert page.evaluate("() => document.getElementById('nfName').value") == ''
+        # age is a drop-down, 16 to 90
+        ages = page.evaluate("() => [...document.querySelectorAll('#nfAge option')].map(o => o.value).filter(Boolean)")
+        assert ages[0] == '16' and ages[-1] == '90' and len(ages) == 75, (ages[:2], ages[-2:], len(ages))
+        # every gender identity is on offer
+        gens = page.evaluate("() => [...document.querySelectorAll('#nfGender option')].map(o => o.value).filter(Boolean)")
+        for g in ('woman', 'man', 'nonbinary', 'transwoman', 'transman', 'genderqueer', 'genderfluid', 'agender', 'bigender', 'twospirit', 'intersex', 'questioning', 'other', 'nosay'):
+            assert g in gens, (g, gens)
+        # validation messages come one at a time, before a gender is chosen
         page.click('#nfGo')
         assert page.evaluate("() => document.getElementById('nfErr').innerText") == 'Please enter a name.'
         page.fill('#nfName', 'Aisha')
-        page.fill('#nfAge', '12')
         page.click('#nfGo')
-        assert 'between 16 and 90' in page.evaluate("() => document.getElementById('nfErr').innerText")
-        # Back keeps you on the choice screen
+        assert page.evaluate("() => document.getElementById('nfErr').innerText") == 'Please select your age.'
+        page.select_option('#nfAge', '30')
+        page.click('#nfGo')
+        assert page.evaluate("() => document.getElementById('nfErr').innerText") == 'Please select your gender identity.'
+        assert disp('#nfGenderTextRow') == 'none'
+        page.select_option('#nfGender', 'other')
+        assert disp('#nfGenderTextRow') != 'none'
+        # all the world's countries, Sweden first
+        n = page.evaluate("() => [...document.querySelectorAll('#nfNat option')].map(o => o.value)")
+        assert len(n) == 197 and n[0] == 'SE' and 'NG' in n and 'VA' in n and 'TW' in n, (len(n), n[:3])
+        # Swedish nationality: born here, a Swedish home town, no immigration status
+        assert 'Born in Sweden: yes' in page.evaluate("() => document.getElementById('nfBorn').innerText")
+        assert disp('#nfStatusRow') == 'none' and disp('#nfTownRow') != 'none'
+        towns = page.evaluate("() => [...document.querySelectorAll('#nfTown option')].map(o => o.value)")
+        assert towns[0] == 'Stockholm' and 'Göteborg' in towns, towns
+        # another nationality: born abroad, the home town list becomes that country's, and the four statuses appear
+        page.select_option('#nfNat', 'NG')
+        assert 'Born in Sweden: no' in page.evaluate("() => document.getElementById('nfBorn').innerText")
+        assert disp('#nfStatusRow') != 'none'
+        towns = page.evaluate("() => [...document.querySelectorAll('#nfTown option')].map(o => o.value)")
+        assert 'Lagos' in towns and 'Stockholm' not in towns and towns[-1] == '__other', towns
+        opts = page.evaluate("() => [...document.querySelectorAll('#nfStatus option')].map(o => o.value)")
+        assert opts == ['temporary', 'asylum', 'permanent', 'student'], opts
+        page.select_option('#nfTown', '__other')
+        assert disp('#nfTownTextRow') != 'none'
+        # an EU citizen gets the two statuses that make sense
+        page.select_option('#nfNat', 'DE')
+        opts = page.evaluate("() => [...document.querySelectorAll('#nfStatus option')].map(o => o.value)")
+        assert opts == ['eu', 'student'], opts
+        page.select_option('#nfGender', 'transwoman')
+        page.click('#nfGo')
+        # step 2: background and about you
+        assert 'step 2 / 2' in page.evaluate("() => document.getElementById('titleCard').innerText").lower()
+        assert page.evaluate("() => [...document.querySelectorAll('#nfEdu option')].length") == 4
+        page.click('.chips[data-k="skills"] button:nth-child(1)')
+        for i in range(2, 6):
+            page.click(f'.chips[data-k="skills"] button:nth-child({i})')
+        assert 'most you can' in page.evaluate("() => document.getElementById('nfErr').innerText")
         page.click('#nfBack')
-        assert page.evaluate("() => !!document.getElementById('cLoad')")
+        assert page.evaluate("() => document.getElementById('nfName').value") == 'Aisha'   # step 1 kept what you wrote
+        page.click('#nfBack')
+        assert page.evaluate("() => !!document.getElementById('cNew')")
         assert err.uncaught == [], err.uncaught
     finally:
         ctx.close()
 
 
-def _start(page, nat, status=None, age='30'):
+def _start(page, nat='SE', status=None, extra=None):
     page.click('#tPlay')
     page.click('#cNew')
-    page.fill('#nfName', 'Tester')
-    page.fill('#nfAge', age)
-    page.select_option('#nfNat', nat)
-    if status:
-        page.select_option('#nfStatus', status)
+    _page1(page, nat, status)
+    page.click('#nfGo')
+    if extra:
+        extra(page)
     page.click('#nfGo')
     game.wait_for(page, "() => { const t = document.getElementById('title'); return t && !t.hidden && /Skip/.test(t.innerText) }", 20)
     page.click('#iSkip')
@@ -270,8 +324,8 @@ def _start(page, nat, status=None, age='30'):
 
 
 @pytest.mark.parametrize('nat,status,bg,permit', [
-    ('Sweden', None, 'local', 1), ('Nigeria', 'temporary', 'newcomer', 0), ('Nigeria', 'asylum', 'asylum', 'asylum'),
-    ('Nigeria', 'permanent', 'permanent', 1), ('Nigeria', 'student', 'student', 0)])
+    ('SE', None, 'local', 1), ('NG', 'temporary', 'newcomer', 0), ('NG', 'asylum', 'asylum', 'asylum'),
+    ('NG', 'permanent', 'permanent', 1), ('NG', 'student', 'student', 0), ('NO', 'eu', 'newcomer', 1)])
 def test_form_choices_start_the_right_kind_of_life(browser, server, nat, status, bg, permit):
     ctx, page, err = game.new_page(browser, hook=True, realtime=True, title=True)
     page.set_default_timeout(90000)
@@ -279,10 +333,43 @@ def test_form_choices_start_the_right_kind_of_life(browser, server, nat, status,
         game.boot(page)
         assert game.wait_for(page, "() => { const t = document.getElementById('title'); return t && !t.hidden && /Start/.test(t.innerText) }", 60)
         _start(page, nat, status)
-        got = page.evaluate("() => ({bg: window.__TS.S.bg, permit: window.__TS.S.docs.permit, status: (window.__TS.S.origin || {}).status || '', nat: window.__TS.S.nat || (window.__TS.S.origin || {}).nat, age: window.__TS.S.me && window.__TS.S.me.age})")
+        got = page.evaluate("() => ({bg: window.__TS.S.bg, permit: window.__TS.S.docs.permit, status: (window.__TS.S.origin || {}).status || '', age: window.__TS.S.me && window.__TS.S.me.age, gl: window.__TS.S.me && window.__TS.S.me.genderLabel, g: window.__TS.S.me && window.__TS.S.me.gender})")
         assert got['bg'] == bg and got['permit'] == permit, got
-        assert got['status'] == (status or ''), got
-        assert got['age'] == 30, got
+        assert got['status'] == ({'eu': ''}.get(status, status) or ''), got
+        assert got['age'] == 30 and got['gl'] == 'Woman' and got['g'] == 'f', got
+        assert err.uncaught == [], err.uncaught
+    finally:
+        ctx.close()
+
+
+def test_background_details_reach_the_life(browser, server):
+    """Education, profession, skills, personality, interests, about-you text, home town and gender identity are kept."""
+    ctx, page, err = game.new_page(browser, hook=True, realtime=True, title=True)
+    page.set_default_timeout(90000)
+    try:
+        game.boot(page)
+        assert game.wait_for(page, "() => { const t = document.getElementById('title'); return t && !t.hidden && /Start/.test(t.innerText) }", 60)
+
+        def extra(pg):
+            pg.select_option('#nfEdu', 'uni')
+            pg.fill('#nfProf', 'nurse')
+            pg.click('.chips[data-k="skills"] button:nth-child(4)')       # Care work
+            pg.click('.chips[data-k="traits"] button:nth-child(10)')      # Kind
+            pg.click('.chips[data-k="hobbies"] button:nth-child(4)')      # Music
+            pg.select_option('#nfSv', 'basic')
+            pg.fill('#nfBio', 'I want to work in care in Stockholm.')
+        # a non-Swedish life with a chosen home town: Lagos
+        page.click('#tPlay'); page.click('#cNew'); _page1(page, 'NG', 'temporary', gender='nonbinary'); page.select_option('#nfTown', 'Lagos'); page.click('#nfGo')
+        extra(page)
+        page.click('#nfGo')
+        game.wait_for(page, "() => { const t = document.getElementById('title'); return t && !t.hidden && /Skip/.test(t.innerText) }", 20)
+        page.click('#iSkip')
+        assert game.wait_for(page, "() => document.getElementById('title').hidden && window.__TS.S && window.__TS.S.name === 'Tester'", 60)
+        me = page.evaluate("() => window.__TS.S.me")
+        assert me['edu'] == 'uni' and me['prof'] == 'nurse' and me['skills'] == ['Care work'] and me['traits'] == ['kind'] and me['hobbies'] == ['Music'], me
+        assert me['homeTown'] == 'Lagos' and me['genderLabel'] == 'Non-binary' and me['gender'] == 'x' and me['bornSweden'] is False, me
+        assert me['bio'] == 'I want to work in care in Stockholm.', me
+        assert page.evaluate("() => window.__TS.S.svenska") >= 15
         assert err.uncaught == [], err.uncaught
     finally:
         ctx.close()

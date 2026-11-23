@@ -135,6 +135,11 @@ button:focus-visible,[tabindex]:focus-visible,input:focus-visible,select:focus-v
 
 .title .frow{display:flex;flex-direction:column;gap:5px;text-align:left}.title .frow.two{flex-direction:row;gap:10px}.title .frow.two>div{flex:1;display:flex;flex-direction:column;gap:5px;min-width:0}
 .title [hidden]{display:none!important}
+.title textarea{font:500 15px var(--body,inherit);padding:11px 13px;border-radius:12px;border:1px solid rgba(255,255,255,.22);background:rgba(10,18,34,.72);color:#fff;width:100%;resize:vertical;min-height:70px}
+.title input::placeholder,.title textarea::placeholder{color:#9fb0c8}.title .steps{font-size:12.5px;letter-spacing:.12em;text-transform:uppercase;color:#d7e0ee;margin-top:-6px}
+.title label em{font-style:normal;text-transform:none;letter-spacing:0;color:#aebbd0;font-weight:500}
+.chips{display:flex;flex-wrap:wrap;gap:6px}.title .chips button{padding:7px 12px;font-size:13.5px;border-radius:999px;box-shadow:none}.title .chips button[aria-pressed=true]{background:#fbc02d;color:#1b1b1b;border-color:#fbc02d;font-weight:600}
+.title .card.panel{max-height:calc(100vh - 90px);overflow-y:auto}
 .title label{font-size:12.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#d7e0ee}
 .title input,.title select{font:500 16px var(--body,inherit);padding:11px 13px;border-radius:12px;border:1px solid rgba(255,255,255,.22);background:rgba(10,18,34,.72);color:#fff;min-width:0;width:100%}
 .title input:focus-visible,.title select:focus-visible{outline:2px solid #fbc02d;outline-offset:1px}.title select option{color:#111}
@@ -515,6 +520,7 @@ h2.hero{font-size:34px;background:linear-gradient(90deg,var(--sweblue),#3a86ff 4
 <script src="src/rules/life-start.js"></script>
 <script src="src/rules/namnsdag.js"></script>
 <script src="src/rules/realtime.js"></script>
+<script src="src/data/world.js"></script>
 <script src="src/city-data.js"></script>
 <script src="src/tables.js"></script>
 <script>
@@ -1060,6 +1066,7 @@ const STIME=useModule('stockholm-time','rules/stockholm-time.js');
 // The time is Stockholm's whatever the device says: the offset between the device clock and our own server's Date header is applied to every STIME.nowMs()
 async function syncServerTime(){try{const t0=Date.now(),r=await fetch(location.pathname+'?t='+t0,{method:'HEAD',cache:'no-store'}),t1=Date.now(),d=Date.parse(r.headers.get('Date')||'');if(Number.isFinite(d)){STIME.setOffset(d+(t1-t0)/2-t1);return true}}catch(e){}return false}
 const TIMESYNC=syncServerTime();setInterval(syncServerTime,10*60e3);// real Stockholm time (docs/REALTIME_SPEC.md R1); not used by the game yet
+const WORLD=useModule('world','data/world.js');// every country and its largest towns (GeoNames, CC BY 4.0), for the new-life form
 const RTIME=useModule('realtime','rules/realtime.js');// the real-time switch and derived clock (src/rules/realtime.js)
 const REALTIME=RTIME.enabled(location.search,(()=>{try{return localStorage}catch(e){return null}})(),true);// real Stockholm time is the default (docs/REALTIME_SPEC.md); ?realtime=0 is the old game clock
 function syncClock(){if(!REALTIME||!S||!S.t0)return false;const c=RTIME.deriveClock(S.t0,STIME.nowMs()),ch=c.day!==S.day;S.day=c.day;S.hour=c.hour;return ch}
@@ -2148,7 +2155,8 @@ function intro(auto){const F=introDefaults();
       m.querySelectorAll('.pill[data-h]').forEach(b=>b.onclick=()=>{const k=b.dataset.h;F.hobbies=F.hobbies.includes(k)?F.hobbies.filter(x=>x!==k):[...F.hobbies,k];b.classList.toggle('on',F.hobbies.includes(k))});
       m.querySelector('#go').onclick=()=>{sync();closeModal();finish()}})};
   draw()}
-function applyMe(o){const me={age:o.age,gender:o.gender,nat:o.kind==='abroad'?o.nat:'Sweden',marital:o.marital,kids:o.kids,edu:o.edu,prof:o.prof,eng:o.eng,traits:o.traits,hobbies:o.hobbies,bio:o.bio};S.me=me;
+function applyMe(o){const me={age:o.age,gender:o.gender,genderLabel:o.genderLabel||'',nat:o.kind==='abroad'?o.nat:'Sweden',bornSweden:o.kind!=='abroad',homeTown:o.homeTown||'',skills:o.skills||[],marital:o.marital,kids:o.kids,edu:o.edu,prof:o.prof,eng:o.eng,traits:o.traits,hobbies:o.hobbies,bio:o.bio};S.me=me;
+  S.skill=clamp(S.skill+2*(me.skills||[]).length,0,100);if(o.svLevel&&S.svenska<100)S.svenska=Math.max(S.svenska,({none:0,basic:15,some:40,fluent:80})[o.svLevel]||0);
   const e=EDU.find(x=>x[0]===o.edu);if(e)S.skill=clamp(S.skill+e[2],0,100);if(/develop|program|engineer|it\b|data/i.test(o.prof||''))S.skill=clamp(S.skill+8,0,100);
   for(const t of o.traits||[]){const T=TRAITS_ME.find(x=>x[0]===t);if(T)for(const k in T[2])S[k]=clamp((S[k]||0)+T[2][k],0,100)}
   if(o.eng==='fluent')S.skill=clamp(S.skill+3,0,100);
@@ -2274,10 +2282,10 @@ function airportSpot(what){if(!S.flags.arlanda)return;
             todoAdd(S.docs.permit==='asylum'?'Migrationsverket: your asylum case':S.docs.permit===0?'Migrationsverket: permit card':'Skatteverket: register (folkbokföring)');if(!S.flags.sim)todoAdd('Buy a SIM card');todoAdd('Eat something')},1500);save();render();after()})})})}}
 
 function renderAbout(){const el=document.getElementById('aboutSec');if(!el||!S)return;const me=S.me;if(!me){el.innerHTML='';return}const nat=COUNTRIES.find(c=>c[0]===me.nat);const p=partner()||S.people.find(q=>q.st==='married');
-  el.innerHTML=`<h3>About ${esc2(S.name)}</h3><div class="aboutme"><div>${nat?nat[1]+' ':''}${esc2(me.nat)} · ${me.age} years · ${({m:'man',f:'woman',x:'non-binary'})[me.gender]||''}${me.prof?' · '+esc2(me.prof):''}</div>
+  el.innerHTML=`<h3>About ${esc2(S.name)}</h3><div class="aboutme"><div>${nat?nat[1]+' ':''}${esc2(me.nat)} · ${me.age} years · ${esc2(me.genderLabel||({m:'man',f:'woman',x:'non-binary'})[me.gender]||'')}${me.prof?' · '+esc2(me.prof):''}${me.homeTown?' · from '+esc2(me.homeTown):''}</div>
     <div>${(MARITAL.find(x=>x[0]===me.marital)||['',''])[1]}${p?` (${esc2(p.n)}${p.away?', in '+esc2(p.away):''})`:''}${me.kids?` · ${me.kids} child${me.kids>1?'ren':''}`:''} · ${(EDU.find(x=>x[0]===me.edu)||['',''])[1]} · English: ${me.eng}</div>
     ${S.route?`<div>Arrived: ${esc2(S.route)}</div>`:S.from?`<div>From ${esc2(S.from)}</div>`:''}
-    <div class="tags">${(me.traits||[]).map(t=>`<i class="t">${(TRAITS_ME.find(x=>x[0]===t)||['',t])[1]}</i>`).join('')}${(me.hobbies||[]).map(h=>`<i>${esc2(h)}</i>`).join('')}</div>${me.bio?`<div class="note">"${esc2(me.bio)}"</div>`:''}</div>`}
+    <div class="tags">${(me.traits||[]).map(t=>`<i class="t">${(TRAITS_ME.find(x=>x[0]===t)||['',t])[1]}</i>`).join('')}${(me.skills||[]).map(h=>`<i class="t">${esc2(h)}</i>`).join('')}${(me.hobbies||[]).map(h=>`<i>${esc2(h)}</i>`).join('')}</div>${me.bio?`<div class="note">"${esc2(me.bio)}"</div>`:''}</div>`}
 lifeMailHooks();
 function poiActions(p){const n=(p.name||'').toLowerCase(),t=p.type,out=[];
   const friend={social:8,mood:5,energy:-6};
@@ -5569,8 +5577,8 @@ let LANG=(()=>{try{const v=localStorage.getItem(LANGKEY);if(v==='sv'||v==='en')r
 const TXT={
  en:{tag:'Live a life in Stockholm. Real map, real time, real weather.',start:'Start',cont:'Continue',newlife:'New life',options:'Options',how:'How to Play',settings:'Settings',saves:'Saves',
   next:'Next',skip:'Skip',back:'Back',
-  choose:'What would you like to do?',contLife:'Continue your life',loadSaved:'Load saved game',newLifeGo:'Start a new life',
-  loadTitle:'Load saved game',empty:'Empty',ended:'Ended',unreadable:'Cannot be read',load:'Load',current:'Current',dayN:'Day',noSaves:'No saved lives yet.',manage:'Manage saves (backup, import)',
+  choose:'What would you like to do?',contLife:'Continue your life',savedGames:'Saved games',newLifeGo:'Start a new life',
+  loadTitle:'Saved games',empty:'Empty',ended:'Ended',unreadable:'Cannot be read',load:'Load',current:'Current',dayN:'Day',noSaves:'No saved lives yet.',manage:'Manage saves (backup, import)',
   formTitle:'Your details',fName:'Name',fAge:'Age',fGender:'Gender',male:'Male',female:'Female',other:'Other',fNat:'Nationality',bornYes:'Born in Sweden: yes',bornNo:'Born in Sweden: no (you were born abroad)',fTown:'Home town',fStatus:'Immigration status',
   st_temporary:'Temporary resident',st_asylum:'Asylum seeker',st_permanent:'Permanent resident',st_student:'Student permit',st_eu:'EU/EEA citizen (right of residence)',
   sn_temporary:'You hold a temporary residence permit, for example for work. First step: your permit card at Migrationsverket.',
@@ -5578,7 +5586,11 @@ const TXT={
   sn_permanent:'You hold a permanent residence permit and may live and work in Sweden. First step: register at Skatteverket for a personnummer.',
   sn_student:'You have a permit to study in Sweden. First step: your permit card at Migrationsverket.',
   sn_eu:'EU/EEA citizens do not need a residence permit. First step: register at Skatteverket.',
-  fGo:'Start my life',errName:'Please enter a name.',errAge:'Age must be between 16 and 90.',
+  fGo:'Start my life',errName:'Please enter a name.',errAge:'Please select your age.',
+  step:'Step',phName:'Fill in your name',phAge:'Select your age',phGender:'Select your gender identity',fGenderText:'Your gender identity, in your own words',fTownAbroad:'Home town (in your country)',townOther:'Other (write it in)',townWrite:'Your home town',
+  fEdu:'Education',fProf:'Profession or field',phProf:'For example nurse, developer, cook',fSkills:'Skills',upTo:'up to',fEng:'English',fSv:'Swedish',fTraits:'About you: personality',fHobbies:'Interests',fMarital:'Relationship',fKids:'Children',fBio:'About you, in your own words',phBio:'A few lines about who you are and what you hope for in Stockholm',
+  tooMany:'You have chosen the most you can. Tap one to remove it first.',errGender:'Please select your gender identity.',errTown:'Please write your home town.',
+
 
   newTitle:'New life?',newBody:'Your current life in Stockholm will be lost. Export a backup from Saves first if you want to keep it.',newYes:'Start a new life',newNo:'Keep playing',
   optTitle:'Options',hints:'Control hints',hintsD:'The line of tips at the bottom of the screen.',tips:'Weather tips',tipsD:'A short message about what to wear when the weather changes.',on:'On',off:'Off',
@@ -5592,8 +5604,8 @@ const TXT={
   map1:'Map ©',map2:' contributors'},
  sv:{tag:'Lev ditt liv i Stockholm. Riktig karta, riktig tid, riktigt väder.',start:'Starta',cont:'Fortsätt',newlife:'Nytt liv',options:'Alternativ',how:'Så spelar du',settings:'Inställningar',saves:'Sparade liv',
   next:'Nästa',skip:'Hoppa över',back:'Tillbaka',
-  choose:'Vad vill du göra?',contLife:'Fortsätt ditt liv',loadSaved:'Ladda sparat spel',newLifeGo:'Starta ett nytt liv',
-  loadTitle:'Ladda sparat spel',empty:'Tom',ended:'Avslutat',unreadable:'Kan inte läsas',load:'Ladda',current:'Aktuellt',dayN:'Dag',noSaves:'Inga sparade liv ännu.',manage:'Hantera sparade liv (säkerhetskopia, import)',
+  choose:'Vad vill du göra?',contLife:'Fortsätt ditt liv',savedGames:'Sparade spel',newLifeGo:'Starta ett nytt liv',
+  loadTitle:'Sparade spel',empty:'Tom',ended:'Avslutat',unreadable:'Kan inte läsas',load:'Ladda',current:'Aktuellt',dayN:'Dag',noSaves:'Inga sparade liv ännu.',manage:'Hantera sparade liv (säkerhetskopia, import)',
   formTitle:'Dina uppgifter',fName:'Namn',fAge:'Ålder',fGender:'Kön',male:'Man',female:'Kvinna',other:'Annat',fNat:'Nationalitet',bornYes:'Född i Sverige: ja',bornNo:'Född i Sverige: nej (du är född utomlands)',fTown:'Hemort',fStatus:'Migrationsstatus',
   st_temporary:'Tillfälligt uppehållstillstånd',st_asylum:'Asylsökande',st_permanent:'Permanent uppehållstillstånd',st_student:'Studentuppehållstillstånd',st_eu:'EU/EES-medborgare (uppehållsrätt)',
   sn_temporary:'Du har ett tillfälligt uppehållstillstånd, till exempel för arbete. Första steget: ditt uppehållstillståndskort hos Migrationsverket.',
@@ -5601,7 +5613,11 @@ const TXT={
   sn_permanent:'Du har ett permanent uppehållstillstånd och får bo och arbeta i Sverige. Första steget: folkbokför dig hos Skatteverket för att få ett personnummer.',
   sn_student:'Du har tillstånd att studera i Sverige. Första steget: ditt uppehållstillståndskort hos Migrationsverket.',
   sn_eu:'EU/EES-medborgare behöver inget uppehållstillstånd. Första steget: folkbokför dig hos Skatteverket.',
-  fGo:'Starta mitt liv',errName:'Skriv ett namn.',errAge:'Åldern måste vara mellan 16 och 90.',
+  fGo:'Starta mitt liv',errName:'Skriv ett namn.',errAge:'Välj din ålder.',
+  step:'Steg',phName:'Fyll i ditt namn',phAge:'Välj din ålder',phGender:'Välj din könsidentitet',fGenderText:'Din könsidentitet, med egna ord',fTownAbroad:'Hemort (i ditt land)',townOther:'Annan (skriv in)',townWrite:'Din hemort',
+  fEdu:'Utbildning',fProf:'Yrke eller område',phProf:'Till exempel sjuksköterska, utvecklare, kock',fSkills:'Färdigheter',upTo:'högst',fEng:'Engelska',fSv:'Svenska',fTraits:'Om dig: personlighet',fHobbies:'Intressen',fMarital:'Relation',fKids:'Barn',fBio:'Om dig, med egna ord',phBio:'Några rader om vem du är och vad du hoppas på i Stockholm',
+  tooMany:'Du har valt så många du kan. Tryck på en för att ta bort den först.',errGender:'Välj din könsidentitet.',errTown:'Skriv din hemort.',
+
 
   newTitle:'Nytt liv?',newBody:'Ditt nuvarande liv i Stockholm går förlorat. Exportera en säkerhetskopia under Sparade liv först om du vill behålla det.',newYes:'Starta ett nytt liv',newNo:'Fortsätt spela',
   optTitle:'Alternativ',hints:'Kontrolltips',hintsD:'Tipsraden längst ned på skärmen.',tips:'Vädertips',tipsD:'Ett kort meddelande om vad du ska ha på dig när vädret ändras.',on:'På',off:'Av',
@@ -5631,19 +5647,17 @@ function titleMain(fresh){
   const started=!!(S&&S.flags&&S.flags.started)&&!fresh;
   titleShow(`<h1>Stockholms<span>liv</span></h1><p class="tag">${tt('tag')}</p>
     <div class="btns"><button class="primary" id="tPlay">${tt('start')}</button>
-    <button id="tOpt">${tt('options')}</button><button id="tHow">${tt('how')}</button><button id="tSet">${tt('settings')}</button><button id="tSaves">${tt('saves')}</button></div>`,t=>{
+    <button id="tOpt">${tt('options')}</button><button id="tHow">${tt('how')}</button></div>`,t=>{
     t.querySelector('#tPlay').onclick=()=>titleGo(()=>startChoice(fresh));
     t.querySelector('#tOpt').onclick=()=>titleGo(()=>optionsScreen(()=>titleGo(()=>titleMain(fresh))));
     t.querySelector('#tHow').onclick=()=>titleGo(()=>introSlides(()=>titleGo(()=>titleMain(fresh)),true));
-    t.querySelector('#tSet').onclick=()=>titleGo(()=>settingsScreen(()=>titleGo(()=>titleMain(fresh))));
-    t.querySelector('#tSaves').onclick=()=>titleModal(()=>openSaveFile(false))},true)}
+    },true)}
 
-const NL={name:'Alex',age:27,gender:'m',nat:'Sweden',town:'Stockholm',status:'temporary'};
-function startChoice(fresh){const started=!!(S&&S.flags&&S.flags.started)&&!fresh,back=()=>titleGo(()=>titleMain(fresh));
-  titleShow(`<h2>${tt('choose')}</h2><div class="btns">${started?`<button class="primary" id="cCont">${tt('contLife')}</button>`:''}
-    <button ${started?'':'class="primary" '}id="cLoad">${tt('loadSaved')}</button><button id="cNew">${tt('newLifeGo')}</button><button id="cBack">${tt('back')}</button></div>`,t=>{
-    const c=t.querySelector('#cCont');if(c)c.onclick=()=>titleHide();
-    t.querySelector('#cLoad').onclick=()=>titleGo(()=>loadScreen(()=>titleGo(()=>startChoice(fresh))));
+function lifeSlot(){const rows=SLOT_IDS.map(slotInfo);return rows.find(r=>r.active&&r.st==='life')||rows.find(r=>r.st==='life')||null}
+function startChoice(fresh){const here=!!(S&&S.flags&&S.flags.started)&&!fresh,other=here?null:lifeSlot(),canCont=here||!!other,back=()=>titleGo(()=>titleMain(fresh));
+  titleShow(`<h2>${tt('choose')}</h2><div class="btns">${canCont?`<button class="primary" id="cCont">${tt('contLife')}</button>`:''}
+    <button ${canCont?'':'class="primary" '}id="cNew">${tt('newLifeGo')}</button><button id="cBack">${tt('back')}</button></div><small id="cNote"></small>`,t=>{
+    const c=t.querySelector('#cCont');if(c)c.onclick=()=>{if(here){titleHide();return}const e=slotSwitch(other.id);if(e)t.querySelector('#cNote').textContent=e};
     t.querySelector('#cNew').onclick=()=>titleGo(()=>newLifeForm(()=>titleGo(()=>startChoice(fresh))));
     t.querySelector('#cBack').onclick=back})}
 function loadScreen(back){
@@ -5656,34 +5670,76 @@ function loadScreen(back){
     t.querySelectorAll('.lcur').forEach(b=>b.onclick=()=>titleHide());
     t.querySelector('#lManage').onclick=()=>titleModal(()=>openSaveFile(false));
     t.querySelector('#lBack').onclick=back})}
-function newLifeForm(back){
-  const natG=n=>(COUNTRIES.find(c=>c[0]===n)||[])[2],isSwe=()=>NL.nat==='Sweden';
-  const statusOpts=()=>{const g=natG(NL.nat);return g==='noneu'?['temporary','asylum','permanent','student']:['eu','student']};
+const NL={name:'',age:'',gender:'',genderText:'',iso:'SE',town:'Stockholm',townText:'',status:'temporary',edu:'upper',prof:'',skills:[],eng:'good',svLevel:'none',traits:[],hobbies:[],bio:'',marital:'single',kids:0};
+const GENDERS=[['woman','Woman','f'],['man','Man','m'],['nonbinary','Non-binary','x'],['transwoman','Trans woman','f'],['transman','Trans man','m'],['genderqueer','Genderqueer','x'],['genderfluid','Genderfluid','x'],['agender','Agender','x'],['bigender','Bigender','x'],['demigender','Demigender','x'],['twospirit','Two-Spirit','x'],['intersex','Intersex','x'],['questioning','Questioning','x'],['other','Other (write your own)','x'],['nosay','Prefer not to say','x']];
+const SKILLS=['Cooking','Driving licence','Customer service','Care work','IT and programming','Teaching','Construction','Cleaning','Sales','Languages','Music','Sports coaching'];
+const SVX={'Woman':'Kvinna','Man':'Man','Non-binary':'Icke-binär','Trans woman':'Transkvinna','Trans man':'Transman','Genderqueer':'Genderqueer','Genderfluid':'Genderfluid','Agender':'Agender','Bigender':'Bigender','Demigender':'Demigender','Two-Spirit':'Two-Spirit','Intersex':'Intersex','Questioning':'Ifrågasättande','Other (write your own)':'Annat (skriv själv)','Prefer not to say':'Vill inte ange',
+ 'Cooking':'Matlagning','Driving licence':'Körkort','Customer service':'Kundservice','Care work':'Vård och omsorg','IT and programming':'IT och programmering','Teaching':'Undervisning','Construction':'Bygg','Cleaning':'Städning','Sales':'Försäljning','Languages':'Språk','Music':'Musik','Sports coaching':'Idrottstränare',
+ 'Outgoing':'Utåtriktad','Shy':'Blyg','Organised':'Organiserad','Spontaneous':'Spontan','Ambitious':'Ambitiös','Laid-back':'Avslappnad','Creative':'Kreativ','Practical':'Praktisk','Funny':'Rolig','Kind':'Snäll','Romantic':'Romantisk','Sporty':'Sportig',
+ 'Football':'Fotboll','Gym':'Gym','Running':'Löpning','Dancing':'Dans','Gaming':'Spel','Reading':'Läsning','Hiking':'Vandring','Art':'Konst','Photography':'Fotografi','Tech':'Teknik','Fashion':'Mode','Faith community':'Trosgemenskap','Volunteering':'Volontärarbete','Movies':'Film',
+ 'Compulsory school':'Grundskola','Upper secondary (gymnasium)':'Gymnasium','University degree':'Universitetsexamen','PhD':'Doktorsexamen','Single':'Singel','In a relationship':'I en relation','Married':'Gift','Divorced':'Skild','Widowed':'Änka/änkling',
+ 'Basic':'Grundläggande','Good':'God','Fluent':'Flytande','None':'Ingen','Some':'Viss'};
+const lab=en=>LANG==='sv'?(SVX[en]||en):en;
+const natNameOf=iso=>{try{return new Intl.DisplayNames([LANG],{type:'region'}).of(iso)}catch(e){}return(WORLD.countries.find(c=>c[0]===iso)||[,iso])[1]};
+const isoFlag=iso=>[...iso].map(ch=>String.fromCodePoint(0x1F1E6+ch.charCodeAt(0)-65)).join('');
+function worldCountry(iso){const w=WORLD.countries.find(c=>c[0]===iso);if(!w)return 'Sweden';const flag=isoFlag(iso),ex=COUNTRIES.find(c=>c[1]===flag);if(ex)return ex[0];
+  COUNTRIES.push([w[1],flag,w[3],w[4],0,w[2],w[3]==='noneu'?0:1]);return w[1]}
+function newLifeForm(back,step){
+  step=step||1;const w=WORLD.countries.find(c=>c[0]===NL.iso)||WORLD.countries.find(c=>c[0]==='SE'),isSwe=NL.iso==='SE',grp=w[3];
+  const statusOpts=()=>grp==='noneu'?['temporary','asylum','permanent','student']:['eu','student'];
   if(!statusOpts().includes(NL.status))NL.status=statusOpts()[0];
-  const opt=(v,l,cur)=>`<option value="${v}"${String(v)===String(cur)?' selected':''}>${l}</option>`;
-  titleShow(`<h2>${tt('formTitle')}</h2>
-    <div class="frow"><label for="nfName">${tt('fName')}</label><input id="nfName" maxlength="24" autocomplete="off" value="${NL.name.replace(/"/g,'&quot;')}"></div>
-    <div class="frow two"><div><label for="nfAge">${tt('fAge')}</label><input id="nfAge" type="number" min="16" max="90" value="${NL.age}"></div>
-      <div><label for="nfGender">${tt('fGender')}</label><select id="nfGender">${opt('m',tt('male'),NL.gender)}${opt('f',tt('female'),NL.gender)}${opt('x',tt('other'),NL.gender)}</select></div></div>
-    <div class="frow"><label for="nfNat">${tt('fNat')}</label><select id="nfNat">${COUNTRIES.map(c=>opt(c[0],c[1]+' '+c[0],NL.nat)).join('')}</select></div>
+  const townList=isSwe?['Stockholm',...SWE_CITIES.map(c=>c[0])]:(WORLD.towns[NL.iso]||[w[2]]);
+  if(!townList.includes(NL.town)&&NL.town!=='__other')NL.town=townList[0];
+  const esc=x=>String(x).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+  const opt=(v,l,cur)=>`<option value="${esc(v)}"${String(v)===String(cur)?' selected':''}>${esc(l)}</option>`;
+  const chips=(key,list,max)=>`<div class="chips" data-k="${key}" data-max="${max}">${list.map(([v,l])=>`<button type="button" data-v="${esc(v)}" aria-pressed="${NL[key].includes(v)}">${esc(l)}</button>`).join('')}</div>`;
+  const natList=WORLD.countries.map(c=>[c[0],natNameOf(c[0])]).sort((a,b)=>a[0]==='SE'?-1:b[0]==='SE'?1:a[1].localeCompare(b[1],LANG));
+  const ages=[];for(let a=16;a<=90;a++)ages.push(a);
+  const heading=`<h2>${tt('formTitle')}</h2><div class="steps">${tt('step')} ${step} / 2</div>`;
+  const page1=`<div class="frow"><label for="nfName">${tt('fName')}</label><input id="nfName" maxlength="24" autocomplete="off" placeholder="${esc(tt('phName'))}" value="${esc(NL.name)}"></div>
+    <div class="frow two"><div><label for="nfAge">${tt('fAge')}</label><select id="nfAge"><option value="" disabled${NL.age===''?' selected':''}>${tt('phAge')}</option>${ages.map(a=>opt(a,a,NL.age)).join('')}</select></div>
+      <div><label for="nfGender">${tt('fGender')}</label><select id="nfGender"><option value="" disabled${NL.gender===''?' selected':''}>${tt('phGender')}</option>${GENDERS.map(g=>opt(g[0],lab(g[1]),NL.gender)).join('')}</select></div></div>
+    <div class="frow" id="nfGenderTextRow"><label for="nfGenderText">${tt('fGenderText')}</label><input id="nfGenderText" maxlength="30" autocomplete="off" value="${esc(NL.genderText)}"></div>
+    <div class="frow"><label for="nfNat">${tt('fNat')}</label><select id="nfNat">${natList.map(([c,n])=>opt(c,isoFlag(c)+' '+n,NL.iso)).join('')}</select></div>
     <div class="nfnote" id="nfBorn"></div>
-    <div class="frow" id="nfTownRow"><label for="nfTown">${tt('fTown')}</label><select id="nfTown">${opt('Stockholm','Stockholm',NL.town)}${SWE_CITIES.map(c=>opt(c[0],c[0],NL.town)).join('')}</select></div>
-    <div class="frow" id="nfStatusRow"><label for="nfStatus">${tt('fStatus')}</label><select id="nfStatus"></select><small id="nfStatusNote"></small></div>
-    <p class="nferr" id="nfErr" role="alert"></p>
-    <button class="primary" id="nfGo">${tt('fGo')}</button><button id="nfBack">${tt('back')}</button>`,t=>{
-    const $q=q=>t.querySelector(q),sync=()=>{const swe=isSwe();
-      $q('#nfBorn').textContent=swe?tt('bornYes'):tt('bornNo');$q('#nfTownRow').hidden=!swe;$q('#nfStatusRow').hidden=swe;
-      if(!swe){const o=statusOpts();if(!o.includes(NL.status))NL.status=o[0];$q('#nfStatus').innerHTML=o.map(v=>opt(v,tt('st_'+v),NL.status)).join('');$q('#nfStatusNote').textContent=tt('sn_'+NL.status)}};
-    const read=()=>{NL.name=$q('#nfName').value;NL.age=$q('#nfAge').value;NL.gender=$q('#nfGender').value;NL.nat=$q('#nfNat').value;NL.town=$q('#nfTown').value;if(!isSwe())NL.status=$q('#nfStatus').value||NL.status};
-    ['#nfName','#nfAge','#nfGender','#nfTown'].forEach(q=>$q(q).addEventListener('input',read));
-    $q('#nfNat').onchange=()=>{read();NL.nat=$q('#nfNat').value;sync()};$q('#nfStatus').onchange=()=>{NL.status=$q('#nfStatus').value;$q('#nfStatusNote').textContent=tt('sn_'+NL.status)};
+    <div class="frow" id="nfTownRow"><label for="nfTown">${tt(isSwe?'fTown':'fTownAbroad')}</label><select id="nfTown">${townList.map(c=>opt(c,c,NL.town)).join('')}${isSwe?'':opt('__other',tt('townOther'),NL.town)}</select></div>
+    <div class="frow" id="nfTownTextRow"><label for="nfTownText">${tt('townWrite')}</label><input id="nfTownText" maxlength="40" autocomplete="off" value="${esc(NL.townText)}"></div>
+    <div class="frow" id="nfStatusRow"><label for="nfStatus">${tt('fStatus')}</label><select id="nfStatus"></select><small id="nfStatusNote"></small></div>`;
+  const page2=`<div class="frow"><label for="nfEdu">${tt('fEdu')}</label><select id="nfEdu">${EDU.map(e=>opt(e[0],lab(e[1]),NL.edu)).join('')}</select></div>
+    <div class="frow"><label for="nfProf">${tt('fProf')}</label><input id="nfProf" maxlength="40" autocomplete="off" placeholder="${esc(tt('phProf'))}" value="${esc(NL.prof)}"></div>
+    <div class="frow"><label>${tt('fSkills')} <em>${tt('upTo')} 4</em></label>${chips('skills',SKILLS.map(x=>[x,lab(x)]),4)}</div>
+    <div class="frow two"><div><label for="nfEng">${tt('fEng')}</label><select id="nfEng">${[['basic','Basic'],['good','Good'],['fluent','Fluent']].map(([v,l])=>opt(v,lab(l),NL.eng)).join('')}</select></div>
+      <div id="nfSvWrap"><label for="nfSv">${tt('fSv')}</label><select id="nfSv">${[['none','None'],['basic','Basic'],['some','Some'],['fluent','Fluent']].map(([v,l])=>opt(v,lab(l),NL.svLevel)).join('')}</select></div></div>
+    <div class="frow"><label>${tt('fTraits')} <em>${tt('upTo')} 3</em></label>${chips('traits',TRAITS_ME.map(t=>[t[0],lab(t[1])]),3)}</div>
+    <div class="frow"><label>${tt('fHobbies')} <em>${tt('upTo')} 4</em></label>${chips('hobbies',HOBBIES.map(h=>[h,lab(h)]),4)}</div>
+    <div class="frow two"><div><label for="nfMar">${tt('fMarital')}</label><select id="nfMar">${MARITAL.map(m=>opt(m[0],lab(m[1]),NL.marital)).join('')}</select></div>
+      <div><label for="nfKids">${tt('fKids')}</label><select id="nfKids">${[0,1,2,3,4,5,6].map(k=>opt(k,k,NL.kids)).join('')}</select></div></div>
+    <div class="frow"><label for="nfBio">${tt('fBio')}</label><textarea id="nfBio" maxlength="300" rows="3" placeholder="${esc(tt('phBio'))}">${esc(NL.bio)}</textarea></div>`;
+  titleShow(`${heading}${step===1?page1:page2}<p class="nferr" id="nfErr" role="alert"></p>
+    <button class="primary" id="nfGo">${step===1?tt('next'):tt('fGo')}</button><button id="nfBack">${tt('back')}</button>`,t=>{
+    const $q=q=>t.querySelector(q),val=q=>{const e=$q(q);return e?e.value:null};
+    const read=()=>{if(step===1){NL.name=val('#nfName');NL.age=val('#nfAge')||'';NL.gender=val('#nfGender')||'';NL.genderText=val('#nfGenderText');NL.town=val('#nfTown')||NL.town;NL.townText=val('#nfTownText');if(!isSwe)NL.status=val('#nfStatus')||NL.status}
+      else{NL.edu=val('#nfEdu');NL.prof=val('#nfProf');NL.eng=val('#nfEng');NL.svLevel=val('#nfSv');NL.marital=val('#nfMar');NL.kids=+val('#nfKids');NL.bio=val('#nfBio')}};
+    t.querySelectorAll('input,select,textarea').forEach(e=>e.addEventListener('input',()=>{read();sync()}));
+    t.querySelectorAll('.chips').forEach(c=>c.querySelectorAll('button').forEach(b=>b.onclick=()=>{const k=c.dataset.k,max=+c.dataset.max,v=b.dataset.v,i=NL[k].indexOf(v);
+      if(i>=0)NL[k].splice(i,1);else if(NL[k].length<max)NL[k].push(v);else{$q('#nfErr').textContent=tt('tooMany');return}
+      $q('#nfErr').textContent='';c.querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',String(NL[k].includes(x.dataset.v))))}));
+    const sync=()=>{if(step===1){$q('#nfBorn').textContent=isSwe?tt('bornYes'):tt('bornNo');
+        $q('#nfGenderTextRow').hidden=NL.gender!=='other';$q('#nfStatusRow').hidden=isSwe;$q('#nfTownTextRow').hidden=NL.town!=='__other';
+        if(!isSwe){const o=statusOpts(),se=$q('#nfStatus');if(!se.options.length)se.innerHTML=o.map(v=>opt(v,tt('st_'+v),NL.status)).join('');$q('#nfStatusNote').textContent=tt('sn_'+NL.status)}}
+      else{$q('#nfSvWrap').hidden=isSwe}};
+    if(step===1)$q('#nfNat').onchange=()=>{read();NL.iso=$q('#nfNat').value;NL.town='';NL.townText='';newLifeForm(back,1)};
     sync();
-    $q('#nfBack').onclick=back;
-    $q('#nfGo').onclick=()=>{read();const name=NL.name.trim(),age=Math.round(+NL.age),err=$q('#nfErr');
-      if(!name){err.textContent=tt('errName');return}if(!(age>=16&&age<=90)){err.textContent=tt('errAge');return}
-      const F=introDefaults();F.name=name;F.age=age;F.gender=NL.gender;
-      if(isSwe()){F.nat='Sweden';F.from='Sweden';if(NL.town==='Stockholm'){F.kind='stockholm';F.over=false}else{F.kind='sweden';F.city=NL.town}}
-      else{F.kind='abroad';F.nat=NL.nat;F.from=NL.nat;F.route=0;F.status=NL.status==='eu'?'':NL.status;F.purpose=NL.status==='student'?'study':'work'}
+    $q('#nfBack').onclick=()=>{read();if(step===2)newLifeForm(back,1);else back()};
+    $q('#nfGo').onclick=()=>{read();const err=$q('#nfErr');
+      if(step===1){if(!NL.name.trim()){err.textContent=tt('errName');return}if(!NL.age){err.textContent=tt('errAge');return}if(!NL.gender){err.textContent=tt('errGender');return}
+        if(NL.town==='__other'&&!NL.townText.trim()){err.textContent=tt('errTown');return}newLifeForm(back,2);return}
+      const g=GENDERS.find(x=>x[0]===NL.gender)||GENDERS[14],F=introDefaults();
+      F.name=NL.name.trim();F.age=+NL.age;F.gender=g[2];F.genderLabel=NL.gender==='other'&&NL.genderText.trim()?NL.genderText.trim():g[1];
+      F.edu=NL.edu;F.prof=NL.prof.trim();F.eng=NL.eng;F.svLevel=isSwe?'fluent':NL.svLevel;F.skills=NL.skills.map(x=>x);F.traits=NL.traits.map(x=>x);F.hobbies=NL.hobbies.map(x=>x);F.bio=NL.bio.trim();F.marital=NL.marital;F.kids=NL.kids;
+      const town=NL.town==='__other'?NL.townText.trim():NL.town;F.homeTown=town;
+      if(isSwe){F.nat='Sweden';F.from='Sweden';if(NL.town==='Stockholm'){F.kind='stockholm';F.over=false}else{F.kind='sweden';F.city=NL.town}}
+      else{const nm=worldCountry(NL.iso);F.kind='abroad';F.nat=nm;F.from=nm;F.route=0;F.status=NL.status==='eu'?'':NL.status;F.purpose=NL.status==='student'?'study':'work'}
       const go=()=>{titleHide();lifeFromForm(F)};if(!seenIntro())titleGo(()=>introSlides(go));else go()}})}
 function titleNewLife(){titleShow(`<h2>${tt('newTitle')}</h2><p class="tag">${tt('newBody')}</p>
   <button class="primary" id="tYes">${tt('newYes')}</button><button id="tNo">${tt('newNo')}</button>`,t=>{
@@ -5701,9 +5757,13 @@ function optionsScreen(back){
   titleShow(`<h2>${tt('optTitle')}</h2>
     <div class="setrow"><div><b>${tt('hints')}</b><small>${tt('hintsD')}</small></div>${segHtml('hints',[[true,tt('on')],[false,tt('off')]])}</div>
     <div class="setrow"><div><b>${tt('tips')}</b><small>${tt('tipsD')}</small></div>${segHtml('tips',[[true,tt('on')],[false,tt('off')]])}</div>
+    <div class="btns"><button id="oSet">${tt('settings')}</button><button id="oSaves">${tt('savedGames')}</button></div>
     <p class="tag" style="margin:8px 0 0;font-size:13px">${tt('langNote')}</p>
     <button class="primary" id="oBack">${tt('back')}</button><small id="oNote"></small>`,t=>{
-    segBind(t,k=>{if(k==='hints')applyHints();t.querySelector('#oNote').textContent=tt('savedNow')});t.querySelector('#oBack').onclick=back})}
+    segBind(t,k=>{if(k==='hints')applyHints();t.querySelector('#oNote').textContent=tt('savedNow')});
+    t.querySelector('#oSet').onclick=()=>titleGo(()=>settingsScreen(()=>titleGo(()=>optionsScreen(back))));
+    t.querySelector('#oSaves').onclick=()=>titleGo(()=>loadScreen(()=>titleGo(()=>optionsScreen(back))));
+    t.querySelector('#oBack').onclick=back})}
 function settingsScreen(back){
   titleShow(`<h2>${tt('setTitle')}</h2>
     <div class="setrow"><div><b>${tt('gfx')}</b><small>${tt('gfxD')}</small></div>${segHtml('quality',[['low',tt('low')],['auto',tt('auto')],['high',tt('high')]])}</div>

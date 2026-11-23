@@ -132,6 +132,16 @@ button:focus-visible,[tabindex]:focus-visible,input:focus-visible,select:focus-v
 @media (prefers-reduced-motion:reduce){.title button,.title button::after{transition:none!important}.title button:hover,.title button:focus-visible{transform:none;letter-spacing:normal}.title button:hover::after{transform:translateX(-130%)}}
 .title .tosm,.title .thel{position:fixed;bottom:max(10px,env(safe-area-inset-bottom,0px));z-index:1;font-size:12px;line-height:1.4;color:#e9eef6;text-shadow:0 1px 8px rgba(0,0,0,.7)}
 .title .tosm{left:max(14px,env(safe-area-inset-left,0px))}.title .thel{right:max(14px,env(safe-area-inset-right,0px))}.title .tosm a{color:inherit}
+
+.title .frow{display:flex;flex-direction:column;gap:5px;text-align:left}.title .frow.two{flex-direction:row;gap:10px}.title .frow.two>div{flex:1;display:flex;flex-direction:column;gap:5px;min-width:0}
+.title [hidden]{display:none!important}
+.title label{font-size:12.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#d7e0ee}
+.title input,.title select{font:500 16px var(--body,inherit);padding:11px 13px;border-radius:12px;border:1px solid rgba(255,255,255,.22);background:rgba(10,18,34,.72);color:#fff;min-width:0;width:100%}
+.title input:focus-visible,.title select:focus-visible{outline:2px solid #fbc02d;outline-offset:1px}.title select option{color:#111}
+.title .nfnote{font-size:14px;color:#fff;background:rgba(251,192,45,.16);border:1px solid rgba(251,192,45,.4);border-radius:12px;padding:9px 12px;text-align:left}
+.title .nferr{margin:0;color:#ffb4a8;font-size:13.5px;min-height:1.2em}
+.title .frow small{margin:2px 0 0;color:#cfd8e6;text-align:left}
+.title .card.panel .primary,.title .card.panel>button{align-self:stretch}
 body.titleopen .stage,body.titleopen .dock,body.titleopen #drawer,body.titleopen .joy,body.titleopen .runbtn{pointer-events:none}
 .title small{color:#e9eef6;font-size:12px;margin-top:6px;text-shadow:0 1px 8px rgba(0,0,0,.6);line-height:1.5}.title small a{color:inherit}
 .slides{min-height:150px;display:flex;flex-direction:column;gap:8px;text-align:left}.slides h3{margin:0;font-size:19px}.slides p{margin:0;color:#e1e8f2;font-size:15px;line-height:1.5}
@@ -569,6 +579,8 @@ const BG={
   student:{label:'EU student at KTH',sub:'An EU citizen, so you may vote in the kommunval once folkbokförd. Master\'s student with savings and a corridor room. Needs a permit card and to register in Sweden.',s:{money:38000,svenska:8,skill:52,social:20,mood:65,queue:0},home:'korridor',start:'ostermalm',coat:0x3c8a5a,docs:{...NODOCS,permit:0}},
   local:{label:'Born in Stockholm',sub:'All papers in order and six years in the queue, but broke and back with your parents.',s:{money:5000,svenska:100,skill:26,social:38,mood:55,queue:2190},home:'parents',start:'vasastan',coat:0x9c2a23,docs:{...NODOCS,pn:1,id:1,bank:1,bankid:1,queue:1,vc:1}},
 };
+BG.permanent={label:'Permanent resident',sub:'You hold a permanent residence permit, so you may live and work in Sweden. Register at Skatteverket to get your personnummer.',s:{money:22000,svenska:0,skill:48,social:8,mood:62,queue:0},home:'rinkebyRoom',start:'tc',coat:0x2f6fa8,docs:{...NODOCS,permit:1}};
+BG.asylum={label:'Asylum seeker',sub:'You have applied for asylum and wait for Migrationsverket\'s decision. You hold an LMA card, not a residence permit, so you have no personnummer yet. Simplified: the real process is longer.',s:{money:1200,svenska:0,skill:44,social:6,mood:42,queue:0},home:'rinkebyRoom',start:'tc',coat:0x6d597a,docs:{...NODOCS,permit:'asylum'}};
 BG.over={label:'Starting over',sub:'Born in Stockholm, papers in order, but a divorce and old debts left you with no home, 1 500 kr and a payment remark. Socialtjänsten, shelters and friends are your way back.',s:{money:1500,svenska:100,skill:30,social:30,mood:40,queue:400},home:'none',start:'tc',coat:0x6d597a,docs:{...BG.local.docs}};
 const need=(...ks)=>()=>{for(const k of ks){
   if(k==='permit'&&S.docs.permit!==1)return 'Needs your residence permit card (Migrationsverket)';
@@ -989,7 +1001,8 @@ function nextSteps(){const out=[];if(!S||busy)return out;const add=(l,s,fn,btn,u
   if(S.bills&&S.bills.some(b=>b.stage>=1))add('Overdue bills','Pay before they go to inkasso and Kronofogden',()=>openBills(),'Pay',80);
   if(S.civ&&S.civ.move&&S.civ.move.permit&&S.civ.move.permit.ok&&S.day===S.civ.move.permit.day)add('Your demonstration is today','At '+S.civ.move.permit.place,()=>openTravel(DEMO_SPOTS[S.civ.move.permit.spot][3]),'Go',88);
   if(S.civ&&electionOpen()&&S.civ.voted!==S.civ.next&&canVote().ok)add(isElectionDay()?'Election day: vote':'Early voting is open','Kommunval '+fmtElection(),()=>castVote(),'Vote',75);
-  if(d.permit===0)add('Get your residence permit card','Photo and fingerprints at Migrationsverket, Sundbyberg',()=>openTravel('sundbyberg'),'Go',60);
+  if(d.permit==='asylum')add('Your asylum case','Wait for Migrationsverket\'s decision and keep your LMA card with you',()=>openTravel('sundbyberg'),'Go',60);
+  else if(d.permit===0)add('Get your residence permit card','Photo and fingerprints at Migrationsverket, Sundbyberg',()=>openTravel('sundbyberg'),'Go',60);
   else if(d.permit==='wait')add('Your permit card is on its way',`Arrives about day ${d.permitDay}. Meanwhile: explore, or look at jobs`,()=>openJobs(),'Jobs',20);
   else if(d.pn===0)add('Register at Skatteverket','Folkbokföring gives you a personnummer (Sundbyberg or Kista)',()=>openTravel('sundbyberg'),'Go',60);
   else if(d.pn==='wait')add('Waiting for your personnummer',`About day ${d.pnDay}. Try the city: museums, fika, Djurgården`,()=>setTab('phone'),'Ideas',15);
@@ -2079,15 +2092,17 @@ const TRAITS_ME=[['outgoing','Outgoing',{social:10,charisma:8}],['shy','Shy',{ch
 const HOBBIES=['Football','Gym','Running','Music','Dancing','Cooking','Gaming','Reading','Hiking','Art','Photography','Tech','Fashion','Faith community','Volunteering','Movies'];
 const MARITAL=[['single','Single'],['relationship','In a relationship'],['married','Married'],['divorced','Divorced'],['widowed','Widowed']];
 const EDU=[['basic','Compulsory school',0],['upper','Upper secondary (gymnasium)',4],['uni','University degree',10],['phd','PhD',16]];
-function intro(auto){const F={kind:'stockholm',over:false,city:SWE_CITIES[0][0],nat:'Nigeria',from:'Nigeria',route:0,purpose:'work',name:'Alex',age:27,gender:'m',marital:'single',kids:0,edu:'upper',prof:'',eng:'good',traits:['kind'],hobbies:['Music'],bio:'',look:'',skin:'',height:'avg',build:'avg',hair:'auto',headw:'none',headCol:'0x1d2733',beard:'none',glasses:'no',pref:'any',asp:''};
-  const finish=()=>{const natG=(COUNTRIES.find(c=>c[0]===F.nat)||[])[2];
-        const bg=F.kind==='stockholm'?(F.over?'over':'local'):F.kind==='sweden'?'domestic':natG==='se'?'domestic':(F.purpose==='study'?'student':'newcomer');
-        const look=F.look||(F.gender==='f'?(F.age>=60?'OldClassy_Female':'Casual_Female'):F.gender==='m'?'Casual_Male':(Math.random()<0.5?'Casual_Female':'Casual_Male'));newGame(F.name.trim()||'Alex',bg,look,F.pref,F.asp||Object.keys(ASPIRATIONS)[0],F.skin,{...F,routeObj:F.kind==='abroad'?routesFrom(F.from)[F.route]:null})};
+const introDefaults=()=>({kind:'stockholm',over:false,city:SWE_CITIES[0][0],nat:'Nigeria',from:'Nigeria',route:0,purpose:'work',name:'Alex',age:27,gender:'m',marital:'single',kids:0,edu:'upper',prof:'',eng:'good',traits:['kind'],hobbies:['Music'],bio:'',look:'',skin:'',height:'avg',build:'avg',hair:'auto',headw:'none',headCol:'0x1d2733',beard:'none',glasses:'no',pref:'any',asp:''});
+function lifeFromForm(F){const natG=(COUNTRIES.find(c=>c[0]===F.nat)||[])[2];
+        const bg=F.kind==='stockholm'?(F.over?'over':'local'):F.kind==='sweden'?'domestic':natG==='se'?'domestic':F.status==='student'||F.purpose==='study'?'student':F.status==='asylum'?'asylum':F.status==='permanent'?'permanent':'newcomer';
+        const look=F.look||(F.gender==='f'?(F.age>=60?'OldClassy_Female':'Casual_Female'):F.gender==='m'?'Casual_Male':(Math.random()<0.5?'Casual_Female':'Casual_Male'));newGame(F.name.trim()||'Alex',bg,look,F.pref,F.asp||Object.keys(ASPIRATIONS)[0],F.skin,{...F,routeObj:F.kind==='abroad'?routesFrom(F.from)[F.route]:null})}
+function intro(auto){const F=introDefaults();
+  const finish=()=>lifeFromForm(F);
   if(auto){F.kind='abroad';finish();return}// real time: no intro, the game starts at once with the default newcomer (who you are can be changed in Me)
   const draw=()=>{const nat=COUNTRIES.find(c=>c[0]===F.nat)||COUNTRIES[1];const rts=routesFrom(F.from);if(F.route>=rts.length)F.route=0;const rt=rts[F.route];
     const papers=F.kind!=='abroad'?'':nat[2]==='se'?'You are Swedish: no permit needed. Re-register your address at Skatteverket.':nat[2]==='nordic'?'Nordic citizens can live and work in Sweden freely. You only register at Skatteverket.':nat[2]==='eu'?'EU/EEA citizens have a right of residence: no permit card. Register at Skatteverket once you have work or studies.':F.purpose==='study'?'You have a residence permit for studies. First stop: Migrationsverket for your permit card.':'Your work permit was approved from abroad. First stop: Migrationsverket for your permit card.';
     const border=F.kind!=='abroad'||!rt?'':rt.sch?`Your last flight leaves from ${rt.last}, inside the Schengen area. ${nat[2]==='noneu'&&rt.last!==(COUNTRIES.find(c=>c[0]===F.from)||[])[5]?`You pass passport control in ${rt.last} when you enter Schengen, `:''}so there is <b>no passport control at Arlanda</b>.`:`Your last flight leaves from ${rt.last}, outside the Schengen area: <b>you go through Swedish passport control at Arlanda</b>.`;
-    modal(`<h2 class="hero">Stockholmsliv</h2><p>Real Stockholm, built from OpenStreetMap. Get your papers, find a flat, make friends and build a life.</p>
+    modal(`<h2 class="hero">Stockholmsliv</h2>
     <h3 class="step">1 · Where are you from?</h3><div class="origins">
       <button class="orig o1 ${F.kind==='stockholm'?'sel':''}" data-o="stockholm">${glyphSVG('house','og')}<b>Born in Stockholm</b><small>You start at home.</small></button>
       <button class="orig o2 ${F.kind==='sweden'?'sel':''}" data-o="sweden">${glyphSVG('train','og')}<b>From elsewhere in Sweden</b><small>Arrive at T-Centralen.</small></button>
@@ -2143,7 +2158,7 @@ function applyMe(o){const me={age:o.age,gender:o.gender,nat:o.kind==='abroad'?o.
     log(abroad?`${p.n}, your ${o.marital==='married'?'spouse':'partner'}, is still in ${where}. Later you can apply for them to join you (anhöriginvandring at Migrationsverket).`:`You live with ${p.n}, your ${o.marital==='married'?'spouse':'partner'}.`,'plus');setTimeout(()=>pushChat(p.id,false,abroad?'Text me when you land ❤️':'Ses ikväll? ❤️','love'),3000)}
   if(o.kids>0){if(abroad){S.flags.kidsAbroad=o.kids;log(`Your ${o.kids>1?o.kids+' children are':'child is'} with family in ${where} for now.`)}else for(let i=0;i<o.kids;i++)S.kids.push({n:pickA([...NAMES_F,...NAMES_M]),born:S.day-365*(3+i*2)})}
   if(o.marital==='divorced')apply({mood:-3});if(o.marital==='widowed')apply({mood:-6})}
-function applyOrigin(o){try{if(W&&W.inside&&W.inside())W.exitInterior(true)}catch(e){}if(!o)return;inboxInit(S);S.origin={kind:o.kind,city:o.city,nat:o.nat,from:o.from,purpose:o.purpose};
+function applyOrigin(o){try{if(W&&W.inside&&W.inside())W.exitInterior(true)}catch(e){}if(!o)return;inboxInit(S);S.origin={kind:o.kind,city:o.city,nat:o.nat,from:o.from,purpose:o.purpose,status:o.status||''};
   if(o.kind==='sweden'||(o.kind==='abroad'&&o.nat==='Sweden'&&false)){const c=SWE_CITIES.find(x=>x[0]===o.city)||SWE_CITIES[0];S.from=c[0];S.flags.moveR=1;S.fam={n:'Mamma',where:c[0]};
     const st=W&&W.stationPos?W.stationPos('central'):null;if(st){S.pos={x:st.x,z:st.z};W.placeAvatar(st.x,st.z,true);updateLoc()}
     log(`${c[1]} from ${c[0]} (${c[3]}), about ${fmtDur(c[2])}. You step off at Stockholms centralstation. T-Centralen is right below you.`,'plus');
@@ -2256,7 +2271,7 @@ function airportSpot(what){if(!S.flags.arlanda)return;
           setTimeout(()=>{pushChat('fam',false,'Did you land safely? Message us when you can ❤️','call');
             if(S.docs.permit===0)sendMail('Migrationsverket','Book your visit: residence permit card','Welcome to Sweden. To get your residence permit card (UT-kort) you need to visit a Migrationsverket service centre for photo and fingerprints. The nearest is in Sundbyberg.',null);
             else sendMail('Skatteverket','Moving to Sweden: folkbokföring','If you plan to live in Sweden for a year or more, apply for registration (folkbokföring) at a Skatteverket service office. Bring your passport and proof of work or studies.',null);
-            todoAdd(S.docs.permit===0?'Migrationsverket: permit card':'Skatteverket: register (folkbokföring)');if(!S.flags.sim)todoAdd('Buy a SIM card');todoAdd('Eat something')},1500);save();render();after()})})})}}
+            todoAdd(S.docs.permit==='asylum'?'Migrationsverket: your asylum case':S.docs.permit===0?'Migrationsverket: permit card':'Skatteverket: register (folkbokföring)');if(!S.flags.sim)todoAdd('Buy a SIM card');todoAdd('Eat something')},1500);save();render();after()})})})}}
 
 function renderAbout(){const el=document.getElementById('aboutSec');if(!el||!S)return;const me=S.me;if(!me){el.innerHTML='';return}const nat=COUNTRIES.find(c=>c[0]===me.nat);const p=partner()||S.people.find(q=>q.st==='married');
   el.innerHTML=`<h3>About ${esc2(S.name)}</h3><div class="aboutme"><div>${nat?nat[1]+' ':''}${esc2(me.nat)} · ${me.age} years · ${({m:'man',f:'woman',x:'non-binary'})[me.gender]||''}${me.prof?' · '+esc2(me.prof):''}</div>
@@ -2465,7 +2480,7 @@ function openHousing(){
 /* ---------- papers & goals ---------- */
 function papers(){const d=S.docs,st=(s,l)=>({s,l});const skv='Skatteverket servicekontor, Kista or Sundbyberg';
   const list=[];
-  if(S.bg!=='local')list.push({n:'Residence permit card',...(d.permit===1?st('done','Done'):d.permit==='wait'?st('wait','Post d'+d.permitDay):st('todo','To do')),w:'Migrationsverket, Sturegatan, Sundbyberg · Mon–Fri 09–15'});
+  if(S.bg!=='local')list.push({n:'Residence permit card',...(d.permit===1?st('done','Done'):d.permit==='wait'?st('wait','Post d'+d.permitDay):d.permit==='asylum'?st('wait','Asylum case'):st('todo','To do')),w:'Migrationsverket, Sturegatan, Sundbyberg · Mon–Fri 09–15'});
   list.push(
     {n:'Personnummer',...(d.pn===1?st('done','Done'):d.pn==='wait'?st('wait','Post d'+d.pnDay):d.permit===1?st('todo','To do'):st('lock','Locked')),w:skv+' · needs permit card'},
     {n:'ID card',...(d.id===1?st('done','Done'):d.id==='ready'?st('todo','Collect'):d.id==='wait'?st('wait','Ready d'+d.idDay):d.pn===1?st('todo','To do'):st('lock','Locked')),w:skv+' · 400 kr'},
@@ -5554,6 +5569,17 @@ let LANG=(()=>{try{const v=localStorage.getItem(LANGKEY);if(v==='sv'||v==='en')r
 const TXT={
  en:{tag:'Live a life in Stockholm. Real map, real time, real weather.',start:'Start',cont:'Continue',newlife:'New life',options:'Options',how:'How to Play',settings:'Settings',saves:'Saves',
   next:'Next',skip:'Skip',back:'Back',
+  choose:'What would you like to do?',contLife:'Continue your life',loadSaved:'Load saved game',newLifeGo:'Start a new life',
+  loadTitle:'Load saved game',empty:'Empty',ended:'Ended',unreadable:'Cannot be read',load:'Load',current:'Current',dayN:'Day',noSaves:'No saved lives yet.',manage:'Manage saves (backup, import)',
+  formTitle:'Your details',fName:'Name',fAge:'Age',fGender:'Gender',male:'Male',female:'Female',other:'Other',fNat:'Nationality',bornYes:'Born in Sweden: yes',bornNo:'Born in Sweden: no (you were born abroad)',fTown:'Home town',fStatus:'Immigration status',
+  st_temporary:'Temporary resident',st_asylum:'Asylum seeker',st_permanent:'Permanent resident',st_student:'Student permit',st_eu:'EU/EEA citizen (right of residence)',
+  sn_temporary:'You hold a temporary residence permit, for example for work. First step: your permit card at Migrationsverket.',
+  sn_asylum:'You have applied for asylum and wait for Migrationsverket\'s decision. You hold an LMA card, not a residence permit. The game simplifies the real process.',
+  sn_permanent:'You hold a permanent residence permit and may live and work in Sweden. First step: register at Skatteverket for a personnummer.',
+  sn_student:'You have a permit to study in Sweden. First step: your permit card at Migrationsverket.',
+  sn_eu:'EU/EEA citizens do not need a residence permit. First step: register at Skatteverket.',
+  fGo:'Start my life',errName:'Please enter a name.',errAge:'Age must be between 16 and 90.',
+
   newTitle:'New life?',newBody:'Your current life in Stockholm will be lost. Export a backup from Saves first if you want to keep it.',newYes:'Start a new life',newNo:'Keep playing',
   optTitle:'Options',hints:'Control hints',hintsD:'The line of tips at the bottom of the screen.',tips:'Weather tips',tipsD:'A short message about what to wear when the weather changes.',on:'On',off:'Off',
   setTitle:'Settings',gfx:'Graphics',gfxD:'Low saves battery; High is sharper on a good screen. Applies after a reload.',low:'Low',auto:'Auto',high:'High',live:'Live data',liveD:'Weather, flights and departures from the internet. Off keeps the game offline-friendly.',
@@ -5566,6 +5592,17 @@ const TXT={
   map1:'Map ©',map2:' contributors'},
  sv:{tag:'Lev ditt liv i Stockholm. Riktig karta, riktig tid, riktigt väder.',start:'Starta',cont:'Fortsätt',newlife:'Nytt liv',options:'Alternativ',how:'Så spelar du',settings:'Inställningar',saves:'Sparade liv',
   next:'Nästa',skip:'Hoppa över',back:'Tillbaka',
+  choose:'Vad vill du göra?',contLife:'Fortsätt ditt liv',loadSaved:'Ladda sparat spel',newLifeGo:'Starta ett nytt liv',
+  loadTitle:'Ladda sparat spel',empty:'Tom',ended:'Avslutat',unreadable:'Kan inte läsas',load:'Ladda',current:'Aktuellt',dayN:'Dag',noSaves:'Inga sparade liv ännu.',manage:'Hantera sparade liv (säkerhetskopia, import)',
+  formTitle:'Dina uppgifter',fName:'Namn',fAge:'Ålder',fGender:'Kön',male:'Man',female:'Kvinna',other:'Annat',fNat:'Nationalitet',bornYes:'Född i Sverige: ja',bornNo:'Född i Sverige: nej (du är född utomlands)',fTown:'Hemort',fStatus:'Migrationsstatus',
+  st_temporary:'Tillfälligt uppehållstillstånd',st_asylum:'Asylsökande',st_permanent:'Permanent uppehållstillstånd',st_student:'Studentuppehållstillstånd',st_eu:'EU/EES-medborgare (uppehållsrätt)',
+  sn_temporary:'Du har ett tillfälligt uppehållstillstånd, till exempel för arbete. Första steget: ditt uppehållstillståndskort hos Migrationsverket.',
+  sn_asylum:'Du har ansökt om asyl och väntar på Migrationsverkets beslut. Du har ett LMA-kort, inte ett uppehållstillstånd. Spelet förenklar den verkliga processen.',
+  sn_permanent:'Du har ett permanent uppehållstillstånd och får bo och arbeta i Sverige. Första steget: folkbokför dig hos Skatteverket för att få ett personnummer.',
+  sn_student:'Du har tillstånd att studera i Sverige. Första steget: ditt uppehållstillståndskort hos Migrationsverket.',
+  sn_eu:'EU/EES-medborgare behöver inget uppehållstillstånd. Första steget: folkbokför dig hos Skatteverket.',
+  fGo:'Starta mitt liv',errName:'Skriv ett namn.',errAge:'Åldern måste vara mellan 16 och 90.',
+
   newTitle:'Nytt liv?',newBody:'Ditt nuvarande liv i Stockholm går förlorat. Exportera en säkerhetskopia under Sparade liv först om du vill behålla det.',newYes:'Starta ett nytt liv',newNo:'Fortsätt spela',
   optTitle:'Alternativ',hints:'Kontrolltips',hintsD:'Tipsraden längst ned på skärmen.',tips:'Vädertips',tipsD:'Ett kort meddelande om vad du ska ha på dig när vädret ändras.',on:'På',off:'Av',
   setTitle:'Inställningar',gfx:'Grafik',gfxD:'Låg sparar batteri; Hög är skarpare på en bra skärm. Gäller efter omladdning.',low:'Låg',auto:'Auto',high:'Hög',live:'Live-data',liveD:'Väder, flyg och avgångar från internet. Av gör spelet mer offlinevänligt.',
@@ -5593,15 +5630,61 @@ function showTitle(fresh){titleGo(()=>titleMain(fresh))}
 function titleMain(fresh){
   const started=!!(S&&S.flags&&S.flags.started)&&!fresh;
   titleShow(`<h1>Stockholms<span>liv</span></h1><p class="tag">${tt('tag')}</p>
-    <div class="btns"><button class="primary" id="tPlay">${started?tt('cont'):tt('start')}</button>
-    ${started?`<button id="tNew">${tt('newlife')}</button>`:''}
+    <div class="btns"><button class="primary" id="tPlay">${tt('start')}</button>
     <button id="tOpt">${tt('options')}</button><button id="tHow">${tt('how')}</button><button id="tSet">${tt('settings')}</button><button id="tSaves">${tt('saves')}</button></div>`,t=>{
-    t.querySelector('#tPlay').onclick=()=>{if(started){titleHide();return}const go=()=>{titleHide();intro(REALTIME)};if(!seenIntro())titleGo(()=>introSlides(go));else go()};
-    const nw=t.querySelector('#tNew');if(nw)nw.onclick=()=>titleGo(()=>titleNewLife());
+    t.querySelector('#tPlay').onclick=()=>titleGo(()=>startChoice(fresh));
     t.querySelector('#tOpt').onclick=()=>titleGo(()=>optionsScreen(()=>titleGo(()=>titleMain(fresh))));
     t.querySelector('#tHow').onclick=()=>titleGo(()=>introSlides(()=>titleGo(()=>titleMain(fresh)),true));
     t.querySelector('#tSet').onclick=()=>titleGo(()=>settingsScreen(()=>titleGo(()=>titleMain(fresh))));
     t.querySelector('#tSaves').onclick=()=>titleModal(()=>openSaveFile(false))},true)}
+
+const NL={name:'Alex',age:27,gender:'m',nat:'Sweden',town:'Stockholm',status:'temporary'};
+function startChoice(fresh){const started=!!(S&&S.flags&&S.flags.started)&&!fresh,back=()=>titleGo(()=>titleMain(fresh));
+  titleShow(`<h2>${tt('choose')}</h2><div class="btns">${started?`<button class="primary" id="cCont">${tt('contLife')}</button>`:''}
+    <button ${started?'':'class="primary" '}id="cLoad">${tt('loadSaved')}</button><button id="cNew">${tt('newLifeGo')}</button><button id="cBack">${tt('back')}</button></div>`,t=>{
+    const c=t.querySelector('#cCont');if(c)c.onclick=()=>titleHide();
+    t.querySelector('#cLoad').onclick=()=>titleGo(()=>loadScreen(()=>titleGo(()=>startChoice(fresh))));
+    t.querySelector('#cNew').onclick=()=>titleGo(()=>newLifeForm(()=>titleGo(()=>startChoice(fresh))));
+    t.querySelector('#cBack').onclick=back})}
+function loadScreen(back){
+  const rows=SLOT_IDS.map(slotInfo),any=rows.some(r=>r.st!=='empty');
+  const label=r=>r.st==='life'?`${tt('dayN')} ${r.day} · ${kr(r.money)}`:r.st==='ended'?tt('ended'):r.st==='unreadable'?tt('unreadable'):tt('empty');
+  titleShow(`<h2>${tt('loadTitle')}</h2>${any?'':`<p class="tag">${tt('noSaves')}</p>`}
+    ${rows.map(r=>`<div class="setrow"><div><b>${r.id}. ${r.st==='life'?(r.title||''):''}${r.st==='life'?'':'—'}</b><small>${label(r)}${r.active&&r.st==='life'?' · '+tt('current'):''}</small></div>${r.st==='life'?(r.active?`<div class="seg"><button class="lcur" data-id="${r.id}">${tt('cont')}</button></div>`:`<div class="seg"><button class="lload" data-id="${r.id}">${tt('load')}</button></div>`):''}</div>`).join('')}
+    <button class="primary" id="lBack">${tt('back')}</button><button id="lManage">${tt('manage')}</button><small id="lNote"></small>`,t=>{
+    t.querySelectorAll('.lload').forEach(b=>b.onclick=()=>{const e=slotSwitch(+b.dataset.id);if(e)t.querySelector('#lNote').textContent=e});
+    t.querySelectorAll('.lcur').forEach(b=>b.onclick=()=>titleHide());
+    t.querySelector('#lManage').onclick=()=>titleModal(()=>openSaveFile(false));
+    t.querySelector('#lBack').onclick=back})}
+function newLifeForm(back){
+  const natG=n=>(COUNTRIES.find(c=>c[0]===n)||[])[2],isSwe=()=>NL.nat==='Sweden';
+  const statusOpts=()=>{const g=natG(NL.nat);return g==='noneu'?['temporary','asylum','permanent','student']:['eu','student']};
+  if(!statusOpts().includes(NL.status))NL.status=statusOpts()[0];
+  const opt=(v,l,cur)=>`<option value="${v}"${String(v)===String(cur)?' selected':''}>${l}</option>`;
+  titleShow(`<h2>${tt('formTitle')}</h2>
+    <div class="frow"><label for="nfName">${tt('fName')}</label><input id="nfName" maxlength="24" autocomplete="off" value="${NL.name.replace(/"/g,'&quot;')}"></div>
+    <div class="frow two"><div><label for="nfAge">${tt('fAge')}</label><input id="nfAge" type="number" min="16" max="90" value="${NL.age}"></div>
+      <div><label for="nfGender">${tt('fGender')}</label><select id="nfGender">${opt('m',tt('male'),NL.gender)}${opt('f',tt('female'),NL.gender)}${opt('x',tt('other'),NL.gender)}</select></div></div>
+    <div class="frow"><label for="nfNat">${tt('fNat')}</label><select id="nfNat">${COUNTRIES.map(c=>opt(c[0],c[1]+' '+c[0],NL.nat)).join('')}</select></div>
+    <div class="nfnote" id="nfBorn"></div>
+    <div class="frow" id="nfTownRow"><label for="nfTown">${tt('fTown')}</label><select id="nfTown">${opt('Stockholm','Stockholm',NL.town)}${SWE_CITIES.map(c=>opt(c[0],c[0],NL.town)).join('')}</select></div>
+    <div class="frow" id="nfStatusRow"><label for="nfStatus">${tt('fStatus')}</label><select id="nfStatus"></select><small id="nfStatusNote"></small></div>
+    <p class="nferr" id="nfErr" role="alert"></p>
+    <button class="primary" id="nfGo">${tt('fGo')}</button><button id="nfBack">${tt('back')}</button>`,t=>{
+    const $q=q=>t.querySelector(q),sync=()=>{const swe=isSwe();
+      $q('#nfBorn').textContent=swe?tt('bornYes'):tt('bornNo');$q('#nfTownRow').hidden=!swe;$q('#nfStatusRow').hidden=swe;
+      if(!swe){const o=statusOpts();if(!o.includes(NL.status))NL.status=o[0];$q('#nfStatus').innerHTML=o.map(v=>opt(v,tt('st_'+v),NL.status)).join('');$q('#nfStatusNote').textContent=tt('sn_'+NL.status)}};
+    const read=()=>{NL.name=$q('#nfName').value;NL.age=$q('#nfAge').value;NL.gender=$q('#nfGender').value;NL.nat=$q('#nfNat').value;NL.town=$q('#nfTown').value;if(!isSwe())NL.status=$q('#nfStatus').value||NL.status};
+    ['#nfName','#nfAge','#nfGender','#nfTown'].forEach(q=>$q(q).addEventListener('input',read));
+    $q('#nfNat').onchange=()=>{read();NL.nat=$q('#nfNat').value;sync()};$q('#nfStatus').onchange=()=>{NL.status=$q('#nfStatus').value;$q('#nfStatusNote').textContent=tt('sn_'+NL.status)};
+    sync();
+    $q('#nfBack').onclick=back;
+    $q('#nfGo').onclick=()=>{read();const name=NL.name.trim(),age=Math.round(+NL.age),err=$q('#nfErr');
+      if(!name){err.textContent=tt('errName');return}if(!(age>=16&&age<=90)){err.textContent=tt('errAge');return}
+      const F=introDefaults();F.name=name;F.age=age;F.gender=NL.gender;
+      if(isSwe()){F.nat='Sweden';F.from='Sweden';if(NL.town==='Stockholm'){F.kind='stockholm';F.over=false}else{F.kind='sweden';F.city=NL.town}}
+      else{F.kind='abroad';F.nat=NL.nat;F.from=NL.nat;F.route=0;F.status=NL.status==='eu'?'':NL.status;F.purpose=NL.status==='student'?'study':'work'}
+      const go=()=>{titleHide();lifeFromForm(F)};if(!seenIntro())titleGo(()=>introSlides(go));else go()}})}
 function titleNewLife(){titleShow(`<h2>${tt('newTitle')}</h2><p class="tag">${tt('newBody')}</p>
   <button class="primary" id="tYes">${tt('newYes')}</button><button id="tNo">${tt('newNo')}</button>`,t=>{
   t.querySelector('#tNo').onclick=()=>titleGo(()=>titleMain(false));

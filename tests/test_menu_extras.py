@@ -165,6 +165,37 @@ def test_edit_about_me_changes_the_life(browser, server):
         ctx.close()
 
 
+def test_about_me_escapes_saved_data_and_delete_reports_failure(browser, server):
+    """Codex review of PR 56: saved traits/languages must not become HTML; a failed delete must say so."""
+    ctx, page, err = _open(browser)
+    try:
+        _start(page, nat='NG', status='temporary')
+        page.evaluate("""() => { const me = window.__TS.S.me;
+            me.traits = ['<img src=x onerror="window.__xss=1">'];
+            me.languages = [{l: 'French', lv: '<b id=xlv>fluent</b>'}];
+            document.getElementById('editMe').click() }""")
+        page.click('#emSave')
+        assert page.evaluate("() => [!!document.querySelector('#aboutSec img'), !!document.getElementById('xlv'), window.__xss || 0]") == [False, False, 0]
+        assert '<img' in page.evaluate("() => document.getElementById('aboutSec').innerText")
+        assert err.uncaught == [], err.uncaught
+    finally:
+        ctx.close()
+
+
+def test_privacy_delete_reports_data_that_could_not_be_removed(browser, server):
+    ctx, page, err = _open(browser)
+    try:
+        page.click('#tOpt'); page.click('#oPriv'); page.click('#pvDelete')
+        page.evaluate("() => { Storage.prototype.removeItem = function () {} }")
+        page.fill('#pvConfirm', 'DELETE')
+        page.click('#pvDoDelete')
+        assert game.wait_for(page, "() => document.getElementById('pvErr').innerText.length > 5", 10)
+        assert page.evaluate("() => !!document.getElementById('pvDoDelete')")  # still on the screen: no reload
+        assert err.uncaught == [], err.uncaught
+    finally:
+        ctx.close()
+
+
 def _png_size(path):
     b = path.read_bytes()
     assert b[:8] == b'\x89PNG\r\n\x1a\n'

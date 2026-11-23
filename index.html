@@ -102,12 +102,17 @@ button:focus-visible,[tabindex]:focus-visible,input:focus-visible,select:focus-v
 .drivehud{font:600 18px var(--mono)}
 .inhud button,.drivehud button{font:700 13px var(--display);letter-spacing:.08em;text-transform:uppercase;border:0;border-radius:8px;padding:8px 14px;background:var(--amber);color:#0A1219}
 .inact{position:absolute;left:50%;bottom:calc(150px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);display:none;font:700 16px var(--display);letter-spacing:.06em;text-transform:uppercase;padding:14px 22px;border-radius:12px;border:0;background:var(--amber);color:#0A1219;box-shadow:0 8px 24px rgba(0,0,0,.4);z-index:5}
-.title{position:fixed;inset:0;z-index:18;display:grid;place-items:center;padding:16px;background:radial-gradient(ellipse at 50% 30%,rgba(18,34,58,.72),rgba(6,11,19,.94));color:#e6eae5;opacity:1;transition:opacity .45s}
+/* the title page sits on a photograph of Stockholm: Jorge Franganillo, CC BY 2.0, Wikimedia Commons (credited on the page). 4K for big or sharp screens, 1080p by default, 720p for small phones. */
+.title{--bg:url(assets/title/stockholm-1920.jpg);position:fixed;inset:0;z-index:18;display:grid;place-items:center;padding:16px;background:linear-gradient(180deg,rgba(5,9,17,.55),rgba(5,9,17,.12) 38%,rgba(5,9,17,.78)),var(--bg) center 55%/cover no-repeat,#0a1220;color:#e6eae5;opacity:1;transition:opacity .45s}
+@media (max-width:700px){.title{--bg:url(assets/title/stockholm-1280.jpg)}}
+@media (min-width:1700px),(min-width:701px) and (min-resolution:2dppx){.title{--bg:url(assets/title/stockholm-3840.jpg)}}
+.title .card.panel{background:rgba(8,14,25,.62);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);padding:22px;border-radius:20px;border:1px solid rgba(255,255,255,.12)}
+.title .pcredit{display:block;margin-top:12px;color:#d3dbe6;font-size:11.5px;line-height:1.5;text-shadow:0 1px 8px rgba(0,0,0,.7)}.title .pcredit a{color:inherit}
 .title[hidden]{display:none}.title.out{opacity:0;pointer-events:none}
-.title .card{width:min(420px,100%);display:flex;flex-direction:column;gap:10px;text-align:center}
-.title h1{margin:0;font:700 clamp(34px,9vw,52px)/1 var(--display);letter-spacing:.05em;text-transform:uppercase;background:linear-gradient(90deg,#fff,#cfe8ff);-webkit-background-clip:text;background-clip:text;color:transparent}
-.title h1 span{color:#ffcd3c;-webkit-text-fill-color:#ffcd3c}.title .tag{margin:0 0 14px;color:#aab6c6;font-size:14px;line-height:1.45}
-.title button{font:600 15px var(--body,inherit);padding:13px 16px;border-radius:12px;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.07);color:inherit;cursor:pointer}
+.title .card{width:min(440px,100%);display:flex;flex-direction:column;gap:10px;text-align:center}
+.title h1{margin:0;white-space:nowrap;font:700 clamp(30px,10.5vw,76px)/1 var(--display);letter-spacing:.05em;text-transform:uppercase;filter:drop-shadow(0 3px 18px rgba(0,0,0,.55));background:linear-gradient(90deg,#fff,#cfe8ff);-webkit-background-clip:text;background-clip:text;color:transparent}
+.title h1 span{color:#ffcd3c;-webkit-text-fill-color:#ffcd3c}.title .tag{margin:0 0 14px;color:#d3dbe6;font-size:15px;line-height:1.45;text-shadow:0 1px 10px rgba(0,0,0,.6)}
+.title button{font:600 15px var(--body,inherit);padding:13px 16px;border-radius:12px;border:1px solid rgba(255,255,255,.22);background:rgba(8,14,25,.58);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);color:inherit;cursor:pointer}
 .title button.primary{background:#ffcd3c;color:#111;border-color:#ffcd3c;font-size:17px;padding:15px 16px}
 .title button:hover,.title button:focus-visible{outline:2px solid #7fb8ff;outline-offset:2px}.title .row{display:flex;gap:10px}.title .row button{flex:1}
 .title small{color:#7f8c9d;font-size:11.5px;margin-top:10px}
@@ -5529,19 +5534,19 @@ const seenIntro=()=>{try{return localStorage.getItem(SEENKEY)==='1'}catch(e){ret
 const markIntro=()=>{try{localStorage.setItem(SEENKEY,'1')}catch(e){}};
 function titleRoot(){return $('title')}
 function titleHide(){const t=titleRoot();if(!t)return;t.classList.add('out');setTimeout(()=>{if(t.classList.contains('out')){t.hidden=true;t.classList.remove('out');t.innerHTML=''}},450)}
-function titleShow(html,bind){const t=titleRoot();t.innerHTML=`<div class="card">${html}</div>`;t.hidden=false;t.classList.remove('out');bind&&bind(t);const f=t.querySelector('button.primary')||t.querySelector('button');f&&f.focus()}
+function titleShow(html,bind,bare){const t=titleRoot();t.innerHTML=`<div class="card${bare?'':' panel'}">${html}</div>`;t.hidden=false;t.classList.remove('out');bind&&bind(t);const f=t.querySelector('button.primary')||t.querySelector('button');f&&f.focus()}
 function showTitle(fresh){
   const started=!!(S&&S.flags&&S.flags.started)&&!fresh;
   titleShow(`<h1>Stockholms<span>liv</span></h1><p class="tag">Live a life in Stockholm. Real map, real time, real weather.</p>
     <button class="primary" id="tPlay">${started?'Continue':'Start'}</button>
     ${started?'<button id="tNew">New life</button>':''}
-    <div class="row"><button id="tHow">How to play</button><button id="tSet">Settings</button></div><button id="tSaves">Saves</button>
-    <small>© OpenStreetMap contributors · © 2026 Helekt</small>`,t=>{
+    <div class="row"><button id="tHow">How to play</button><button id="tSet">Settings</button><button id="tSaves">Saves</button></div>
+    <small class="pcredit">Photo: <a href="https://commons.wikimedia.org/wiki/File:Stockholm_(52314433720).jpg" target="_blank" rel="noopener">Jorge Franganillo</a>, <a href="https://creativecommons.org/licenses/by/2.0/" target="_blank" rel="noopener">CC BY 2.0</a> · Map © OpenStreetMap contributors · © 2026 Helekt</small>`,t=>{
     t.querySelector('#tPlay').onclick=()=>{if(started){titleHide();return}const go=()=>{titleHide();intro(REALTIME)};if(!seenIntro())introSlides(go);else go()};
     const nw=t.querySelector('#tNew');if(nw)nw.onclick=()=>titleNewLife();
     t.querySelector('#tHow').onclick=()=>introSlides(()=>showTitle(fresh),true);
     t.querySelector('#tSet').onclick=()=>settingsScreen(()=>showTitle(fresh));
-    t.querySelector('#tSaves').onclick=()=>{t.hidden=true;openSaveFile(false);const mo=$('modalRoot');const w=setInterval(()=>{if(!mo.innerHTML){clearInterval(w);t.hidden=false}},400)}})}
+    t.querySelector('#tSaves').onclick=()=>{t.hidden=true;openSaveFile(false);const mo=$('modalRoot');const w=setInterval(()=>{if(!mo.innerHTML){clearInterval(w);t.hidden=false}},400)}},true)}
 function titleNewLife(){titleShow(`<h1>New life?</h1><p class="tag">Your current life in Stockholm will be lost. Export a backup from Saves first if you want to keep it.</p>
   <button class="primary" id="tYes">Start a new life</button><button id="tNo">Keep playing</button>`,t=>{
   t.querySelector('#tNo').onclick=()=>showTitle(false);

@@ -337,7 +337,7 @@ h2.hero{font-size:34px;background:linear-gradient(90deg,var(--sweblue),#3a86ff 4
   .apsteps{left:8px;right:8px;width:auto;max-width:none;top:calc(var(--boardH,74px) + 58px + env(safe-area-inset-top,0px));font-size:12px}
   .apsteps .apstub{width:52px}.apsteps .apstub b{font-size:22px}.apsteps .apmain{padding:7px 4px 7px 12px}.apsteps .apmain b{font-size:15px}.apsteps .apline{-webkit-line-clamp:1}
   .apsteps .apgo{width:40px;height:40px;margin:0 8px}.apsteps .apbody{max-height:42vh;overflow:auto}
-  body.inside .next,body.inside .places,body.inside #hint,body.inside .hint,body.inside .carechip{display:none!important}
+  body.inside.arr .next,body.inside.arr .places,body.inside.arr #hint,body.inside.arr .hint,body.inside.arr .carechip{display:none!important}
   .inhud,.drivehud{left:8px;right:8px;transform:none;max-width:none;justify-content:space-between;padding:6px 6px 6px 12px;font-size:12px}.inhud b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}.inhud button{padding:7px 10px;font-size:12px}
   .cshud{left:8px;right:8px;transform:none;width:auto;max-width:none;justify-content:flex-start;gap:5px;padding:6px 8px;font-size:11.5px}.cshud b{flex:1 1 100%;font-size:12.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .cshud button{padding:6px 8px;font-size:10.5px;letter-spacing:.04em}.cshud .chip{padding:2px 6px}
@@ -396,18 +396,18 @@ h2.hero{font-size:34px;background:linear-gradient(90deg,var(--sweblue),#3a86ff 4
 /* Inside buildings and the arrivals hall: one layout for every screen size, so nothing overlaps.
    Top: the board, then the Leave bar, then the arrival guide (right-hand column; the full width on a phone).
    Bottom: joystick on the left, zoom buttons on the right, the action prompt between them, the dock under all of it. */
-body.inside .next,body.inside .places,body.inside #hint,body.inside .hint,body.inside .carechip,body.inside .sos112{display:none!important}
-body.inside{--apTop:calc(var(--boardH,74px) + 84px + env(safe-area-inset-top,0px));--apLimit:230px}
-body.inside .apsteps{top:var(--apTop)}
-body.inside .apsteps .apbody{max-height:max(96px,calc(100dvh - var(--apTop) - var(--apLimit) - 84px));overflow:auto;overscroll-behavior:contain}
-body.inside .inact{bottom:calc(100px + env(safe-area-inset-bottom,0px));max-width:calc(100vw - 2*(var(--gut,16px) + 130px));white-space:normal;text-align:center;overflow:visible}
-body.inside .toast{bottom:calc(166px + env(safe-area-inset-bottom,0px))}
-@media (max-width:899px){body.inside{--apLimit:290px}}
-@media (max-height:700px){body.inside{--apTop:calc(var(--boardH,74px) + 76px + env(safe-area-inset-top,0px));--apLimit:384px}body.inside .apsteps .apbody{max-height:max(0px,calc(100dvh - var(--apTop) - var(--apLimit) - 84px))}}
-@media (max-width:640px){body.inside{--apLimit:370px}
-  body.inside .apsteps{left:8px;right:8px;width:auto;max-width:none}
-  body.inside .inact{bottom:calc(292px + env(safe-area-inset-bottom,0px));max-width:calc(100vw - 32px);padding:10px 16px;font-size:14px}
-  body.inside .toast{bottom:calc(366px + env(safe-area-inset-bottom,0px))}}
+body.inside.arr .next,body.inside.arr .places,body.inside.arr #hint,body.inside.arr .hint,body.inside.arr .carechip,body.inside.arr .sos112{display:none!important}
+body.inside.arr{--apTop:calc(var(--boardH,74px) + 84px + env(safe-area-inset-top,0px));--apLimit:230px}
+body.inside.arr .apsteps{top:var(--apTop)}
+body.inside.arr .apsteps .apbody{max-height:max(96px,calc(100dvh - var(--apTop) - var(--apLimit) - 84px));overflow:auto;overscroll-behavior:contain}
+body.inside.arr .inact{bottom:calc(100px + env(safe-area-inset-bottom,0px));max-width:calc(100vw - 2*(var(--gut,16px) + 130px));white-space:normal;text-align:center;overflow:visible}
+body.inside.arr .toast{bottom:calc(166px + env(safe-area-inset-bottom,0px))}
+@media (max-width:899px){body.inside.arr{--apLimit:290px}}
+@media (max-height:700px){body.inside.arr{--apTop:calc(var(--boardH,74px) + 76px + env(safe-area-inset-top,0px));--apLimit:384px}body.inside.arr .apsteps .apbody{max-height:max(0px,calc(100dvh - var(--apTop) - var(--apLimit) - 84px))}}
+@media (max-width:640px){body.inside.arr{--apLimit:370px}
+  body.inside.arr .apsteps{left:8px;right:8px;width:auto;max-width:none}
+  body.inside.arr .inact{bottom:calc(292px + env(safe-area-inset-bottom,0px));max-width:calc(100vw - 32px);padding:10px 16px;font-size:14px}
+  body.inside.arr .toast{bottom:calc(366px + env(safe-area-inset-bottom,0px))}}
 
 .officer{border-left:4px solid #1c2b44;background:color-mix(in srgb,#1c2b44 10%,transparent);padding:8px 12px;border-radius:8px;margin:6px 0 10px}.officer b{font:700 12px var(--display);letter-spacing:.08em;text-transform:uppercase;color:#1c2b44}.officer p{margin:4px 0 0;font-style:italic}
 .passbook{background:linear-gradient(135deg,#7a1f2b,#4d1019);color:#f4e7c1;border-radius:10px;padding:10px 12px;margin:0 0 8px;box-shadow:0 6px 16px rgba(0,0,0,.25)}.passbook .pbh{display:flex;justify-content:space-between;font:700 12px var(--display);letter-spacing:.14em;text-transform:uppercase}
@@ -4100,7 +4100,7 @@ const POSTERS_CITY=[['#f2b705','#1b1b1b','KANELBULLE','Färskt varje morgon','Ba
     else if(kind==='shelter'){for(let i=0;i<5;i++){solid(g,0.05,0.06,0.12,0x5d4037,-0.26+i*0.13,-0.1)}spot(0,0.08,'Find your bed',()=>{exitInterior();sleep(false,'shelter')})}
     else{for(let r=0;r<2;r++)solid(g,0.34,0.07,0.04,0xd7ccc8,0,-0.1+r*0.12);solid(g,0.12,0.045,0.04,0xbcaaa4,-0.2,-HD+0.04);npc(g,null,null,-0.2,-HD+0.015,0);spot(-0.2,-HD+0.1,'Counter',()=>actionsMenu(p))}
     return g}
-  function enterInterior(kind,p,opts){if(IN.on||DR.on||CS.mode)return;document.body.classList.add('inside');IN.spots=[];IN.col=[];IN.mixers=[];IN.lights=[];IN.near=null;IN.kind=kind;IN.p=p;
+  function enterInterior(kind,p,opts){if(IN.on||DR.on||CS.mode)return;document.body.classList.add('inside');document.body.classList.toggle('arr',kind==='arlanda');IN.spots=[];IN.col=[];IN.mixers=[];IN.lights=[];IN.near=null;IN.kind=kind;IN.p=p;
     inScene=new THREE.Scene();inScene.background=new THREE.Color(kind==='club'?0x05050d:0x20262e);inScene.add(new THREE.HemisphereLight(0xffffff,0x8a7a6a,kind==='club'?0.35:0.95));
     const dl=new THREE.DirectionalLight(0xffffff,kind==='club'?0.2:0.55);dl.position.set(0.3,1,0.6);inScene.add(dl);inScene.add(buildRoom(kind,p,opts||{}));
     IN.prev=av.position.clone();IN.prevVis=av.visible;scene.remove(av);inScene.add(av);av.position.set(0,0,HD-0.06);av.rotation.y=Math.PI;av.visible=true;vel.set(0,0);
@@ -4108,7 +4108,7 @@ const POSTERS_CITY=[['#f2b705','#1b1b1b','KANELBULLE','Färskt varje morgon','Ba
     if(kind==='arlanda'){av.position.set(0,0,-HD+0.07);av.rotation.y=0;controls.maxDistance=2.6;controls.target.set(0,0.02,-HD+0.25);camera.position.set(0,0.8,-HD+1.2);apCarry(true)}if(kind==='home'&&S.flags.luggage){S.flags.luggage=0;log('You unpack your suitcase. Home at last.','plus');setTimeout(()=>save(),50)}scene.fog&&(IN.fog=scene.fog);IN.on=true;$('inhud').style.display='flex';$('inTitle').textContent=p?p.name:(kind==='home'?'Home · '+addrText():'Inside');if(p)S.seen[kindSeen(kind)]=S.day;hideHint()}
   function kindSeen(k){return k==='restaurant'||k==='cafe'?'eatout':k==='gym'?'gym':k==='clothes'?'clothes':'visit'}
   function exitInterior(force){if(!IN.on)return;{const el=document.getElementById('apguide');if(el&&!(IN.kind==='arlanda'&&S&&S.flags.arlanda&&force!==true))el.remove()}guideWalk=null;if(IN.kind==='arlanda'&&S&&S.flags.arlanda&&force!==true){airportSpot('exit');return}if(AP.trolley){av.remove(AP.trolley);AP.trolley=null}apCarry(!!(S&&S.flags&&S.flags.luggage));inScene.remove(av);scene.add(av);av.position.copy(IN.prev);av.visible=IN.prevVis;controls.minDistance=IN.cam.min;controls.maxDistance=IN.cam.max;camera.position.copy(IN.cam.p);controls.target.copy(IN.cam.t);
-    IN.on=false;IN.mixers=[];inScene=null;document.body.classList.remove('inside');$('inhud').style.display='none';$('inAct').style.display='none';DESK=null;closeModal();vel.set(0,0)}
+    IN.on=false;IN.mixers=[];inScene=null;document.body.classList.remove('inside','arr');$('inhud').style.display='none';$('inAct').style.display='none';DESK=null;closeModal();vel.set(0,0)}
   function inMove(x,z,dx,dz){const hit=(a,b)=>a<-HW+0.025||a>HW-0.025||b<-HD+0.025||b>HD-0.015||IN.col.some(c=>a>c[0]&&a<c[1]&&b>c[2]&&b<c[3]);
     if(!hit(x+dx,z+dz))return [x+dx,z+dz];if(!hit(x+dx,z))return [x+dx,z];if(!hit(x,z+dz))return [x,z+dz];return [x,z]}
   // ---------- Arlanda arrivals hall: airport signs, the arrivals screen, belt 4 and your suitcase, and the step-by-step guide ----------

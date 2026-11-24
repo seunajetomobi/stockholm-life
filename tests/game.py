@@ -64,14 +64,21 @@ class Errors:
         return [m for s, m in self.failed + self.http if not s]
 
 
+def new_context(browser, realtime=False, title=False, **opts):
+    """A browser context with the game's start-up preferences set before any page script runs.
+    The game runs on real Stockholm time and opens on the title page by default. The existing tests were written against
+    the game clock and the intro, so they keep that path unless a test asks for real time (realtime=True) or the title
+    page (title=True). Every test makes its contexts here; tests/test_harness.py checks that none calls browser.new_context."""
+    ctx = browser.new_context(**opts)
+    ctx.add_init_script("try{localStorage.setItem('stockholmsliv-realtime','%s');localStorage.setItem('stockholmsliv-title','%s')}catch(e){}" % ('1' if realtime else '0', '1' if title else '0'))
+    return ctx
+
+
 def new_page(browser, width=1366, height=768, mobile=False, hook=False, init_script=None, realtime=False, title=False):
     opts = {'viewport': {'width': width, 'height': height}}
     if mobile:
         opts.update(is_mobile=True, has_touch=True, device_scale_factor=2)
-    ctx = browser.new_context(**opts)
-    # The game runs on real Stockholm time by default. The existing tests were written against the game clock and the intro,
-    # so they keep that path unless a test asks for real time (realtime=True).
-    ctx.add_init_script("try{localStorage.setItem('stockholmsliv-realtime','%s');localStorage.setItem('stockholmsliv-title','%s')}catch(e){}" % ('1' if realtime else '0', '1' if title else '0'))
+    ctx = new_context(browser, realtime=realtime, title=title, **opts)
     if init_script:
         ctx.add_init_script(init_script)
     if hook:

@@ -533,7 +533,7 @@ h2.hero{font-size:34px;background:linear-gradient(90deg,var(--sweblue),#3a86ff 4
   .inhud,.drivehud{left:8px;right:8px;transform:none;max-width:none;justify-content:space-between;padding:6px 6px 6px 12px;font-size:12px}.inhud b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}.inhud button{padding:7px 10px;font-size:12px}
   .cshud{left:8px;right:8px;transform:none;width:auto;max-width:none;justify-content:flex-start;gap:5px;padding:6px 8px;font-size:11.5px}.cshud b{flex:1 1 100%;font-size:12.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .cshud button{padding:6px 8px;font-size:10.5px;letter-spacing:.04em}.cshud .chip{padding:2px 6px}
-  #csLine{top:auto;bottom:calc(290px + env(safe-area-inset-bottom,0px));left:8px;right:8px;transform:none;width:auto;max-width:none;font-size:12px;border-radius:12px}
+  #csLine{top:auto;bottom:calc(290px + env(safe-area-inset-bottom,0px));left:8px;right:62px;transform:none;width:auto;max-width:none;font-size:12px;border-radius:12px}/* ends left of the map buttons (42 px + 16 px edge + 4 px gap): with the Quit button their column reaches the strip's height */
   #csPrompt:not(:empty)~#csLine{bottom:calc(350px + env(safe-area-inset-bottom,0px))}/* above an open prompt */
   .csprompt{left:8px;right:8px;transform:none;width:auto;bottom:calc(196px + env(safe-area-inset-bottom,0px))}
   .inact{bottom:calc(196px + env(safe-area-inset-bottom,0px));max-width:calc(100% - 32px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -1226,7 +1226,8 @@ const today=()=>REALTIME&&S&&S.t0?realDate():dateOf(S.day);
 const SUN=useModule('sun','rules/sun.js');// the sun and daylight rules; the date is passed in, so the game keeps today() and nothing else changes
 const STIME=useModule('stockholm-time','rules/stockholm-time.js');
 // The time is Stockholm's whatever the device says: the offset between the device clock and our own server's Date header is applied to every STIME.nowMs()
-async function syncServerTime(){try{const t0=Date.now(),r=await fetch(location.pathname+'?t='+t0,{method:'HEAD',cache:'no-store'}),t1=Date.now(),d=Date.parse(r.headers.get('Date')||'');if(Number.isFinite(d)){STIME.setOffset(d+(t1-t0)/2-t1);return true}}catch(e){}return false}
+// the server's Date header from a small GET (the 705-byte manifest), not a HEAD of the page: Chromium 145 under test interception reports a HEAD as aborted
+async function syncServerTime(){try{const t0=Date.now(),r=await fetch('manifest.webmanifest?t='+t0,{cache:'no-store'}),t1=Date.now(),d=Date.parse(r.headers.get('Date')||'');if(Number.isFinite(d)){STIME.setOffset(d+(t1-t0)/2-t1);return true}}catch(e){}return false}
 const TIMESYNC=syncServerTime();setInterval(syncServerTime,10*60e3);// real Stockholm time (docs/REALTIME_SPEC.md R1); not used by the game yet
 const WORLD=useModule('world','data/world.js');// every country and its largest towns (GeoNames, CC BY 4.0), for the new-life form
 const RTIME=useModule('realtime','rules/realtime.js');// the real-time switch and derived clock (src/rules/realtime.js)

@@ -622,8 +622,8 @@ def test_title_has_no_tagline_or_button_backgrounds_and_the_first_o_loads(browse
         assert game.wait_for(page, "() => { const t = document.getElementById('title'); return t && !t.hidden && /Start/.test(t.innerText) }", 60)
         text = page.evaluate("() => document.getElementById('title').innerText")
         assert 'real map' not in text.lower() and 'live a life' not in text.lower(), text
-        pr = page.evaluate("() => { const b = document.querySelector('#tLang button[aria-pressed=true]'); const c = getComputedStyle(b), a = getComputedStyle(b, '::after'); return [c.backgroundColor, a.height, a.backgroundColor] }")
-        assert pr[0] == 'rgba(0, 0, 0, 0)' and pr[1] == '3px' and pr[2] != 'rgba(0, 0, 0, 0)', ('the selected language is a bar, not a background', pr)
+        pr = page.evaluate("() => { const b = document.querySelector('#tLang button[aria-pressed=true]'); const c = getComputedStyle(b), a = getComputedStyle(b, '::before'); return [c.backgroundColor, a.height, a.backgroundColor] }")
+        assert pr[0] == 'rgba(0, 0, 0, 0)' and pr[1] == '3px' and pr[2] == 'rgb(254, 204, 2)', ('the selected language is a bar, not a background', pr)
         for sel in ('#tAcct', '#tLang'):
             bg = page.evaluate("s => { const c = getComputedStyle(document.querySelector(s)); return [c.backgroundColor, c.backgroundImage, c.borderTopWidth] }", sel)
             assert bg[0] in ('rgba(0, 0, 0, 0)', 'transparent') and bg[1] == 'none' and bg[2] == '0px', (sel, bg)

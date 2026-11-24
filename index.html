@@ -604,7 +604,9 @@ body.ringing-on .dock [data-tab="phone"] svg,body.ringing-on .dock [data-tab="ph
 .title .tr i{background:rgba(255,255,255,.55)}
 .title .tr button{position:relative;border-radius:6px!important}
 .title .tr button[aria-pressed=true]{background:none!important;color:#fff!important}
-.title .tr button[aria-pressed=true]::after{content:"";position:absolute;left:10px;right:10px;bottom:2px;height:3px;border-radius:3px;background:#fecc02;box-shadow:0 1px 4px rgba(0,0,0,.5)}
+.title .ttop button::after{display:none!important}
+.title .tr button[aria-pressed=true]::before{content:"";position:absolute;left:10px;right:10px;bottom:2px;height:3px;border-radius:3px;background:#fecc02;box-shadow:0 1px 4px rgba(0,0,0,.5)}
+.title .tr button:hover,.title .tr button:focus-visible{background:none!important;transform:none!important;letter-spacing:.06em!important}
 </style>
 </head>
 <body>

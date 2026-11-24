@@ -7,7 +7,7 @@
 <title>Stockholmsliv</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Familjen+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jost:wght@400;500;600;700&family=Barlow+Condensed:wght@500;600;700&family=Familjen+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
 <style>
 /* Layout: the city fills the screen. A departure-board strip (time, place, money, need gauges) runs across the top,
    a "Next up" ticket sits under it, and a five-tab dock opens one panel: a drawer on the right on wide screens, a sheet on phones. */
@@ -16,9 +16,9 @@
   --accent:#0B5FA5; --accent-ink:#FFFFFF; --signal:#C8342C; --good:#23824F; --warn:#A86400; --bad:#C0362C;
   --board:#0A1219; --board-ink:#E9EEF2; --amber:#FFB81C; --glass:rgba(10,18,25,.80); --glass-ink:#EEF3F6; --falu:#C8342C; --falu-ink:#FFFFFF;
   --chip:rgba(10,18,25,.80); --chip-ink:#EEF3F6; --ochre:#B97A1F;
-  --display:"Barlow Condensed","Arial Narrow",Arial,sans-serif;
-  --body:"Familjen Grotesk","Helvetica Neue",Arial,sans-serif;
-  --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+  --display:"Jost","Helvetica Neue",Arial,sans-serif;
+  --body:"Jost","Helvetica Neue",Arial,sans-serif;
+  --mono:"Jost","Helvetica Neue",Arial,sans-serif;
   --r:14px; --gut:max(16px,env(safe-area-inset-left,0px)); --gutR:max(16px,env(safe-area-inset-right,0px));
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
@@ -419,21 +419,141 @@ h2.hero{font-size:34px;background:linear-gradient(90deg,var(--sweblue),#3a86ff 4
 .dock button{color:var(--g2mute)!important;border-radius:99px;min-width:62px}.dock button.on{background:var(--g2ink)!important;color:#fff!important;box-shadow:none!important}.dock button.on svg{stroke:#fff!important}.dock span{font:600 10.5px var(--body);letter-spacing:.04em;text-transform:none}
 .inact{border-radius:99px;background:var(--g2ink);color:#fff;font:600 15px var(--body);letter-spacing:.01em;text-transform:none}.inact kbd{background:rgba(255,255,255,.2)!important}
 .inhud,.drivehud,.ridechip{background:var(--g2);color:var(--g2ink);border:1px solid rgba(255,255,255,.7);border-radius:99px;box-shadow:0 6px 20px rgba(11,27,43,.18)}.inhud button,.drivehud button{background:var(--sweblue);color:#fff;border-radius:99px;text-transform:none;letter-spacing:.02em;font-weight:600}
-body.inside .needs{display:none!important}@media (max-width:1100px){body.inside .next{display:none!important}}
-@media (max-width:899px){body.drawer-open .needs,body.drawer-open .places{display:none}}
+@media (max-width:1100px){body.inside .next{display:none!important}}
+@media (max-width:899px){body.drawer-open .places{display:none}}
 @media (max-width:640px){.next{width:calc(100% - 2*var(--gut,16px))}.needs{top:calc(var(--boardH,46px) + 146px + env(safe-area-inset-top,0px))}}
+
+/* ===== Interface v2, refined: one icon family (Lucide, ISC licence), one ink colour, accents only where they mean something ===== */
+:root{--g2:rgba(255,255,255,.92);--g2ink:#0e2236;--g2mute:#677789;--g2line:rgba(14,34,54,.08)}
+.ic2{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round;flex:none;display:block}
+.b-time,.b-where,.b-money,.needs,.next,.places button,.ctrls button,.runbtn,.dock,.inhud,.drivehud,.ridechip{border:1px solid var(--g2line);box-shadow:0 1px 2px rgba(14,34,54,.06),0 8px 24px rgba(14,34,54,.12)}
+.b-money .ic2{width:18px;height:18px;color:var(--g2mute)}
+.b-time #time{font-weight:600;letter-spacing:0}.b-time #date,.b-where #where{color:var(--g2mute)}.b-where #where{color:var(--g2ink)}
+/* needs: a thin ring around the icon; blue when fine, amber when middling, red and pulsing when low */
+.needs{gap:6px;padding:7px 5px}
+.need{position:relative;width:38px;height:38px;display:grid;place-items:center;color:var(--g2ink)}
+.need .ring{position:absolute;inset:0;width:38px;height:38px}.need .rb{stroke:rgba(14,34,54,.09)}.need .rv{stroke:#006aa7}
+.need .ic2{width:16px;height:16px;position:relative}
+.need:nth-child(n) .rv{stroke:#006aa7}.need.mid:nth-child(n) .rv{stroke:#c98a00}.need.lo:nth-child(n) .rv{stroke:#d64545!important;animation:none}.need.lo .ic2{color:#d64545}
+/* places: plain round buttons, ink icon on white glass */
+.places button{width:40px;height:40px;display:grid;place-items:center;padding:0;color:var(--g2ink);background:var(--g2)}
+.places button i{background:transparent!important;width:auto;height:auto;display:grid}
+.places button .ic2{width:20px;height:20px;stroke:currentColor;stroke-width:1.75}
+.places button:hover:not(:disabled){filter:none;background:#fff;color:#006aa7}
+/* map buttons, dock */
+.ctrls button{width:42px;height:42px;color:var(--g2ink)}.ctrls .ic2{width:20px;height:20px}
+.dock{gap:2px}.dock button{padding:7px 14px;gap:3px;color:var(--g2mute)!important}
+.dock button:nth-child(n) svg.ic2{stroke:currentColor;width:22px;height:22px}.dock button.on{background:var(--g2ink)!important;color:#fff!important}.dock button.on svg.ic2{stroke:#fff!important}
+.dock span{font:500 11px var(--body);letter-spacing:.02em}
+.next{border-left:0;border-radius:18px}.next::before{content:"";width:4px;background:var(--sweyellow);border-radius:4px;margin:12px 0 12px 10px}
+.next .body{padding:6px 12px 6px 10px}
+.next button{background:var(--g2ink)!important;color:#fff!important;font-weight:500}
+.inact{background:var(--g2ink);box-shadow:0 10px 28px rgba(14,34,54,.3)}
+
+/* panels: the same calm type, sentence case, hairlines */
+.dhead{padding:14px 18px 12px;border-bottom:1px solid var(--g2line)}.dhead b{font:600 20px var(--body);letter-spacing:0;text-transform:none}
+.dhead button{border-radius:50%;width:34px;height:34px}
+.sec h3{font:600 14px var(--body);letter-spacing:0;text-transform:none;color:var(--g2ink)!important}.sec h3::before{display:none}
+.eyebrow{font:500 12px var(--body);letter-spacing:.02em;text-transform:none;color:var(--g2mute)}
+.stat{background:#f3f6f9;border-radius:14px}.stat .k{font:500 12px var(--body);letter-spacing:.02em;text-transform:none}.stat .v{font:600 18px var(--body)}
+.placehead h2{font:600 28px var(--body);letter-spacing:-.01em}
+
+/* one navigation bar: time, date and weather | where you are | money */
+.board{left:var(--gut);right:var(--gutR);height:48px;min-height:48px;padding:0 6px;gap:0;background:var(--g2)!important;border:1px solid var(--g2line);border-radius:99px;box-shadow:0 1px 2px rgba(14,34,54,.06),0 8px 24px rgba(14,34,54,.12)!important;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);align-items:center}
+.board .b-time,.board .b-where,.board .b-money{background:none;border:0;box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none;height:48px;border-radius:0}
+.board .b-where{flex:1 1 auto;max-width:none;border-left:1px solid var(--g2line);border-right:1px solid var(--g2line);margin:10px 0;height:28px;padding:0 16px;gap:8px;justify-content:center}
+.board .b-where .ic2{width:16px;height:16px;color:var(--g2mute)}
+.board .b-time{padding:0 16px 0 12px;min-width:0;flex:0 1 auto}.board .b-money{padding:0 14px 0 16px;margin-left:0}
+.b-time #date{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+@media (max-width:640px){.board .b-where{display:none}.board .b-time{flex:1 1 auto}.board .b-time #date{display:block;font-size:12px}.board .b-money{border-left:1px solid var(--g2line);margin:10px 0;height:28px}}
+
+/* one bar: time, date, weather and place | your six needs | money */
+.board .b-where{flex:0 1 auto;max-width:34vw;border-right:0;margin:0;height:48px;padding:0 8px 0 4px;justify-content:flex-start}
+.board .b-where #where{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.board .b-time{padding:0 6px 0 14px;border-right:0}
+.board .needs{position:static;flex-direction:row;gap:2px;padding:0;margin:0 auto;background:none;border:0;box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none;pointer-events:auto}
+.board .need{width:36px;height:36px}.board .need .ring{width:36px;height:36px}.board .need .ic2{width:15px;height:15px}
+.board .b-money{border-left:1px solid var(--g2line);margin:10px 0;height:28px}
+@media (max-width:899px){.board .b-where{max-width:22vw}.board .b-where small,.board .b-where .ic2{display:none}}
+@media (max-width:640px){
+  .board{flex-wrap:wrap;height:auto;min-height:0;padding:6px 8px 8px;border-radius:26px;row-gap:2px}
+  .board .b-time{order:1;flex:1 1 0;height:40px;padding:0 4px 0 8px}.board .b-where{display:none}
+  .board .b-money{order:2;height:40px;margin:0;border-left:0;padding:0 8px}
+  .board .needs{order:3;flex:1 0 100%;margin:0;justify-content:space-between;padding:2px 4px 0;border-top:1px solid var(--g2line)}
+  .board .need{width:40px;height:40px}.board .need .ring{width:40px;height:40px}.board .need .ic2{width:17px;height:17px}}
+body.inside .board .needs{display:flex!important}
+
+/* places: a vertical column on the left edge */
+.places{display:flex;flex-direction:column;gap:8px;top:calc(var(--boardH,48px) + 82px + env(safe-area-inset-top,0px));bottom:auto}
+@media (max-width:640px){.places{top:calc(var(--boardH,48px) + 82px + env(safe-area-inset-top,0px));bottom:auto;flex-direction:column}}
+
+@media (max-width:640px){.board .b-where{display:flex;order:3;flex:1 0 100%;max-width:none;height:24px;padding:0 8px;border:0;margin:0;justify-content:flex-start}.board .b-where .ic2{display:block;width:14px;height:14px}.board .b-where #where{font-size:13px;color:#fff}.board .needs{order:4}}
+
+/* ===== Swedish look: deep blue with a fine Nordic diamond pattern, white bold icons, yellow for the active and the important ===== */
+:root{--sv-pat:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 28 28'%3E%3Cg fill='%23fecc02' fill-opacity='.09'%3E%3Cpath d='M14 6l3.5 8-3.5 8-3.5-8z'/%3E%3Cpath d='M0 0h3v3H0zM25 0h3v3h-3zM0 25h3v3H0zM25 25h3v3h-3z'/%3E%3C/g%3E%3Cpath d='M14 0v4M14 24v4M0 14h4M24 14h4' stroke='%23fff' stroke-opacity='.07' fill='none'/%3E%3C/svg%3E");--sv-bg:linear-gradient(135deg,#0b4d7c 0%,#006aa7 100%);--sv-ink:#fff;--sv-soft:rgba(255,255,255,.72);--sv-line:rgba(255,255,255,.16);--sv-yellow:#fecc02}
+.board,.next,.dock,.places button,.ctrls button,.runbtn,.inhud,.drivehud,.ridechip{background:var(--sv-pat),var(--sv-bg)!important;color:var(--sv-ink)!important;border:1px solid rgba(255,255,255,.18);box-shadow:0 1px 2px rgba(0,30,60,.25),0 10px 26px rgba(0,30,60,.28)!important;backdrop-filter:none;-webkit-backdrop-filter:none}
+.ic2{stroke-width:2.4}
+.board .b-time,.board .b-where,.board .b-money{color:var(--sv-ink)}
+.b-time #time,.b-money #money,.b-where #where{color:var(--sv-ink)}.b-time #date{color:var(--sv-soft)}.b-money .ic2,.board .b-where .ic2{color:var(--sv-yellow)}
+.board .b-where,.board .b-money{border-color:var(--sv-line)}
+.b-time #time{font:600 21px var(--body);letter-spacing:.01em;font-variant-numeric:tabular-nums}.b-money #money{font:600 17px var(--body);font-variant-numeric:tabular-nums}.b-where #where{font:500 15px var(--body)}.b-time #date{font:400 13px var(--body)}
+.need{color:var(--sv-ink)}.need .rb{stroke:rgba(255,255,255,.2)}.need:nth-child(n) .rv{stroke:var(--sv-yellow)}.need.mid:nth-child(n) .rv{stroke:#ffa63d}.need.lo:nth-child(n) .rv{stroke:#ff6b6b!important}.need.lo .ic2{color:#ff8a8a}
+.need .ring circle{stroke-width:3}.need .ic2{width:17px;height:17px}.board .need .ic2{width:16px;height:16px}
+.board .needs{border:0}
+.next{border-left:0}.next::before{background:var(--sv-yellow)}.next b{color:#fff;font-weight:600;font-size:15px}.next small{color:var(--sv-soft)}
+.next button{background:var(--sv-yellow)!important;color:#0b2740!important;font-weight:600}
+.places button{color:#fff!important}.places button:hover:not(:disabled){background:var(--sv-pat),linear-gradient(135deg,#0e5d94,#1a82c4)!important;color:var(--sv-yellow)!important}
+.ctrls button,.runbtn{color:#fff!important}.runbtn.on{background:var(--sv-yellow)!important;color:#0b2740!important}.runbtn{font:600 13px var(--body);letter-spacing:.08em}
+.dock button{color:var(--sv-soft)!important}.dock button.on{background:var(--sv-yellow)!important;color:#0b2740!important}.dock button.on svg.ic2{stroke:#0b2740!important}.dock span{font:500 11.5px var(--body);letter-spacing:.03em}
+.inhud button,.drivehud button{background:var(--sv-yellow);color:#0b2740}
+.inact{background:var(--sv-yellow);color:#0b2740;font:600 16px var(--body)}.inact kbd{background:rgba(11,39,64,.15)!important}
+/* panels: calm sentence-case type in Jost, a blue header strip with the pattern */
+.dhead{background:var(--sv-pat),var(--sv-bg);color:#fff;border-bottom:0}.dhead b{font:600 21px var(--body);color:#fff}.dhead button{background:rgba(255,255,255,.16);color:#fff}
+.drawer{border:0}
+h1,h2,h3,.placehead h2{font-family:var(--body)}
+
+/* sanitation: nothing on the playing screen that does not help you play */
+.hint{animation:hintgone .8s 14s forwards}@keyframes hintgone{to{opacity:0;visibility:hidden}}
+@media (max-width:899px){.credit{display:none}}
+.ic2{stroke-width:2.8}
+.dock button:nth-child(n) svg.ic2{width:24px;height:24px}.places button .ic2{width:22px;height:22px;stroke-width:2.8}.ctrls .ic2{width:22px;height:22px}
+.need .ring circle{stroke-width:3.4}.board .need .ic2{width:17px;height:17px}
+.b-money .ic2,.board .b-where .ic2{stroke-width:2.6}
+
+/* no backgrounds: bold white icons and text float over the city, with a soft shadow so they stay readable */
+.board,.next,.dock,.places button,.ctrls button,.runbtn,.inhud,.drivehud,.ridechip{background:none!important;border:0!important;box-shadow:none!important}
+.board,.next,.places,.ctrls,.dock,.runbtn,.inhud,.drivehud,.ridechip{filter:drop-shadow(0 1px 1.5px rgba(0,20,40,.85)) drop-shadow(0 0 7px rgba(0,20,40,.45))}
+.board .b-where,.board .b-money{border-color:rgba(255,255,255,.28)}
+.dock button.on{background:none!important;color:var(--sv-yellow)!important}.dock button.on svg.ic2{stroke:var(--sv-yellow)!important}
+.dock button.on::after{content:"";position:absolute;left:50%;bottom:0;width:18px;height:3px;margin-left:-9px;border-radius:3px;background:var(--sv-yellow)}
+.places button:hover:not(:disabled){background:none!important;color:var(--sv-yellow)!important}
+.runbtn.on{background:none!important;color:var(--sv-yellow)!important}
+.next button{filter:none}
+.dhead{background:none;color:var(--g2ink)}.dhead b{color:var(--g2ink)}.dhead button{background:var(--surface2);color:var(--g2ink)}
+
+/* a soft shade at the top and bottom edges keeps the floating icons and text readable (not a panel) */
+.stage::after{content:"";position:absolute;inset:0;pointer-events:none;z-index:1;background:linear-gradient(rgba(0,22,44,.62),rgba(0,22,44,0) 190px),linear-gradient(to top,rgba(0,22,44,.55),rgba(0,22,44,0) 150px)}
+
+/* short phones: smaller place buttons so the column ends above the joystick; the station message strip starts to the right of the column */
+@media (max-height:700px){.places{gap:5px}.places button{width:34px;height:34px}.places button .ic2{width:18px;height:18px}}
+@media (max-width:640px){#csLine{left:64px}}
+
+/* inside buildings and stations on a phone the bar shrinks to time and money, so the ride HUD and the messages keep their room */
+@media (max-width:640px){body.inside .board .needs,body.inside .board .b-where{display:none!important}}
 </style>
 </head>
 <body>
+<!-- Icons: Lucide (https://lucide.dev), ISC licence, v0.460.0, embedded as a sprite -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><symbol id="i-arrow-right" viewBox="0 0 24 24"><path d="M5 12h14" /> <path d="m12 5 7 7-7 7" /></symbol><symbol id="i-briefcase-business" viewBox="0 0 24 24"><path d="M12 12h.01" /> <path d="M16 6V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2" /> <path d="M22 13a18.15 18.15 0 0 1-20 0" /> <rect width="20" height="14" x="2" y="6" rx="2" /></symbol><symbol id="i-cloud-sun" viewBox="0 0 24 24"><path d="M12 2v2" /> <path d="m4.93 4.93 1.41 1.41" /> <path d="M20 12h2" /> <path d="m19.07 4.93-1.41 1.41" /> <path d="M15.947 12.65a4 4 0 0 0-5.925-4.128" /> <path d="M13 22H7a5 5 0 1 1 4.9-6H13a3 3 0 0 1 0 6Z" /></symbol><symbol id="i-droplets" viewBox="0 0 24 24"><path d="M7 16.3c2.2 0 4-1.83 4-4.05 0-1.16-.57-2.26-1.71-3.19S7.29 6.75 7 5.3c-.29 1.45-1.14 2.84-2.29 3.76S3 11.1 3 12.25c0 2.22 1.8 4.05 4 4.05z" /> <path d="M12.56 6.6A10.97 10.97 0 0 0 14 3.02c.5 2.5 2 4.9 4 6.5s3 3.5 3 5.5a6.98 6.98 0 0 1-11.91 4.97" /></symbol><symbol id="i-flag" viewBox="0 0 24 24"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" /> <line x1="4" x2="4" y1="22" y2="15" /></symbol><symbol id="i-footprints" viewBox="0 0 24 24"><path d="M4 16v-2.38C4 11.5 2.97 10.5 3 8c.03-2.72 1.49-6 4.5-6C9.37 2 10 3.8 10 5.5c0 3.11-2 5.66-2 8.68V16a2 2 0 1 1-4 0Z" /> <path d="M20 20v-2.38c0-2.12 1.03-3.12 1-5.62-.03-2.72-1.49-6-4.5-6C14.63 6 14 7.8 14 9.5c0 3.11 2 5.66 2 8.68V20a2 2 0 1 0 4 0Z" /> <path d="M16 17h4" /> <path d="M4 13h4" /></symbol><symbol id="i-heart" viewBox="0 0 24 24"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" /></symbol><symbol id="i-house" viewBox="0 0 24 24"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8" /> <path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /></symbol><symbol id="i-landmark" viewBox="0 0 24 24"><line x1="3" x2="21" y1="22" y2="22" /> <line x1="6" x2="6" y1="18" y2="11" /> <line x1="10" x2="10" y1="18" y2="11" /> <line x1="14" x2="14" y1="18" y2="11" /> <line x1="18" x2="18" y1="18" y2="11" /> <polygon points="12 2 20 7 4 7" /></symbol><symbol id="i-locate-fixed" viewBox="0 0 24 24"><line x1="2" x2="5" y1="12" y2="12" /> <line x1="19" x2="22" y1="12" y2="12" /> <line x1="12" x2="12" y1="2" y2="5" /> <line x1="12" x2="12" y1="19" y2="22" /> <circle cx="12" cy="12" r="7" /> <circle cx="12" cy="12" r="3" /></symbol><symbol id="i-log-out" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /> <polyline points="16 17 21 12 16 7" /> <line x1="21" x2="9" y1="12" y2="12" /></symbol><symbol id="i-map-pin" viewBox="0 0 24 24"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0" /> <circle cx="12" cy="10" r="3" /></symbol><symbol id="i-menu" viewBox="0 0 24 24"><line x1="4" x2="20" y1="12" y2="12" /> <line x1="4" x2="20" y1="6" y2="6" /> <line x1="4" x2="20" y1="18" y2="18" /></symbol><symbol id="i-message-circle" viewBox="0 0 24 24"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z" /></symbol><symbol id="i-messages-square" viewBox="0 0 24 24"><path d="M14 9a2 2 0 0 1-2 2H6l-4 4V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2z" /> <path d="M18 9h2a2 2 0 0 1 2 2v11l-4-4h-6a2 2 0 0 1-2-2v-1" /></symbol><symbol id="i-minus" viewBox="0 0 24 24"><path d="M5 12h14" /></symbol><symbol id="i-notebook-pen" viewBox="0 0 24 24"><path d="M13.4 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7.4" /> <path d="M2 6h4" /> <path d="M2 10h4" /> <path d="M2 14h4" /> <path d="M2 18h4" /> <path d="M21.378 5.626a1 1 0 1 0-3.004-3.004l-5.01 5.012a2 2 0 0 0-.506.854l-.837 2.87a.5.5 0 0 0 .62.62l2.87-.837a2 2 0 0 0 .854-.506z" /></symbol><symbol id="i-party-popper" viewBox="0 0 24 24"><path d="M5.8 11.3 2 22l10.7-3.79" /> <path d="M4 3h.01" /> <path d="M22 8h.01" /> <path d="M15 2h.01" /> <path d="M22 20h.01" /> <path d="m22 2-2.24.75a2.9 2.9 0 0 0-1.96 3.12c.1.86-.57 1.63-1.45 1.63h-.38c-.86 0-1.6.6-1.76 1.44L14 10" /> <path d="m22 13-.82-.33c-.86-.34-1.82.2-1.98 1.11c-.11.7-.72 1.22-1.43 1.22H17" /> <path d="m11 2 .33.82c.34.86-.2 1.82-1.11 1.98C9.52 4.9 9 5.52 9 6.23V7" /> <path d="M11 13c1.93 1.93 2.83 4.17 2 5-.83.83-3.07-.07-5-2-1.93-1.93-2.83-4.17-2-5 .83-.83 3.07.07 5 2Z" /></symbol><symbol id="i-plus" viewBox="0 0 24 24"><path d="M5 12h14" /> <path d="M12 5v14" /></symbol><symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8" /> <path d="m21 21-4.3-4.3" /></symbol><symbol id="i-smartphone" viewBox="0 0 24 24"><rect width="14" height="20" x="5" y="2" rx="2" ry="2" /> <path d="M12 18h.01" /></symbol><symbol id="i-smile" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /> <path d="M8 14s1.5 2 4 2 4-2 4-2" /> <line x1="9" x2="9.01" y1="9" y2="9" /> <line x1="15" x2="15.01" y1="9" y2="9" /></symbol><symbol id="i-sparkles" viewBox="0 0 24 24"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z" /> <path d="M20 3v4" /> <path d="M22 5h-4" /> <path d="M4 17v2" /> <path d="M5 18H3" /></symbol><symbol id="i-train-track" viewBox="0 0 24 24"><path d="M2 17 17 2" /> <path d="m2 14 8 8" /> <path d="m5 11 8 8" /> <path d="m8 8 8 8" /> <path d="m11 5 8 8" /> <path d="m14 2 8 8" /> <path d="M7 22 22 7" /></symbol><symbol id="i-train-front" viewBox="0 0 24 24"><path d="M8 3.1V7a4 4 0 0 0 8 0V3.1" /> <path d="m9 15-1-1" /> <path d="m15 15 1-1" /> <path d="M9 19c-2.8 0-5-2.2-5-5v-4a8 8 0 0 1 16 0v4c0 2.8-2.2 5-5 5Z" /> <path d="m8 19-2 3" /> <path d="m16 19 2 3" /></symbol><symbol id="i-trending-up" viewBox="0 0 24 24"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17" /> <polyline points="16 7 22 7 22 13" /></symbol><symbol id="i-user-round" viewBox="0 0 24 24"><circle cx="12" cy="8" r="5" /> <path d="M20 21a8 8 0 0 0-16 0" /></symbol><symbol id="i-users" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /> <circle cx="9" cy="7" r="4" /> <path d="M22 21v-2a4 4 0 0 0-3-3.87" /> <path d="M16 3.13a4 4 0 0 1 0 7.75" /></symbol><symbol id="i-utensils" viewBox="0 0 24 24"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2" /> <path d="M7 2v20" /> <path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7" /></symbol><symbol id="i-wallet" viewBox="0 0 24 24"><path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1" /> <path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4" /></symbol><symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18" /> <path d="m6 6 12 12" /></symbol><symbol id="i-zap" viewBox="0 0 24 24"><path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z" /></symbol></svg>
 
 <section class="stage" id="stage" aria-label="3D view of Stockholm built from OpenStreetMap. Tap a place name to travel, tap a street to walk there, tap a business to see it.">
   <div class="labels" id="labels"></div>
   <header class="board" id="board">
     <div class="brand">Stockholms<span>liv</span></div>
     <div class="b-time"><span id="time">08:00</span><span id="date"></span></div>
-    <div class="b-where"><small>You are at</small><span id="where">Stockholm</span></div>
-    <div class="b-money"><span id="money">0 kr</span><span id="jobline"></span></div>
-    <div class="needs" id="needs" aria-label="Your needs"></div>
+    <div class="b-where"><svg class="ic2" aria-hidden="true"><use href="#i-map-pin"/></svg><small>You are at</small><span id="where">Stockholm</span></div>
+    <div class="needs" id="needs" role="group" aria-label="Your needs"></div>
+    <div class="b-money"><svg class="ic2" aria-hidden="true"><use href="#i-wallet"/></svg><span id="money">0 kr</span><span id="jobline"></span></div>
     <div class="daytrack" title="Daylight today"><div class="light" id="light"></div><div class="now" id="now"></div></div>
     <span class="skymeta"><span id="dlText"></span><span id="season"></span></span>
   </header>
@@ -441,7 +561,7 @@ body.inside .needs{display:none!important}@media (max-width:1100px){body.inside 
   <div class="ridechip" id="ride"></div>
   <div class="places" id="places" aria-label="Your places"></div>
   <div class="hint" id="hint">Joystick or WASD to walk · tap a street to auto-walk · tap a shop to look · drag to turn</div>
-  <div class="ctrls"><button id="zfind" aria-label="Find shops and places">⌕</button><button id="zin" aria-label="Zoom in">+</button><button id="zout" aria-label="Zoom out">−</button><button id="zme" aria-label="Center on you" style="font-size:16px">◎</button></div>
+  <div class="ctrls"><button id="zfind" aria-label="Find shops and places"><svg class="ic2" aria-hidden="true"><use href="#i-search"/></svg></button><button id="zin" aria-label="Zoom in"><svg class="ic2" aria-hidden="true"><use href="#i-plus"/></svg></button><button id="zout" aria-label="Zoom out"><svg class="ic2" aria-hidden="true"><use href="#i-minus"/></svg></button><button id="zme" aria-label="Center on you"><svg class="ic2" aria-hidden="true"><use href="#i-locate-fixed"/></svg></button></div>
   <div class="inhud" id="inhud"><b id="inTitle"></b><button id="inLeave">Leave</button></div><button class="inact" id="inAct"></button><div class="csprompt" id="csPrompt" role="dialog" aria-live="polite"></div><div class="cshud" id="csHud"></div><div class="csline" id="csLine" aria-live="polite"></div><div class="cscine" id="csCine"><span></span><button>Skip ▸▸</button></div>
   <div class="drivehud" id="drivehud"><span class="limit" id="lim">50</span><span id="spd">0 km/h</span><span id="coach"></span><button id="park">Park</button></div>
   <div class="joy" id="joy" aria-label="Move joystick"><div class="knob" id="knob"></div></div>
@@ -451,11 +571,11 @@ body.inside .needs{display:none!important}@media (max-width:1100px){body.inside 
   <div class="loading" id="loading"><div class="box"><b>Stockholmsliv</b><div class="bar"><i id="loadbar"></i></div><small id="loadtxt">Downloading 84 000 buildings, 160 000 street segments and 15 000 places from OpenStreetMap…</small></div></div>
 </section>
 <nav class="dock" id="dock" aria-label="Panels">
-  <button data-tab="here" aria-label="Here"><svg viewBox="0 0 24 24"><path d="M12 21s7-6.3 7-12a7 7 0 1 0-14 0c0 5.7 7 12 7 12z"/><circle cx="12" cy="9" r="2.5"/></svg><span>Here</span></button>
-  <button data-tab="phone" aria-label="Phone"><svg viewBox="0 0 24 24"><rect x="6" y="2.5" width="12" height="19" rx="2.5"/><path d="M10.5 18.5h3"/></svg><span>Phone</span></button>
-  <button data-tab="me" aria-label="Me"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg><span>Me</span></button>
-  <button data-tab="civic" aria-label="Society"><svg viewBox="0 0 24 24"><path d="M3 10l9-6 9 6M5 10v9M9.5 10v9M14.5 10v9M19 10v9M3 21h18"/></svg><span>Society</span></button>
-  <button data-tab="diary" aria-label="Diary"><svg viewBox="0 0 24 24"><path d="M5 3.5h11l3 3V21H5z"/><path d="M8.5 9h7M8.5 13h7M8.5 17h4"/></svg><span>Diary</span></button>
+  <button data-tab="here" aria-label="Here"><svg class="ic2" aria-hidden="true"><use href="#i-map-pin"/></svg><span>Here</span></button>
+  <button data-tab="phone" aria-label="Phone"><svg class="ic2" aria-hidden="true"><use href="#i-smartphone"/></svg><span>Phone</span></button>
+  <button data-tab="me" aria-label="Me"><svg class="ic2" aria-hidden="true"><use href="#i-user-round"/></svg><span>Me</span></button>
+  <button data-tab="civic" aria-label="Society"><svg class="ic2" aria-hidden="true"><use href="#i-landmark"/></svg><span>Society</span></button>
+  <button data-tab="diary" aria-label="Diary"><svg class="ic2" aria-hidden="true"><use href="#i-notebook-pen"/></svg><span>Diary</span></button>
 </nav>
 <aside class="drawer" id="drawer" hidden>
   <div class="dhead"><b id="dtitle">Here</b><button id="dclose" aria-label="Close panel">✕</button></div>
@@ -964,9 +1084,9 @@ const PHONE_APPS=[["Phone","txt:☎","#23824f",()=>openCalls()],['Chatt','chat',
 function openTravelPicker(){const ks=Object.keys(D);modal(`<h2>Go somewhere</h2><div class="choices">${S.addr&&S.home!=='none'?`<button class="choice" data-k="${homeD()}"><b>⌂ Home</b><small>${addrText()}</small></button>`:''}${ks.map(k=>`<button class="choice" data-k="${k}"><b>${D[k].name}</b><small>${D[k].blurb.slice(0,90)}…</small></button>`).join('')}</div><div class="row2"><button class="btn ghost" id="no">Close</button></div>`,m=>{
   m.querySelector('#no').onclick=closeModal;m.querySelectorAll('.choice').forEach(b=>b.onclick=()=>{closeModal();openTravel(b.dataset.k)})})}
 // ---------- need gauges on the board
-const GAUGES=[['energy','Energy'],['mood','Mood'],['hunger','Food'],['hygiene','Hygiene'],['fun','Fun'],['social','Social']];
-function renderNeeds(){const C=2*Math.PI*14;$('needs').innerHTML=GAUGES.map(([k,l])=>{const v=clamp(Math.round(S[k]||0),0,100);const cls=v<25?'lo':v<50?'mid':'';
-  return `<div class="need ${cls}" title="${l} ${v}/100"><svg viewBox="0 0 34 34"><circle class="rb" cx="17" cy="17" r="14" fill="none" stroke-width="4"/><circle class="rv" cx="17" cy="17" r="14" fill="none" stroke-width="4" stroke-linecap="round" stroke-dasharray="${C*v/100} ${C}" transform="rotate(-90 17 17)"/><text x="17" y="21" text-anchor="middle">${v}</text></svg><span>${l}</span></div>`}).join('')}
+const GAUGES=[['energy','Energy','zap'],['mood','Mood','smile'],['hunger','Food','utensils'],['hygiene','Hygiene','droplets'],['fun','Fun','party-popper'],['social','Social','message-circle']];
+function renderNeeds(){const C=2*Math.PI*16;$('needs').innerHTML=GAUGES.map(([k,l,ic])=>{const v=clamp(Math.round(S[k]||0),0,100);const cls=v<25?'lo':v<50?'mid':'';
+  return `<div class="need ${cls}" role="img" aria-label="${l} ${v} of 100" title="${l} ${v}/100"><svg class="ring" viewBox="0 0 38 38"><circle class="rb" cx="19" cy="19" r="16" fill="none" stroke-width="2.5"/><circle class="rv" cx="19" cy="19" r="16" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="${C*v/100} ${C}" transform="rotate(-90 19 19)"/></svg>${ico(ic)}<span>${l}</span></div>`}).join('')}
 // ---------- the guide: what makes sense to do next
 function nextSteps(){const out=[];if(!S||busy)return out;const add=(l,s,fn,btn,u)=>out.push({l,s,fn,btn:btn||'Go',u:u||0});
   if(S.flags&&S.flags.arlanda){if(!S.flags.passport&&!S.schengen)add('Passport control','Walk to the booths at the back of the hall',()=>airportSpot('passport'),'Go',100);if(!S.flags.bags)add('Collect your suitcase','Baggage claim, in the middle of the hall',()=>airportSpot('bags'),'Go',99);add('Travel into Stockholm','Arlanda Express, pendeltåg, Flygbussarna or taxi',()=>airportSpot('exit'),'Go',98);return out}const d=S.docs;
@@ -1595,6 +1715,7 @@ const GLYPHS={
   plane:'M21 15l-8-4V4.5a1.5 1.5 0 0 0-3 0V11l-8 4v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-4.5l8 2.5z',suitcase:'M5 8h14v12H5zM9 8V5h6v3M9 8v12M15 8v12'};
 const _p2d={};function glyphPath(n){return _p2d[n]||(_p2d[n]=typeof Path2D!=='undefined'?new Path2D(GLYPHS[n]||GLYPHS.pin):null)}
 function drawGlyph(g,name,cx,cy,size,color){const p=glyphPath(name);if(!p||!g.stroke)return;g.save();g.translate(cx-size/2,cy-size/2);g.scale(size/24,size/24);g.strokeStyle=color||'#fff';g.lineWidth=2.3;g.lineCap='round';g.lineJoin='round';g.stroke(p);g.restore()}
+const ico=(n,cls)=>`<svg class="${cls||'ic2'}" aria-hidden="true"><use href="#i-${n}"/></svg>`;
 const glyphSVG=(n,cls)=>`<svg class="${cls||'gl'}" viewBox="0 0 24 24" aria-hidden="true"><path d="${GLYPHS[n]||GLYPHS.pin}"/></svg>`;
 function glyphFor(p){const t=p.type,c=p.catName,n=(p.name||'').toLowerCase();
   const T={restaurant:'food',food_court:'food',cafe:'cafe',bakery:'cafe',ice_cream:'cafe',fast_food:'burger',bar:'bar',pub:'bar',biergarten:'bar',nightclub:'music',dance:'music',bank:'bank',atm:'card',pharmacy:'pill',clinic:'health',doctors:'health',dentist:'health',healthcare:'health',
@@ -1785,12 +1906,12 @@ function openInvest(){invTick();const I=invInit();if(!S.docs.bankid){modal(`<div
     m.querySelector('#no').onclick=closeModal;
     m.querySelectorAll('[data-buy]').forEach(b=>b.onclick=()=>{const k=b.dataset.buy,a=+b.dataset.a;if(S.money<a)return;S.money-=a;const h=I.h[k]||(I.h[k]={v:0,cost:0,prev:0});h.v+=a;h.cost+=a;if(!h.prev)h.prev=h.v;log(`Bought ${FUNDS[k].n} for ${kr(a)}.`);save();openInvest()});
     m.querySelectorAll('[data-sell]').forEach(b=>b.onclick=()=>{const k=b.dataset.sell,h=I.h[k];const v=Math.round(h.v);S.money+=v;log(`Sold ${FUNDS[k].n} for ${kr(v)} (${v>=h.cost?'gain':'loss'} ${kr(Math.abs(v-Math.round(h.cost)))}).`,v>=h.cost?'plus':'minus');delete I.h[k];save();openInvest()})})}
-const PLACEBTN=[['home','house','#a84b32','Home',()=>goHome()],['work','brief','#0b5fa5','Work',()=>goWork()],['fam','people','#1faa59','Family',()=>goFamily()],['friends','chat','#2a8a52','Friends',()=>goFriends()],['inv','chart','#0f6b5c','Invest',()=>openInvest()],['central','train','#c8102e','Centralen',()=>goCentral()]];
+const PLACEBTN=[['home','house','#a84b32','Home',()=>goHome()],['work','briefcase-business','#0b5fa5','Work',()=>goWork()],['fam','users','#1faa59','Family',()=>goFamily()],['friends','messages-square','#2a8a52','Friends',()=>goFriends()],['inv','trending-up','#0f6b5c','Invest',()=>openInvest()],['central','train-track','#c8102e','Centralen',()=>goCentral()]];
 // Stockholm Central: walk or ride to the main entrance on Vasagatan; going in is a prompt at the doors
 function goCentral(){if(W&&W.inStation&&W.inStation()){toast('You are already at Stockholm Central');return}const t=W&&W.centralEntrance&&W.centralEntrance();if(!t){toast('The 3D city is needed for the station');return}
   openTravel(S.loc||Object.keys(D)[0],{name:'Stockholm Central Station',blurb:'Main entrance on Vasagatan. Walk up to the doors to go inside: tickets, food, currency exchange and pendeltåg from Stockholm City.',x:t.x,z:t.z,arrive:()=>toast('Stockholm Central · walk up to the doors to go inside')})}
 function renderPlaces(){const el=document.getElementById('places');if(!el||!S)return;
-  if(!el.dataset.built){el.innerHTML=PLACEBTN.map(([k,g,c,l])=>`<button data-pl="${k}" style="--c:${c}" title="${l}"><i>${glyphSVG(g)}</i><span>${l}</span></button>`).join('');el.dataset.built=1;
+  if(!el.dataset.built){el.innerHTML=PLACEBTN.map(([k,g,c,l])=>`<button data-pl="${k}" style="--c:${c}" title="${l}"><i>${ico(g)}</i><span>${l}</span></button>`).join('');el.dataset.built=1;
     el.querySelectorAll('[data-pl]').forEach(b=>b.onclick=()=>{if(busy){toast('You are on the move');return}const f=PLACEBTN.find(x=>x[0]===b.dataset.pl);f&&f[4]()})}
   const lbl={home:S.home==='none'?'No home':'Home',work:S.job&&JOBS[S.job]?'Work':'Find work',inv:(()=>{const t=S.inv?invTotal().v:0;return t>1?kr(Math.round(t)):'Invest'})()};
   el.querySelectorAll('[data-pl]').forEach(b=>{const t=lbl[b.dataset.pl];if(t)b.querySelector('span').textContent=t;const n=b.querySelector('span').textContent;b.setAttribute('aria-label',n);b.title=n})}
@@ -2483,7 +2604,7 @@ function render(){try{if(S){renderTodo();badges();renderAbout()}}catch(e){}
   $('now').style.left=`calc(${Math.min(S.hour,24)/24*100}% - 1px)`;
   $('dlText').textContent=`☀ ${hhmm(sunrise())}–${hhmm(sunset())}`;
   $('season').textContent=dl<8?(S.vitD>=S.day?'Dark season · D-vitamin on':S.sunToday?'Dark season · sun caught':'Dark season · get outside'):(dl>16?'Light nights':'');
-  const bars=[['energy','Energy'],['mood','Mood'],['hunger','Hunger'],['hygiene','Hygiene'],['fun','Fun'],['social','Social'],['svenska','Svenska'],['skill','Skill'],['charisma','Charisma'],['fitness','Fitness']];
+  const bars=[['energy','Energy'],['mood','Mood'],['hunger','Food'],['hygiene','Hygiene'],['fun','Fun'],['social','Social'],['svenska','Svenska'],['skill','Skill'],['charisma','Charisma'],['fitness','Fitness']];
   $('stats').innerHTML=bars.map(([k,l])=>`<div class="stat ${S[k]<20&&['energy','mood','hunger','hygiene','fun'].includes(k)?'lo':''}"><div class="k">${l}</div><div class="v">${Math.round(S[k])}</div><div class="bar2"><i style="width:${S[k]}%"></i></div></div>`).join('')+
     `<div class="feel">${feelings().map(f=>`<span class="chip2 ${f[2]}">${f[0]} ${f[1]}</span>`).join('')}</div><div class="stat"><div class="k">SL card</div><div class="v">${S.slUntil>=S.day?(S.slUntil-S.day+1)+'d':'—'}</div><div class="k" style="text-transform:none;letter-spacing:0">${S.slUntil>=S.day?'days left':kr(TICKET)+'/trip'}</div></div>`;
   const d=S.loc?D[S.loc]:null;

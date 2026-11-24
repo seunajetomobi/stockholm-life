@@ -64,11 +64,14 @@ class Errors:
         return [m for s, m in self.failed + self.http if not s]
 
 
-def new_page(browser, width=1366, height=768, mobile=False, hook=False, init_script=None):
+def new_page(browser, width=1366, height=768, mobile=False, hook=False, init_script=None, gfx=False):
     opts = {'viewport': {'width': width, 'height': height}}
     if mobile:
         opts.update(is_mobile=True, has_touch=True, device_scale_factor=2)
     ctx = browser.new_context(**opts)
+    # The image effects (High preset) cost much time in the test browser's software renderer and change no layout,
+    # so tests run without them unless they ask (gfx=True); tests/test_gfx.py covers them.
+    ctx.add_init_script("try{localStorage.setItem('sl-gfx','%s')}catch(e){}" % ('1' if gfx else '0'))
     if init_script:
         ctx.add_init_script(init_script)
     if hook:

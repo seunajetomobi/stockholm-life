@@ -594,6 +594,15 @@ h2.hero{font-size:34px;background:linear-gradient(90deg,var(--sweblue),#3a86ff 4
 @keyframes ringPulse{0%{transform:scale(1);opacity:.8}100%{transform:scale(1.9);opacity:0}}
 body.ringing-on .dock [data-tab="phone"] svg,body.ringing-on .dock [data-tab="phone"] .ic{animation:ringShake .9s ease-in-out infinite}
 @media (prefers-reduced-motion:reduce){.ringico svg,body.ringing-on .dock [data-tab="phone"] svg{animation:none}.ringico::before,.ringico::after{animation:none;opacity:.5}}
+
+/* loading: only the first O of the wordmark shows progress (it fills with yellow from the bottom); no bar and no text unless something went wrong */
+.loading .bar,.loading #loadtip,.loading #loadtxt{display:none!important}.loading.err #loadtxt{display:block!important}
+.loading b em.lo{font-style:normal;color:transparent;-webkit-text-stroke:max(2px,.045em) #006aa7;background:linear-gradient(to top,#fecc02 var(--p,0%),rgba(254,204,2,.18) var(--p,0%));-webkit-background-clip:text;background-clip:text;transition:background .3s}
+/* title page: the sign in and language buttons float on the photo with no backgrounds */
+.title .glass{background:none!important;border:0!important;box-shadow:none!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+.title .tl button,.title .tr button{color:#fff!important;text-shadow:0 1px 6px rgba(0,0,0,.75),0 0 2px rgba(0,0,0,.6)}
+.title .tr i{background:rgba(255,255,255,.55)}
+.title .tr button[aria-pressed=true]{background:rgba(254,204,2,.95)!important;color:#0b2740!important;text-shadow:none}
 </style>
 </head>
 <body>
@@ -648,7 +657,7 @@ body.ringing-on .dock [data-tab="phone"] svg,body.ringing-on .dock [data-tab="ph
     <div class="pane" data-pane="diary" hidden><div class="sec"><ul class="log" id="log"></ul></div></div>
   </div>
 </aside>
-<div class="loading" id="loading"><div class="box"><b>Stockholms<span>liv</span></b><div class="bar"><i id="loadbar"></i></div><small id="loadtip" aria-live="off"></small><small id="loadtxt">Downloading 84 000 buildings, 160 000 street segments and 15 000 places from OpenStreetMap…</small></div></div>
+<div class="loading" id="loading"><div class="box"><b>St<em class="lo" id="loadO">o</em>ckholms<span>liv</span></b><div class="bar"><i id="loadbar"></i></div><small id="loadtip" aria-live="off"></small><small id="loadtxt">Downloading 84 000 buildings, 160 000 street segments and 15 000 places from OpenStreetMap…</small></div></div>
 <div class="title" id="title" hidden><div class="ttop"><div class="glass tl" id="tAcct"></div><div class="glass tr" id="tLang" role="group" aria-label="Language"></div></div><div class="stack" id="titleCard"></div><div class="tosm" id="tOsm"></div><div class="thel">© 2026 Helekt</div></div>
 <div id="modalRoot"></div>
 <div id="saveStatus" role="status" hidden></div>
@@ -678,7 +687,7 @@ body.ringing-on .dock [data-tab="phone"] svg,body.ringing-on .dock [data-tab="ph
 // useModule(name, file) returns a module from window.StockholmLife (file: its path under src/, default <name>.js); a module
 // that did not load stops the game here with a message on the loading screen, not a blank page. docs/MODULES.md
 function useModule(name,file=name+'.js'){const m=window.StockholmLife&&window.StockholmLife[name];if(m)return m;
-  const t=document.getElementById('loadtxt');if(t)t.textContent=`The game could not load src/${file}. Reload the page. If this keeps happening, a file is missing from the site.`;
+  const t=document.getElementById('loadtxt');const Lg=document.getElementById('loading');if(Lg)Lg.classList.add('err');if(t)t.textContent=`The game could not load src/${file}. Reload the page. If this keeps happening, a file is missing from the site.`;
   throw new Error(`src/${file} did not load`)}
 const {O_LAT,O_LON,P,PP,WATER_FALLBACK,AREAS,HUB_R,ST,STP,LINES,transitRoute,nearestStation}=useModule('geography');
 const D=AREAS;
@@ -5723,9 +5732,10 @@ const POSTERS_CITY=[['#f2b705','#1b1b1b','KANELBULLE','Färskt varje morgon','Ba
 /* =================== START =================== */
 $('restart').onclick=()=>modal(`<h2>Start over?</h2><p>Your current life in Stockholm will be lost.</p><div class="row2"><button class="btn" id="yes">Start a new life</button><button class="btn ghost" id="no">Keep playing</button></div>`,m=>{m.querySelector('#yes').onclick=()=>{closeModal();intro()};m.querySelector('#no').onclick=closeModal});
 
+function loadO(pct){const o=document.getElementById('loadO');if(o)o.style.setProperty('--p',Math.round(pct)+'%')}
 async function loadCity(){
   const parts=[['b','buildings'],['r','streets'],['m','parks, water and places']];const out={};let n=0;
-  for(const [k,label] of parts){$('loadtxt').textContent=`Loading ${label}…`;out[k]=await gunzipFetch(`data/${k}.json`);n++;$('loadbar').style.width=(n/parts.length*100)+'%'}
+  for(const [k,label] of parts){$('loadtxt').textContent=`Loading ${label}…`;out[k]=await gunzipFetch(`data/${k}.json`);n++;$('loadbar').style.width=(n/parts.length*100)+'%';loadO(n/parts.length*100)}
   for(const k of ['x','t','o','e']){try{$('loadtxt').textContent=k==='t'?'Loading bus, tram, train and ferry lines…':k==='o'?'Loading one-way streets and lanes…':k==='e'?'Loading station entrances…':'Loading traffic lights…';out[k]=await gunzipFetch(`data/${k}.json`)}catch(e){}}
   return out}
 function matchServices(){if(!CITY)return;const pois=CITY.m.pois.map((p,i)=>({i,cat:p[0],catName:CITY.m.cats[p[0]],type:p[1],name:p[2],x:p[3]/100,z:p[4]/100,hours:p[5]||'',addr:p[6]||''}));
@@ -5845,7 +5855,7 @@ const storeHtml=()=>{const L=LANG==='sv'?'sv':'en',B=[['ios','App Store','Downlo
   return `<p class="stsoon">${STORE.ios||STORE.android?'':tt('stSoon')}</p><div class="storerow">${B.map(([k,n,alt,src,cls])=>STORE[k]?`<a class="store" href="${STORE[k]}" target="_blank" rel="noopener" aria-label="${alt}">${img(alt,src,cls)}</a>`:`<span class="store pending" role="group" aria-label="${n}: ${tt('stSoon')}">${img(alt,src,cls)}</span>`).join('')}</div>`};
 function titleMain(fresh){
   const started=!!(S&&S.flags&&S.flags.started)&&!fresh;
-  titleShow(`<h1>Stockholms<span>liv</span></h1><p class="tag">${tt('tag')}</p>
+  titleShow(`<h1>Stockholms<span>liv</span></h1>
     <div class="btns"><button class="primary" id="tPlay">${tt('start')}</button>
     <button id="tOpt">${tt('options')}</button><button id="tHow">${tt('how')}</button></div>
     <div class="stores">${storeHtml()}</div>`,t=>{
@@ -6120,10 +6130,10 @@ await Promise.race([TIMESYNC,new Promise(r=>setTimeout(r,3000))]);// a new life 
   if(!S){fresh=true;const b=BG.newcomer,a=D[b.start];S={v:6,t0:LIFESTART.lifeStartFor(1,STIME.nowMs()),name:'Alex',bg:'newcomer',day:1,hour:8,money:b.s.money,energy:90,mood:b.s.mood,social:b.s.social,svenska:b.s.svenska,skill:b.s.skill,queue:0,home:b.home,pos:{x:a.x+0.3,z:a.z+0.3},loc:b.start,job:null,jobDays:0,pay:0,slUntil:0,vitD:0,coat:false,sunToday:false,sick:0,applied:{},flags:{},docs:{...b.docs},log:[],won:false,weather:'clear',temp:7};log('Welcome to Stockholm. Pick who you are to begin.')}
   lifeInit(S);updateLoc();render();
   if(!SV.on){SV.on=true;addEventListener('pagehide',()=>save());document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')save()})}
-  try{CITY=await loadCity();matchServices()}catch(e){console.error(e);CITY=null;$('loadtxt').textContent='Could not load the real city data, so you get a simplified Stockholm. ('+e.message+')'}
+  try{CITY=await loadCity();matchServices()}catch(e){console.error(e);CITY=null;$('loading')&&$('loading').classList.add('err');$('loadtxt').textContent='Could not load the real city data, so you get a simplified Stockholm. ('+e.message+')'}
   try{W=buildWorld()}catch(e){console.error(e);W=null}
   // the loading screen fades only after the title page is painted under it, so the game is never seen half-built
-  const fadeLoader=()=>{const L=$('loading');if(!L)return;requestAnimationFrame(()=>requestAnimationFrame(()=>setTimeout(()=>{L.style.opacity=0;setTimeout(()=>L.remove(),650)},CITY?120:2500)))};
+  const fadeLoader=()=>{const L=$('loading');if(!L)return;loadO(100);requestAnimationFrame(()=>requestAnimationFrame(()=>setTimeout(()=>{L.style.opacity=0;setTimeout(()=>L.remove(),650)},CITY?120:2500)))};
   if(!CITY){const n=document.createElement('div');n.className='nogl';n.style.cssText='inset:auto;top:160px;left:50%;transform:translateX(-50%);width:min(440px,calc(100% - 32px));background:var(--glass);border-radius:12px;z-index:5;line-height:1.45';n.textContent=location.protocol==='file:'?'The city cannot load when index.html is opened from disk. Run ./start.sh in this folder and open http://localhost:8000 instead.':'Could not load the city data from the data/ folder, so the map is empty. Check that ./start.sh is running in the game folder, then reload.';$('stage').appendChild(n)}
   if(!W){const n=document.createElement('div');n.className='nogl';n.style.cssText='inset:auto;top:160px;left:50%;transform:translateX(-50%);width:min(440px,calc(100% - 32px));background:var(--glass);border-radius:12px;z-index:5;line-height:1.45';n.textContent='Your browser could not start 3D graphics (WebGL), so the city cannot be drawn. The game still works from the panels. Fix: quit the browser completely and reopen it (after a graphics crash Chrome blocks 3D until restart), and check that "Use graphics acceleration" is on in its settings.';$('stage').appendChild(n)}
   else{W.placeAvatar(S.pos.x,S.pos.z,true);if(!S.addr&&S.home!=='none'){assignAddress();save()}W.setHome();W.syncCar();if(!S.wants.length)rollWants();if(S.flags&&S.flags.arlanda&&W.enterAirport)setTimeout(()=>W.enterAirport(),600);else if(resume&&W.restorePlace)setTimeout(()=>W.restorePlace(resume),600)}

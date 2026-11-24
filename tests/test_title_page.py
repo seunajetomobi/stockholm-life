@@ -608,3 +608,23 @@ def test_ringing_phone_shakes_and_pulses(browser, server):
         assert err.uncaught == [], err.uncaught
     finally:
         ctx.close()
+
+
+def test_title_has_no_tagline_or_button_backgrounds_and_the_first_o_loads(browser, server):
+    import pathlib
+    html = (pathlib.Path(__file__).resolve().parent.parent / 'index.html').read_text()
+    # the loading screen shows progress only in the first O of the wordmark
+    assert 'St<em class="lo" id="loadO">o</em>ckholms' in html, 'the first o is not the loader'
+    ctx, page, err = game.new_page(browser, hook=True, realtime=True, title=True)
+    page.set_default_timeout(90000)
+    try:
+        game.boot(page)
+        assert game.wait_for(page, "() => { const t = document.getElementById('title'); return t && !t.hidden && /Start/.test(t.innerText) }", 60)
+        text = page.evaluate("() => document.getElementById('title').innerText")
+        assert 'real map' not in text.lower() and 'live a life' not in text.lower(), text
+        for sel in ('#tAcct', '#tLang'):
+            bg = page.evaluate("s => { const c = getComputedStyle(document.querySelector(s)); return [c.backgroundColor, c.backgroundImage, c.borderTopWidth] }", sel)
+            assert bg[0] in ('rgba(0, 0, 0, 0)', 'transparent') and bg[1] == 'none' and bg[2] == '0px', (sel, bg)
+        assert err.uncaught == [], err.uncaught
+    finally:
+        ctx.close()

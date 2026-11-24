@@ -6103,7 +6103,7 @@ function settingsScreen(back){
     t.querySelector('#sReset').onclick=()=>{SET.quality='auto';SET.live=true;SET.hints=true;SET.tips=true;setSave();applyHints();settingsScreen(back);const n=document.querySelector('#sNote');if(n){n.textContent=tt('saved');const r=document.querySelector('#sReload');if(r)r.hidden=false}};
     t.querySelector('#sReplay').onclick=()=>{try{localStorage.removeItem(SEENKEY)}catch(e){}t.querySelector('#sNote').textContent=tt('replayed')};
     t.querySelector('#sBack').onclick=back})}
-function quitGame(){modal(`<h2>${tt('qTitle')}</h2><p>${tt('qAsk')}</p><div class="row2"><button class="btn big" id="qSave">${tt('qSave')}</button><button class="btn" id="qNo">${tt('qNo')}</button><button class="btn ghost" id="qCancel">${tt('qCancel')}</button></div>`,m=>{
+function quitGame(){modal(`<h2>${tt('qTitle')}</h2><p>${tt('qAsk')}</p><div class="row2 quitrow"><button class="btn big" id="qSave">${tt('qSave')}</button><button class="btn" id="qNo">${tt('qNo')}</button><button class="btn ghost" id="qCancel">${tt('qCancel')}</button></div>`,m=>{
   m.querySelector('#qSave').onclick=()=>{try{save()}catch(e){}location.reload()};
   m.querySelector('#qNo').onclick=()=>{SV.noSave=true;location.reload()};
   m.querySelector('#qCancel').onclick=()=>{$('modalRoot').innerHTML=''}})}

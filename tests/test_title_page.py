@@ -42,7 +42,7 @@ def test_title_intro_settings_flow(browser, server):
         assert page.evaluate("() => localStorage.getItem('stockholmsliv-intro-seen')") == '1'
         # the brand opens the title page again, now with Continue
         # (the arrival cutscene hides the control buttons for a while, so press it from the page)
-        page.evaluate("() => showTitle(false)")
+        page.evaluate("() => window.__T.showTitle(false)")
         assert game.wait_for(page, "() => { const t = document.getElementById('title'); return t && !t.hidden && /Start/.test(t.innerText) }", 10)
         page.click('#tPlay')
         assert game.wait_for(page, "() => { const t = document.getElementById('title'); return t && !t.hidden && /Continue your life/.test(t.innerText) }", 10)
@@ -530,7 +530,7 @@ def test_saved_games_lists_only_real_lives(browser, server):
         game.boot(page)
         assert game.wait_for(page, "() => { const t = document.getElementById('title'); return t && !t.hidden && /Start/.test(t.innerText) }", 60)
         _start(page)
-        page.evaluate("() => showTitle(false)")
+        page.evaluate("() => window.__T.showTitle(false)")
         assert game.wait_for(page, "() => { const t = document.getElementById('title'); return t && !t.hidden && /Start/.test(t.innerText) }", 10)
         page.click('#tOpt')
         page.click('#oSaves')
@@ -576,7 +576,7 @@ def test_about_credits_done_and_resume_card(browser, server):
         page.click('#tLang button[data-l="en"]')
         # Continue shows who you would continue as
         _start(page)
-        page.evaluate("() => showTitle(false)")
+        page.evaluate("() => window.__T.showTitle(false)")
         assert game.wait_for(page, "() => { const t = document.getElementById('title'); return t && !t.hidden && /Start/.test(t.innerText) }", 10)
         page.click('#tPlay')
         r = page.evaluate("() => { const e = document.querySelector('#titleCard .resume'); return e ? e.innerText : '' }")

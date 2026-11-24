@@ -568,6 +568,14 @@ h1,h2,h3,.placehead h2{font-family:var(--body)}
 .runbtn.on{background:linear-gradient(135deg,#ffd23f,#f2a100)!important;color:#0b2740!important}.runbtn.on::after{content:"on";font-weight:600;opacity:.75}
 .next b,.next small{white-space:normal!important;overflow:visible!important;text-overflow:clip!important}.next small{display:block;line-height:1.25}
 @media (max-width:640px){.notifs{left:12px!important;transform:none!important;width:calc(100% - 82px)!important}}
+
+/* Quit dialog: compact, centred, readable in light and dark */
+.modal:has(.quitrow){max-width:340px;text-align:center}.modal:has(.quitrow) h2{font-size:21px;letter-spacing:.01em;margin-bottom:6px}.modal:has(.quitrow) p{margin:0 0 14px}
+.quitrow{display:flex!important;flex-direction:column;align-items:center;gap:8px}
+.quitrow .btn{width:100%;max-width:250px;min-height:42px;padding:9px 16px;font:700 13px var(--body);letter-spacing:.04em;border-radius:12px;text-transform:uppercase}
+.quitrow #qSave{background:linear-gradient(135deg,#ff8a00,#e0245e)!important;color:#fff!important}
+.quitrow #qNo{background:linear-gradient(135deg,#1e6fc0,#0b3f8a)!important;color:#fff!important}
+.quitrow #qCancel{background:transparent!important;color:inherit!important;border:1.5px solid currentColor!important;opacity:.85}
 </style>
 </head>
 <body>

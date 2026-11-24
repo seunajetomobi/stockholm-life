@@ -585,6 +585,15 @@ h2.hero{font-size:34px;background:linear-gradient(90deg,var(--sweblue),#3a86ff 4
 .dep.fl{border:0;width:100%;text-align:left;cursor:pointer;font:inherit}.dep .dst{font-size:13.5px;line-height:1.25}.dep .dst small{display:block;color:#9fb0bd;font-size:11px}.dep .tm{font:600 14px "IBM Plex Mono",monospace;color:var(--amber);text-align:right}.dep .tm small{display:block}.dep .late{color:#ff8a80;font-size:11px}.dep.can .dst,.dep.can .tm{text-decoration:line-through;opacity:.6}
 .devs p{margin:6px 0 0;font-size:12px;color:var(--warn)}
 .wxdays{width:100%;border-collapse:collapse;font-size:12.5px}.wxdays td{padding:4px 3px;border-top:1px solid var(--line)}.wxdays td:nth-child(2){font-size:16px}.wxdays td:last-child,.wxdays td:nth-child(5){color:var(--muted);text-align:right}
+
+/* a ringing phone: the icon shakes and pulses rings; the Phone button in the dock shakes too */
+.ringico{position:relative;width:64px;height:64px;margin:0 auto 10px;border-radius:50%;background:linear-gradient(135deg,#2bd96b,#119a48);display:grid;place-items:center}
+.ringico svg{width:32px;height:32px;animation:ringShake .9s ease-in-out infinite;transform-origin:50% 50%}
+.ringico::before,.ringico::after{content:"";position:absolute;inset:0;border-radius:50%;border:3px solid #2bd96b;animation:ringPulse 1.6s ease-out infinite}.ringico::after{animation-delay:.8s}
+@keyframes ringShake{0%,50%,100%{transform:rotate(0)}5%{transform:rotate(-16deg)}10%{transform:rotate(16deg)}15%{transform:rotate(-16deg)}20%{transform:rotate(16deg)}25%{transform:rotate(-10deg)}30%{transform:rotate(10deg)}35%{transform:rotate(0)}}
+@keyframes ringPulse{0%{transform:scale(1);opacity:.8}100%{transform:scale(1.9);opacity:0}}
+body.ringing-on .dock [data-tab="phone"] svg,body.ringing-on .dock [data-tab="phone"] .ic{animation:ringShake .9s ease-in-out infinite}
+@media (prefers-reduced-motion:reduce){.ringico svg,body.ringing-on .dock [data-tab="phone"] svg{animation:none}.ringico::before,.ringico::after{animation:none;opacity:.5}}
 </style>
 </head>
 <body>
@@ -604,7 +613,7 @@ h2.hero{font-size:34px;background:linear-gradient(90deg,var(--sweblue),#3a86ff 4
   <div class="ridechip" id="ride"></div>
   <div class="places" id="places" aria-label="Your places"></div>
   <div class="hint" id="hint">Joystick or WASD to walk · tap a street to auto-walk · tap a shop to look · drag to turn</div>
-  <div class="ctrls"><button id="quitBtn" aria-label="Quit to the title page">⏻</button><button id="menuBtn" aria-label="Menu: title page, settings, how to play">☰</button><button id="zfind" aria-label="Find shops and places">⌕</button><button id="zin" aria-label="Zoom in">+</button><button id="zout" aria-label="Zoom out">−</button><button id="zme" aria-label="Center on you" style="font-size:16px">◎</button></div>
+  <div class="ctrls"><button id="quitBtn" aria-label="Quit to the title page">⏻</button><button id="zfind" aria-label="Find shops and places">⌕</button><button id="zin" aria-label="Zoom in">+</button><button id="zout" aria-label="Zoom out">−</button><button id="zme" aria-label="Center on you" style="font-size:16px">◎</button></div>
   <div class="inhud" id="inhud"><b id="inTitle"></b><button id="inLeave">Leave</button></div><button class="inact" id="inAct"></button><div class="csprompt" id="csPrompt" role="dialog" aria-live="polite"></div><div class="cshud" id="csHud"></div><div class="csline" id="csLine" aria-live="polite"></div><div class="cscine" id="csCine"><span></span><button>Skip ▸▸</button></div>
   <div class="drivehud" id="drivehud"><span class="limit" id="lim">50</span><span id="spd">0 km/h</span><span id="coach"></span><button id="park">Park</button></div>
   <div class="joy" id="joy" aria-label="Move joystick"><div class="knob" id="knob"></div></div>
@@ -2004,8 +2013,8 @@ function callPerson(c){const late=S.hour>=23||S.hour<7,p=c.p;const answers=!late
 // someone rings you now and then (family, friends, your manager, or a telemarketer)
 function incomingCall(){if(titleOpen()||!S||busy||document.querySelector('.modal')||document.querySelector('.callscr,.ringing')||S.hour>=23||S.hour<8)return;const L=contactsForCall();
   const r=Math.random();const c=r<0.12?{id:'tm',n:'Okänt nummer',what:'Unknown number'}:L.length?L[Math.floor(Math.random()*L.length)]:null;if(!c)return;
-  const el=document.createElement('div');el.className='ringing';el.innerHTML=`<div><small>Incoming call</small><b>${esc2(c.n)}</b><span>${esc2(c.what)}</span><div class="row2"><button class="ok">Answer</button><button class="no">Decline</button></div></div>`;document.body.appendChild(el);
-  const kill=()=>el.remove();const t=setTimeout(()=>{kill();if(c.id!=='tm'){toast(`Missed call from ${c.n}`);if(c.p)c.p.fr=Math.max(0,c.p.fr-1)}},15000);
+  const el=document.createElement('div');el.className='ringing';document.body.classList.add('ringing-on');el.innerHTML=`<div><div class="ringico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg></div><small>Incoming call</small><b>${esc2(c.n)}</b><span>${esc2(c.what)}</span><div class="row2"><button class="ok">Answer</button><button class="no">Decline</button></div></div>`;document.body.appendChild(el);
+  const kill=()=>{el.remove();document.body.classList.remove('ringing-on')};const t=setTimeout(()=>{kill();if(c.id!=='tm'){toast(`Missed call from ${c.n}`);if(c.p)c.p.fr=Math.max(0,c.p.fr-1)}},15000);
   el.querySelector('.no').onclick=()=>{clearTimeout(t);kill();if(c.p)c.p.fr=Math.max(0,c.p.fr-1)};
   el.querySelector('.ok').onclick=()=>{clearTimeout(t);kill();
     if(c.id==='tm'){modal(`<h2>Okänt nummer</h2><p>"Hej, jag ringer från ett elbolag med ett fantastiskt erbjudande…" A telemarketer. In Sweden you can sign up to NIX to stop these calls.</p><div class="row2"><button class="btn ghost" id="no">Hang up</button></div>`,m=>m.querySelector('#no').onclick=closeModal);return}
@@ -6094,7 +6103,6 @@ function settingsScreen(back){
     t.querySelector('#sReset').onclick=()=>{SET.quality='auto';SET.live=true;SET.hints=true;SET.tips=true;setSave();applyHints();settingsScreen(back);const n=document.querySelector('#sNote');if(n){n.textContent=tt('saved');const r=document.querySelector('#sReload');if(r)r.hidden=false}};
     t.querySelector('#sReplay').onclick=()=>{try{localStorage.removeItem(SEENKEY)}catch(e){}t.querySelector('#sNote').textContent=tt('replayed')};
     t.querySelector('#sBack').onclick=back})}
-document.addEventListener('click',e=>{if(e.target.closest&&e.target.closest('#menuBtn')&&S)showTitle(false)});
 function quitGame(){modal(`<h2>${tt('qTitle')}</h2><p>${tt('qAsk')}</p><div class="row2"><button class="btn big" id="qSave">${tt('qSave')}</button><button class="btn" id="qNo">${tt('qNo')}</button><button class="btn ghost" id="qCancel">${tt('qCancel')}</button></div>`,m=>{
   m.querySelector('#qSave').onclick=()=>{try{save()}catch(e){}location.reload()};
   m.querySelector('#qNo').onclick=()=>{SV.noSave=true;location.reload()};

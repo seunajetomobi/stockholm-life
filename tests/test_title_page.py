@@ -46,6 +46,14 @@ def test_title_intro_settings_flow(browser, server):
         assert game.wait_for(page, "() => { const t = document.getElementById('title'); return t && !t.hidden && /Start/.test(t.innerText) }", 10)
         page.click('#tPlay')
         assert game.wait_for(page, "() => { const t = document.getElementById('title'); return t && !t.hidden && /Continue your life/.test(t.innerText) }", 10)
+        # in a running game the title menu offers Save and quit to title; it saves and returns to a fresh title page
+        page.click('#cBack')
+        assert page.locator('#tQuit').count() == 1, 'no quit button in a running game'
+        page.click('#tQuit')
+        page.wait_for_load_state('load')
+        game.boot(page)
+        assert game.wait_for(page, "() => { const t = document.getElementById('title'); return t && !t.hidden && /Start/.test(t.innerText) }", 60), 'no title page after quitting'
+        assert page.evaluate("() => !!localStorage.getItem('stockholm-life-v4')"), 'life not saved on quit'
         assert err.uncaught == [], err.uncaught
     finally:
         ctx.close()

@@ -5733,7 +5733,7 @@ const titleOpen=()=>{const t=document.getElementById('title');return !!t&&!t.hid
 const TITLE_ON=(()=>{try{return localStorage.getItem('stockholmsliv-title')!=='0'}catch(e){return true}})();
 let LANG=(()=>{try{const v=localStorage.getItem(LANGKEY);if(v==='sv'||v==='en')return v}catch(e){}return /^sv/i.test(navigator.language||'')?'sv':'en'})();
 const TXT={
- en:{tag:'Live a life in Stockholm. Real map, real time, real weather.',start:'Start',cont:'Continue',newlife:'New life',options:'Options',how:'How to Play',settings:'Settings',saves:'Saves',
+ en:{quit:'Save and quit to title',tag:'Live a life in Stockholm. Real map, real time, real weather.',start:'Start',cont:'Continue',newlife:'New life',options:'Options',how:'How to Play',settings:'Settings',saves:'Saves',
   next:'Next',skip:'Skip',back:'Back',
   aboutBtn:'About and credits',abMap:'Map and places',abContrib:'contributors',abPlaces:'Countries and home towns',abWeather:'Weather',abTransit:'Public transport',abMoney:'Exchange rates',abVia:'via',abFlights:'Flights',abRoutes:'routes from',abType:'Lettering',abEngine:'3D engine',
   accBtn:'Accessibility',axTitle:'Accessibility',axText:'Text size',axTextD:'Makes the menus and dialogs larger or smaller.',tzSmall:'Small',tzNormal:'Normal',tzLarge:'Large',tzXL:'Extra large',axContrast:'High contrast',axContrastD:'Stronger borders and plain backgrounds.',axMotion:'Reduce motion',axMotionD:'Turns off sliding and fading effects.',axNote:'These apply to menus and dialogs. The 3D city follows your graphics setting.',
@@ -5772,7 +5772,7 @@ const TXT={
    ['Move and act','Walk with the joystick or WASD, tap a street to auto-walk, tap a shop to look inside. Your phone has chats, mail, maps, SL and banking.'],
    ['Your life is saved here','Saves stay in this browser. Use Saves on the title page to keep several lives, export a backup or restore one.']],
   map1:'Map ©',map2:' contributors'},
- sv:{tag:'Lev ditt liv i Stockholm. Riktig karta, riktig tid, riktigt väder.',start:'Starta',cont:'Fortsätt',newlife:'Nytt liv',options:'Alternativ',how:'Så spelar du',settings:'Inställningar',saves:'Sparade liv',
+ sv:{quit:'Spara och avsluta till startsidan',tag:'Lev ditt liv i Stockholm. Riktig karta, riktig tid, riktigt väder.',start:'Starta',cont:'Fortsätt',newlife:'Nytt liv',options:'Alternativ',how:'Så spelar du',settings:'Inställningar',saves:'Sparade liv',
   next:'Nästa',skip:'Hoppa över',back:'Tillbaka',
   aboutBtn:'Om och tack',abMap:'Karta och platser',abContrib:'-bidragsgivare',abPlaces:'Länder och hemorter',abWeather:'Väder',abTransit:'Kollektivtrafik',abMoney:'Växelkurser',abVia:'via',abFlights:'Flyg',abRoutes:'rutter från',abType:'Typsnitt',abEngine:'3D-motor',
   accBtn:'Tillgänglighet',axTitle:'Tillgänglighet',axText:'Textstorlek',axTextD:'Gör menyer och dialogrutor större eller mindre.',tzSmall:'Liten',tzNormal:'Normal',tzLarge:'Stor',tzXL:'Extra stor',axContrast:'Hög kontrast',axContrastD:'Tydligare kanter och enkla bakgrunder.',axMotion:'Minska rörelse',axMotionD:'Stänger av glidande och tonande effekter.',axNote:'Gäller menyer och dialogrutor. 3D-staden följer din grafikinställning.',
@@ -5838,11 +5838,12 @@ function titleMain(fresh){
   const started=!!(S&&S.flags&&S.flags.started)&&!fresh;
   titleShow(`<h1>Stockholms<span>liv</span></h1><p class="tag">${tt('tag')}</p>
     <div class="btns"><button class="primary" id="tPlay">${tt('start')}</button>
-    <button id="tOpt">${tt('options')}</button><button id="tHow">${tt('how')}</button></div>
+    <button id="tOpt">${tt('options')}</button><button id="tHow">${tt('how')}</button>${started?`<button id="tQuit">${tt('quit')}</button>`:''}</div>
     <div class="stores">${storeHtml()}</div>`,t=>{
     t.querySelector('#tPlay').onclick=()=>titleGo(()=>startChoice(fresh));
     t.querySelector('#tOpt').onclick=()=>titleGo(()=>optionsScreen(()=>titleGo(()=>titleMain(fresh))));
     t.querySelector('#tHow').onclick=()=>titleGo(()=>introSlides(()=>titleGo(()=>titleMain(fresh)),true));
+    const q=t.querySelector('#tQuit');if(q)q.onclick=()=>{try{save()}catch(e){}location.reload()};
     },true)}
 
 function lifeSlot(){const rows=SLOT_IDS.map(slotInfo);return rows.find(r=>r.active&&r.st==='life')||rows.find(r=>r.st==='life')||null}

@@ -604,7 +604,7 @@ h2.hero{font-size:34px;background:linear-gradient(90deg,var(--sweblue),#3a86ff 4
   <div class="ridechip" id="ride"></div>
   <div class="places" id="places" aria-label="Your places"></div>
   <div class="hint" id="hint">Joystick or WASD to walk · tap a street to auto-walk · tap a shop to look · drag to turn</div>
-  <div class="ctrls"><button id="menuBtn" aria-label="Menu: title page, settings, how to play">☰</button><button id="zfind" aria-label="Find shops and places">⌕</button><button id="zin" aria-label="Zoom in">+</button><button id="zout" aria-label="Zoom out">−</button><button id="zme" aria-label="Center on you" style="font-size:16px">◎</button></div>
+  <div class="ctrls"><button id="quitBtn" aria-label="Quit to the title page">⏻</button><button id="menuBtn" aria-label="Menu: title page, settings, how to play">☰</button><button id="zfind" aria-label="Find shops and places">⌕</button><button id="zin" aria-label="Zoom in">+</button><button id="zout" aria-label="Zoom out">−</button><button id="zme" aria-label="Center on you" style="font-size:16px">◎</button></div>
   <div class="inhud" id="inhud"><b id="inTitle"></b><button id="inLeave">Leave</button></div><button class="inact" id="inAct"></button><div class="csprompt" id="csPrompt" role="dialog" aria-live="polite"></div><div class="cshud" id="csHud"></div><div class="csline" id="csLine" aria-live="polite"></div><div class="cscine" id="csCine"><span></span><button>Skip ▸▸</button></div>
   <div class="drivehud" id="drivehud"><span class="limit" id="lim">50</span><span id="spd">0 km/h</span><span id="coach"></span><button id="park">Park</button></div>
   <div class="joy" id="joy" aria-label="Move joystick"><div class="knob" id="knob"></div></div>
@@ -1357,7 +1357,7 @@ function saveBad(key,raw){if(saveKeep(key,raw)){SV.mode='pending';saveMsg(SAVE_M
 function saveUnblock(){const b=SV.bad;if(b.slots){slotsInit(true);if(SL.id===null||SL.stuck)return false;SV.bad=null;SV.mode='active';SV.failing=true;return true}
   if(b.unread){slotsInit(true);if(SL.id===null||SL.stuck)return false;let cur;try{cur=localStorage.getItem(activeKey())}catch(e){return false}if(cur!==null){saveOther();return false}SV.expected=null}else if(!saveKeep(b.key,b.raw))return false;
   SV.bad=null;SV.mode='active';SV.failing=true;return true}// saveOk() then replaces the warning, even if no save has failed yet
-function save(){if(!S||!S.flags||!S.flags.started||SV.mode==='pending'||SV.mode==='ended'||SV.mode==='superseded')return;
+function save(){if(SV.noSave)return;if(!S||!S.flags||!S.flags.started||SV.mode==='pending'||SV.mode==='ended'||SV.mode==='superseded')return;
   // the state is half-way through a journey, an arrest or a driving lesson: the next save after it writes the result
   if(busy||(W&&W.inLesson&&W.inLesson())){if(SV.failing)saveRetry();return}
   if(SV.mode==='blocked'&&!saveUnblock()){if(SV.mode==='blocked'){SV.failing=true;saveRetry()}return}
@@ -5733,7 +5733,7 @@ const titleOpen=()=>{const t=document.getElementById('title');return !!t&&!t.hid
 const TITLE_ON=(()=>{try{return localStorage.getItem('stockholmsliv-title')!=='0'}catch(e){return true}})();
 let LANG=(()=>{try{const v=localStorage.getItem(LANGKEY);if(v==='sv'||v==='en')return v}catch(e){}return /^sv/i.test(navigator.language||'')?'sv':'en'})();
 const TXT={
- en:{quit:'Save and quit to title',tag:'Live a life in Stockholm. Real map, real time, real weather.',start:'Start',cont:'Continue',newlife:'New life',options:'Options',how:'How to Play',settings:'Settings',saves:'Saves',
+ en:{qTitle:'Quit to the title page?',qAsk:'Do you want to save your game first?',qSave:'Save and quit',qNo:'Quit without saving',qCancel:'Keep playing',tag:'Live a life in Stockholm. Real map, real time, real weather.',start:'Start',cont:'Continue',newlife:'New life',options:'Options',how:'How to Play',settings:'Settings',saves:'Saves',
   next:'Next',skip:'Skip',back:'Back',
   aboutBtn:'About and credits',abMap:'Map and places',abContrib:'contributors',abPlaces:'Countries and home towns',abWeather:'Weather',abTransit:'Public transport',abMoney:'Exchange rates',abVia:'via',abFlights:'Flights',abRoutes:'routes from',abType:'Lettering',abEngine:'3D engine',
   accBtn:'Accessibility',axTitle:'Accessibility',axText:'Text size',axTextD:'Makes the menus and dialogs larger or smaller.',tzSmall:'Small',tzNormal:'Normal',tzLarge:'Large',tzXL:'Extra large',axContrast:'High contrast',axContrastD:'Stronger borders and plain backgrounds.',axMotion:'Reduce motion',axMotionD:'Turns off sliding and fading effects.',axNote:'These apply to menus and dialogs. The 3D city follows your graphics setting.',
@@ -5772,7 +5772,7 @@ const TXT={
    ['Move and act','Walk with the joystick or WASD, tap a street to auto-walk, tap a shop to look inside. Your phone has chats, mail, maps, SL and banking.'],
    ['Your life is saved here','Saves stay in this browser. Use Saves on the title page to keep several lives, export a backup or restore one.']],
   map1:'Map ©',map2:' contributors'},
- sv:{quit:'Spara och avsluta till startsidan',tag:'Lev ditt liv i Stockholm. Riktig karta, riktig tid, riktigt väder.',start:'Starta',cont:'Fortsätt',newlife:'Nytt liv',options:'Alternativ',how:'Så spelar du',settings:'Inställningar',saves:'Sparade liv',
+ sv:{qTitle:'Avsluta till startsidan?',qAsk:'Vill du spara spelet först?',qSave:'Spara och avsluta',qNo:'Avsluta utan att spara',qCancel:'Fortsätt spela',tag:'Lev ditt liv i Stockholm. Riktig karta, riktig tid, riktigt väder.',start:'Starta',cont:'Fortsätt',newlife:'Nytt liv',options:'Alternativ',how:'Så spelar du',settings:'Inställningar',saves:'Sparade liv',
   next:'Nästa',skip:'Hoppa över',back:'Tillbaka',
   aboutBtn:'Om och tack',abMap:'Karta och platser',abContrib:'-bidragsgivare',abPlaces:'Länder och hemorter',abWeather:'Väder',abTransit:'Kollektivtrafik',abMoney:'Växelkurser',abVia:'via',abFlights:'Flyg',abRoutes:'rutter från',abType:'Typsnitt',abEngine:'3D-motor',
   accBtn:'Tillgänglighet',axTitle:'Tillgänglighet',axText:'Textstorlek',axTextD:'Gör menyer och dialogrutor större eller mindre.',tzSmall:'Liten',tzNormal:'Normal',tzLarge:'Stor',tzXL:'Extra stor',axContrast:'Hög kontrast',axContrastD:'Tydligare kanter och enkla bakgrunder.',axMotion:'Minska rörelse',axMotionD:'Stänger av glidande och tonande effekter.',axNote:'Gäller menyer och dialogrutor. 3D-staden följer din grafikinställning.',
@@ -5838,12 +5838,11 @@ function titleMain(fresh){
   const started=!!(S&&S.flags&&S.flags.started)&&!fresh;
   titleShow(`<h1>Stockholms<span>liv</span></h1><p class="tag">${tt('tag')}</p>
     <div class="btns"><button class="primary" id="tPlay">${tt('start')}</button>
-    <button id="tOpt">${tt('options')}</button><button id="tHow">${tt('how')}</button>${started?`<button id="tQuit">${tt('quit')}</button>`:''}</div>
+    <button id="tOpt">${tt('options')}</button><button id="tHow">${tt('how')}</button></div>
     <div class="stores">${storeHtml()}</div>`,t=>{
     t.querySelector('#tPlay').onclick=()=>titleGo(()=>startChoice(fresh));
     t.querySelector('#tOpt').onclick=()=>titleGo(()=>optionsScreen(()=>titleGo(()=>titleMain(fresh))));
     t.querySelector('#tHow').onclick=()=>titleGo(()=>introSlides(()=>titleGo(()=>titleMain(fresh)),true));
-    const q=t.querySelector('#tQuit');if(q)q.onclick=()=>{try{save()}catch(e){}location.reload()};
     },true)}
 
 function lifeSlot(){const rows=SLOT_IDS.map(slotInfo);return rows.find(r=>r.active&&r.st==='life')||rows.find(r=>r.st==='life')||null}
@@ -6096,6 +6095,11 @@ function settingsScreen(back){
     t.querySelector('#sReplay').onclick=()=>{try{localStorage.removeItem(SEENKEY)}catch(e){}t.querySelector('#sNote').textContent=tt('replayed')};
     t.querySelector('#sBack').onclick=back})}
 document.addEventListener('click',e=>{if(e.target.closest&&e.target.closest('#menuBtn')&&S)showTitle(false)});
+function quitGame(){modal(`<h2>${tt('qTitle')}</h2><p>${tt('qAsk')}</p><div class="row2"><button class="btn big" id="qSave">${tt('qSave')}</button><button class="btn" id="qNo">${tt('qNo')}</button><button class="btn ghost" id="qCancel">${tt('qCancel')}</button></div>`,m=>{
+  m.querySelector('#qSave').onclick=()=>{try{save()}catch(e){}location.reload()};
+  m.querySelector('#qNo').onclick=()=>{SV.noSave=true;location.reload()};
+  m.querySelector('#qCancel').onclick=()=>{$('modalRoot').innerHTML=''}})}
+document.addEventListener('click',e=>{if(e.target.closest&&e.target.closest('#quitBtn')&&S)quitGame()});
 async function start(data){uiInit();applyA11y();
   {const tips=TIPS[LANG]||TIPS.en,el=$('loadtip');let i=0;if(el){el.textContent=tips[0];const tm=setInterval(()=>{if(!document.getElementById('loading')){clearInterval(tm);return}el.textContent=tips[++i%tips.length]},3500)}}
 await Promise.race([TIMESYNC,new Promise(r=>setTimeout(r,3000))]);// a new life must start on the true Stockholm time

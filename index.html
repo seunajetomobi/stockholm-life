@@ -3881,7 +3881,7 @@ const POSTERS_CITY=[['#f2b705','#1b1b1b','KANELBULLE','Färskt varje morgon','Ba
   // Layout from the north (planes) to the south (city): gate corridor, passport control (Polisen), baggage hall with belt 4 and
   // trolleys, customs (Tullverket), the arrivals hall with people waiting, glass doors, the kerb with taxis, coaches and cars.
   // Research notes and sources: docs/ARRIVAL_HALL.md. Uniform colours are stylised (navy) and not taken from an official source.
-  const AP_BZ=-0.03,AP_Z={pass:-0.3,customs:0.17,doors:0.4,kerb:0.44};
+  const AP_BZ=-0.03,AP_Z={pass:-0.46,customs:0.2,doors:0.44,kerb:0.54};
   function apLabelTex(w,h,draw){return ccnv(w,h,draw)}
   // Swedish officers: navy uniform and cap. Customs add a yellow hi-vis vest with blue panels and a blue-white check trim, a radio and a
   // "TULL Customs" sleeve badge; passport control wears the police-style uniform and only the sleeve badge differs (Polisen or Migrationsverket).
@@ -3936,60 +3936,65 @@ const POSTERS_CITY=[['#f2b705','#1b1b1b','KANELBULLE','Färskt varje morgon','Ba
       const win=new THREE.Mesh(new THREE.BoxGeometry(0.236,0.016,0.054),new THREE.MeshLambertMaterial({color:0x2a3a4a}));win.position.y=0.037;v.add(win);
       const C=apLabelTex(512,128,(q,W,H)=>{q.fillStyle='#' +col.toString(16).padStart(6,'0');q.fillRect(0,0,W,H);q.fillStyle='#fff';q.font=`800 54px ${CF}`;q.textAlign='center';q.textBaseline='middle';q.fillText('FLYGBUSSARNA',W/2,H*0.36);q.font=`600 34px ${CF}`;q.fillText('Stockholm City · Cityterminalen',W/2,H*0.76)});
       const mat=new THREE.MeshBasicMaterial({map:C.t});for(const sz of [1,-1]){const p=new THREE.Mesh(new THREE.PlaneGeometry(0.2,0.0125),mat);p.position.set(0,0.0125,sz*0.0262);p.rotation.y=sz>0?0:Math.PI;v.add(p)}
-      for(const sx of [-0.08,0.08])for(const sz of [-0.022,0.022]){const w=new THREE.Mesh(new THREE.BoxGeometry(0.014,0.014,0.006),dk);w.position.set(sx,0.007,sz);v.add(w)}v.userData.len=0.26}
+      for(const sx of [-0.08,0.08])for(const sz of [-0.022,0.022]){const w=new THREE.Mesh(new THREE.BoxGeometry(0.014,0.014,0.006),dk);w.position.set(sx,0.007,sz);v.add(w)}v.scale.set(1.45,1.6,1.45);v.userData.len=0.26*1.45}
     else{const body=new THREE.Mesh(new THREE.BoxGeometry(0.09,0.014,0.036),inMat(col));body.position.y=0.011;v.add(body);
       const cab=new THREE.Mesh(new THREE.BoxGeometry(0.046,0.013,0.032),new THREE.MeshLambertMaterial({color:0x2a3a4a}));cab.position.set(-0.004,0.0245,0);v.add(cab);
       for(const sx of [-0.028,0.028])for(const sz of [-0.016,0.016]){const w=new THREE.Mesh(new THREE.BoxGeometry(0.012,0.012,0.005),dk);w.position.set(sx,0.006,sz);v.add(w)}
-      if(kind==='taxi'){const s=new THREE.Mesh(new THREE.BoxGeometry(0.014,0.004,0.008),new THREE.MeshBasicMaterial({color:0xfff1a8}));s.position.set(-0.004,0.033,0);v.add(s)}v.userData.len=0.1}
+      if(kind==='taxi'){const s=new THREE.Mesh(new THREE.BoxGeometry(0.014,0.004,0.008),new THREE.MeshBasicMaterial({color:0xfff1a8}));s.position.set(-0.004,0.033,0);v.add(s)}v.scale.set(1.25,1.25,1.25);v.userData.len=0.1*1.25}
     return v}
-  function apVehTick(dt){for(const v of AP.veh){v.t-=dt;const L=v.g.userData.len;
-      if(v.mode==='wait'){if(v.t<=0){v.mode='leave'}}
-      else if(v.mode==='leave'){v.g.position.x+=v.dir*0.06*dt;if(Math.abs(v.g.position.x)>HW+0.2){v.mode='gone';v.t=4+Math.random()*14}}
-      else if(v.mode==='gone'){if(v.t<=0){v.g.position.x=-v.dir*(HW+0.2);v.mode='arrive'}}
-      else if(v.mode==='arrive'){v.g.position.x+=v.dir*0.06*dt;if((v.dir>0&&v.g.position.x>=v.stall)||(v.dir<0&&v.g.position.x<=v.stall)){v.g.position.x=v.stall;v.mode='wait';v.t=10+Math.random()*25}}}}
+  // Vehicles keep to two lanes. Lane 'k' (next to the kerb) runs west and is where cars, taxis and coaches stop (right-hand traffic: the kerb is on the right).
+  // Lane 'o' runs east for through traffic. Every vehicle keeps a safe gap to the one ahead of it in its lane and waits behind it.
+  function apAhead(v){let best=1e9;for(const o of AP.veh){if(o===v||o.lane!==v.lane||o.mode==='gone')continue;const d=(o.g.position.x-v.g.position.x)*v.dir;if(d>0){const gap=d-(v.g.userData.len+o.g.userData.len)/2-0.03;if(gap<best)best=gap}}return best}
+  function apVehTick(dt){const OUT=HW+0.5;dt=Math.min(dt,0.1);
+    for(const v of AP.veh){v.t-=dt;const g=v.g,sp=v.sp||0.06;
+      const drive=()=>{g.position.x+=v.dir*Math.min(sp*dt,Math.max(0,apAhead(v)))};
+      if(v.mode==='wait'){if(v.t<=0)v.mode='leave'}
+      else if(v.mode==='leave'||v.mode==='pass'){drive();if(Math.abs(g.position.x)>OUT){v.mode='gone';v.t=5+Math.random()*16}}
+      else if(v.mode==='gone'){if(v.t<=0){const sx=-v.dir*OUT;g.position.x=sx;if(apAhead(v)>0.1){v.mode=v.stall==null?'pass':'arrive'}else{g.position.x=-v.dir*(OUT+1);v.t=1.5}}}
+      else if(v.mode==='arrive'){drive();if((v.dir>0&&g.position.x>=v.stall)||(v.dir<0&&g.position.x<=v.stall)){g.position.x=v.stall;v.mode='wait';v.t=10+Math.random()*25}}}}
   function buildArrivalHall(g){
     const nonS=!(S&&S.schengen);IN.gates={};apReset();AP.crowd=[];AP.veh=[];AP.trolley=null;AP.H=0;AP.g=g;
     const tape=(x,z,w)=>inBox(g,w,0.012,0.006,0xd32f2f,x,z,0.03,true);
     // ground: terminal floor, the kerb and the road outside
     inBox(g,HW*2,0.003,HD-AP_Z.doors+0.02,0x3b4047,0,(AP_Z.doors+HD)/2,0);inBox(g,HW*2,0.004,0.018,0xaeb4ba,0,AP_Z.kerb-0.03,0);
-    for(let i=-5;i<=5;i++)inBox(g,0.05,0.001,0.003,0xffffff,i*0.1,HD-0.015,0.003,true);
+    for(let i=-8;i<=8;i++)inBox(g,0.06,0.001,0.004,0xffffff,i*0.1,AP_Z.kerb+0.13,0.003,true);inBox(g,HW*2,0.001,0.002,0xf2c94c,0,AP_Z.kerb+0.025,0.001,true);
     inBox(g,HW*2,0.012,0.006,0x6f7a84,0,HD+0.004,0);
     // welcome signs on the north wall
     apSign(g,['Välkommen till Stockholm','Welcome to Stockholm'],0.4,0.07,0,0.12,-HD+0.006,0,{bg:'#0b3a6e',fg:'#ffffff'});
-    apSign(g,['Ankomst · Arrival '+apFlight().no,'från · from '+((S&&S.lastLeg)||'abroad')],0.2,0.04,0.3,0.075,-HD+0.006,0,{small:1});
+    apSign(g,['Ankomst · Arrival '+apFlight().no,'från · from '+((S&&S.lastLeg)||'abroad')],0.2,0.04,0.45,0.075,-HD+0.006,0,{small:1});
     // ---- passport control (Polisen): eight booths, the gate in the middle; flights from Schengen walk straight through
-    const bxL=[-0.52,-0.42,-0.32,-0.22],bxR=[0.22,0.32,0.42,0.52],zb=AP_Z.pass;
-    if(nonS){solid(g,0.46,0.04,0.014,0x78909c,-0.33,zb+0.012);solid(g,0.46,0.04,0.014,0x78909c,0.33,zb+0.012);
+    const bxL=[-0.72,-0.6,-0.48,-0.36],bxR=[0.36,0.48,0.6,0.72],zb=AP_Z.pass;
+    if(nonS){solid(g,0.54,0.04,0.014,0x78909c,-0.54,zb+0.012);solid(g,0.54,0.04,0.014,0x78909c,0.54,zb+0.012);
       for(const x of [...bxL,...bxR]){solid(g,0.07,0.05,0.03,0x37474f,x,zb+0.03);inBox(g,0.05,0.012,0.003,0x6fc3e8,x,zb+0.0155,0.052,true)}
       bxL.slice(1).concat(bxR.slice(0,3)).forEach((x,i)=>apOfficer(g,i%3===2?'migration':'police',x,zb+0.055,Math.PI,i%2===1));
-      apSign(g,['Passkontroll','Passport control'],0.26,0.05,0,0.118,zb-0.02,0,{icon:'pass',back:1});apSign(g,['EU · EES · CH'],0.16,0.03,-0.37,0.088,zb-0.02,0,{small:1,back:1});apSign(g,['Alla pass · All passports'],0.18,0.03,0.37,0.088,zb-0.02,0,{small:1,back:1});
+      apSign(g,['Passkontroll','Passport control'],0.26,0.05,0,0.118,zb-0.02,0,{icon:'pass',back:1});apSign(g,['EU · EES · CH'],0.16,0.03,-0.54,0.088,zb-0.02,0,{small:1,back:1});apSign(g,['Alla pass · All passports'],0.18,0.03,0.54,0.088,zb-0.02,0,{small:1,back:1});
       const b=[-0.1,0.1,zb-0.002,zb+0.03];IN.col.push(b);IN.gates.passport={c:[b],m:[tape(0,zb+0.01,0.2)]};spot(0,zb-0.07,'Passport control',()=>airportSpot('passport'),0.1);
       // queue behind the booths: people waiting between tape posts
-      for(const sx of [-1,1])for(let i=0;i<7;i++){const x=sx*(0.18+(i%3)*0.1+0.04),z=zb-0.07-Math.floor(i/3)*0.045;npc(g,null,null,x,z,0)}
-      for(const sx of [-1,1])for(let i=0;i<5;i++){inBox(g,0.003,0.016,0.003,0x37474f,sx*(0.16+i*0.09),zb-0.04,0);inBox(g,0.003,0.016,0.003,0x37474f,sx*(0.16+i*0.09),zb-0.17,0)}}
+      for(const sx of [-1,1])for(let i=0;i<7;i++){const x=sx*(0.2+(i%3)*0.13),z=zb-0.09-Math.floor(i/3)*0.06;npc(g,null,null,x,z,0)}
+      for(const sx of [-1,1])for(let i=0;i<5;i++){inBox(g,0.003,0.016,0.003,0x37474f,sx*(0.18+i*0.12),zb-0.05,0);inBox(g,0.003,0.016,0.003,0x37474f,sx*(0.18+i*0.12),zb-0.21,0)}}
     else apSign(g,['Schengen · ingen passkontroll','No passport control'],0.3,0.05,0,0.098,zb,0,{bg:'#1b5e20',fg:'#ffffff',back:1});
     // ---- baggage hall: belt 4 (long racetrack), belts 3 and 5 at the walls, waiting passengers, trolley racks
     const bz=AP_BZ;inBox(g,2*(BL+BR)+0.02,0.014,2*BR+0.025,0x2b2f33,0,bz,0);inBox(g,2*(BL+BR),0.004,2*BR+0.008,0x3c4146,0,bz,0.014);inBox(g,2*BL,0.026,0.022,0xaab2b9,0,bz,0);
     IN.col.push([-(BL+BR+0.012),BL+BR+0.012,bz-BR-0.016,bz+BR+0.016]);
     inBox(g,0.03,0.05,0.03,0x5e666e,-BL-BR-0.025,bz-0.04,0);apSign(g,['4'],0.03,0.03,-BL-BR-0.025,0.065,bz-0.0255,0,{big:1,back:1});
     AP.beltC=ccnv(512,256);{const m=new THREE.MeshBasicMaterial({map:AP.beltC.t});for(const ry of [0,Math.PI]){const p=new THREE.Mesh(new THREE.PlaneGeometry(0.15,0.075),m);p.position.set(0,0.14,bz+(ry?-0.001:0.001));p.rotation.y=ry;g.add(p)}inBox(g,0.003,0.04,0.003,0x5e666e,0,bz,0)}
-    for(const [bx,n] of [[-0.5,'3'],[0.5,'5']]){inBox(g,0.1,0.012,0.3,0x2b2f33,bx,-0.04,0);inBox(g,0.08,0.004,0.28,0x3c4146,bx,-0.04,0.012);IN.col.push([bx-0.06,bx+0.06,-0.2,0.12]);
+    for(const [bx,n] of [[-0.7,'3'],[0.7,'5']]){inBox(g,0.1,0.012,0.3,0x2b2f33,bx,-0.04,0);inBox(g,0.08,0.004,0.28,0x3c4146,bx,-0.04,0.012);IN.col.push([bx-0.06,bx+0.06,-0.2,0.12]);
       apSign(g,[n],0.04,0.04,bx,0.07,-0.2,0,{big:1,back:1});for(let i=0;i<4;i++){const b=new THREE.Mesh(new THREE.BoxGeometry(0.012,0.014,0.018),inMat(pickR(BAGC)));b.position.set(bx,0.023,-0.15+i*0.07);b.rotation.y=Math.random()*3;g.add(b)}
       for(let i=0;i<4;i++)npc(g,null,null,bx+(bx<0?0.075:-0.075),-0.15+i*0.08,bx<0?Math.PI/2:-Math.PI/2)}
     AP.boardC=ccnv(768,448);{const p=new THREE.Mesh(new THREE.PlaneGeometry(0.16,0.093),new THREE.MeshBasicMaterial({map:AP.boardC.t}));p.position.set(HW-0.007,0.075,0.2);p.rotation.y=-Math.PI/2;g.add(p);inBox(g,0.006,0.1,0.17,0x111417,HW-0.004,0.2,0.026)}
     spot(HW-0.06,0.2,'Arrivals screen',()=>apBoardModal(),0.06);
     apSign(g,['Bagage · Baggage claim'],0.18,0.034,0,0.092,-0.17,0,{icon:'bag',back:1});
     // people waiting at belt 4, some with trolleys, with gaps so you can stand at the belt
-    const slots=[];for(let i=0;i<9;i++){slots.push([-0.3+i*0.075,bz+BR+0.05,Math.PI]);slots.push([-0.3+i*0.075+0.03,bz-BR-0.05,0])}
+    const slots=[];for(let i=0;i<9;i++){slots.push([-0.36+i*0.09,bz+BR+0.05,Math.PI]);slots.push([-0.36+i*0.09+0.04,bz-BR-0.05,0])}
     slots.forEach(([x,z,ry],i)=>{if(i%5===4)return;if(Math.abs(x)<0.035&&z>bz)return;const o=npc(g,null,null,x,z,ry);const c={x,z,has:i%3===0};AP.crowd.push(c);
       if(c.has){if(i%2===0){const t=apTrolley();t.position.set(x+(x<0?0.014:-0.014),0,z+(ry?0.012:-0.012));t.rotation.y=ry;g.add(t);const b=new THREE.Mesh(new THREE.BoxGeometry(0.012,0.016,0.018),inMat(pickR(BAGC)));b.position.set(0,0.0165,0.002);t.add(b)}
         else{const b=new THREE.Mesh(new THREE.BoxGeometry(0.012,0.016,0.018),inMat(pickR(BAGC)));b.position.set(x+(x<0?0.016:-0.016),0.008,z);g.add(b)}}});
     // luggage trolley racks (one on each side before the belt hall)
-    for(const rx of [-0.34,0.34]){for(let i=0;i<5;i++){const t=apTrolley();t.position.set(rx,i*0.0025,-0.2+i*0.0055);g.add(t)}IN.col.push([rx-0.015,rx+0.015,-0.215,-0.165]);
+    for(const rx of [-0.46,0.46]){for(let i=0;i<5;i++){const t=apTrolley();t.position.set(rx,i*0.0025,-0.2+i*0.0055);g.add(t)}IN.col.push([rx-0.015,rx+0.015,-0.215,-0.165]);
       IN.spots.push({x:rx,z:-0.145,get label(){return AP.trolley?'Return the luggage trolley':'Take a luggage trolley'},fn:()=>apTrolleyToggle(),r:0.07})}
-    apSign(g,['Bagagevagnar · gratis','Luggage trolleys · free'],0.14,0.03,-0.34,0.07,-0.235,0,{back:1,small:1});apSign(g,['Bagagevagnar · gratis','Luggage trolleys · free'],0.14,0.03,0.34,0.07,-0.235,0,{back:1,small:1});
+    apSign(g,['Bagagevagnar · gratis','Luggage trolleys · free'],0.14,0.03,-0.46,0.07,-0.235,0,{back:1,small:1});apSign(g,['Bagagevagnar · gratis','Luggage trolleys · free'],0.14,0.03,0.46,0.07,-0.235,0,{back:1,small:1});
     // ---- customs (Tullverket): green, red and (after EU flights) blue lane; uniformed officers behind the counter
-    const cz=AP_Z.customs;const lanes=S.euFlight?[[-0.3,'green'],[0,'red'],[0.3,'blue']]:[[-0.18,'green'],[0.18,'red']];const gx=lanes.map(l=>l[0]);
+    const cz=AP_Z.customs;const lanes=S.euFlight?[[-0.44,'green'],[0,'red'],[0.44,'blue']]:[[-0.3,'green'],[0.3,'red']];const gx=lanes.map(l=>l[0]);
     const wallSeg=(a,b)=>{if(b-a>0.01)solid(g,b-a,0.05,0.012,0xb0bec5,(a+b)/2,cz)};let prev=-HW;for(const x of gx){wallSeg(prev,x-0.07);prev=x+0.07}wallSeg(prev,HW);
     IN.gates.customs={c:[],m:[]};const LANE={green:['Ingenting att förtulla','Nothing to declare','#1b7a3a'],red:['Varor att förtulla','Goods to declare','#c62828'],blue:['EU-flyg · EU flights','No customs check','#1565c0']};
     for(const [x,k] of lanes){const col={green:0x2e7d32,red:0xc62828,blue:0x1565c0}[k];inBox(g,0.13,0.002,0.08,col,x,cz,0.001,true);const b=[x-0.07,x+0.07,cz-0.012,cz+0.012];IN.col.push(b);IN.gates.customs.c.push(b);IN.gates.customs.m.push(tape(x,cz,0.14));
@@ -3999,34 +4004,35 @@ const POSTERS_CITY=[['#f2b705','#1b1b1b','KANELBULLE','Färskt varje morgon','Ba
     apSign(g,['Tull · Customs'],0.16,0.034,HW-0.1,0.07,cz-0.02,0,{icon:'cust',back:1});
     {const tc=ccnv(512,384,(q,W,H)=>{q.fillStyle='#ffffff';q.fillRect(0,0,W,H);q.fillStyle='#1b4d8c';q.fillRect(0,0,W,70);q.fillStyle='#fff';q.font=`700 36px ${CF}`;q.textBaseline='middle';q.fillText('Tullverket',24,36);
         q.fillStyle='#14202c';q.font=`700 30px ${CF}`;q.fillText('Vad får du ta med?',24,110);q.font=`500 24px ${CF}`;['What can I bring into Sweden?','• Spirits 1 l · wine 4 l · beer 16 l','• 200 cigarettes · goods SEK 5 000','• No meat or dairy from outside the EU','• Cash €10 000+: declare'].forEach((t,i)=>q.fillText(t,24,150+i*40))});
-      const p=new THREE.Mesh(new THREE.PlaneGeometry(0.1,0.075),new THREE.MeshBasicMaterial({map:tc.t}));p.position.set(-HW+0.007,0.07,0.07);p.rotation.y=Math.PI/2;g.add(p);spot(-HW+0.06,0.07,'Customs rules (Tullverket)',()=>custRules(),0.06)}
+      const p=new THREE.Mesh(new THREE.PlaneGeometry(0.1,0.075),new THREE.MeshBasicMaterial({map:tc.t}));p.position.set(-HW+0.007,0.07,0.165);p.rotation.y=Math.PI/2;g.add(p);spot(-HW+0.06,0.165,'Customs rules (Tullverket)',()=>custRules(),0.06)}
     // ---- arrivals hall: people waiting behind the barrier, a kiosk, information, then the glass doors
     const names=['Anna','Welcome Mum!','Ibrahim','Svensson','Min Jae','Dr. Lindqvist','Olu','Mamma'];
-    for(let i=0;i<10;i++){const x=-0.46+i*0.1+(i%2)*0.02,z=0.275+(i%3)*0.018;npc(g,null,null,x,z,Math.PI);
+    for(let i=0;i<10;i++){const x=-0.66+i*0.15+(i%2)*0.02,z=0.315+(i%3)*0.02;npc(g,null,null,x,z,Math.PI);
       if(i<8)apSign(g,[names[i]],0.034,0.016,x,0.045,z+0.012,0,{small:1,bg:'#ffffff',fg:'#14181c'})}
-    for(const x of [-0.5,-0.3,-0.1,0.1,0.3,0.5])inBox(g,0.1,0.014,0.004,0x78909c,x-0.02,0.245,0);
-    solid(g,0.1,0.05,0.045,0xd84315,-HW+0.07,0.33);npc(g,'Worker_Female',null,-HW+0.07,0.31,Math.PI);spot(-HW+0.13,0.33,'Pressbyrån: snacks and a SIM card',()=>shopMenu({type:'convenience',name:'Pressbyrån Arlanda',i:-1}),0.07);
-    apSign(g,['Pressbyrån'],0.1,0.026,-HW+0.07,0.07,0.352,0,{small:1,bg:'#d84315'});
-    solid(g,0.12,0.04,0.04,0x37474f,HW-0.12,0.33);npc(g,'Suit_Female',null,HW-0.12,0.31,Math.PI);spot(HW-0.12,0.37,'Swedavia information desk',()=>toast('Swedavia information: trains, coaches and taxis are straight ahead through the doors'),0.07);
-    apSign(g,['Information'],0.1,0.026,HW-0.12,0.07,0.352,0,{small:1,bg:'#0b3a6e'});
+    for(let k=0;k<10;k++)inBox(g,0.14,0.014,0.004,0x78909c,-0.72+k*0.16,0.285,0);
+    solid(g,0.1,0.05,0.045,0xd84315,-HW+0.07,0.37);npc(g,'Worker_Female',null,-HW+0.07,0.35,Math.PI);spot(-HW+0.13,0.37,'Pressbyrån: snacks and a SIM card',()=>shopMenu({type:'convenience',name:'Pressbyrån Arlanda',i:-1}),0.07);
+    apSign(g,['Pressbyrån'],0.1,0.026,-HW+0.07,0.07,0.392,0,{small:1,bg:'#d84315'});
+    solid(g,0.12,0.04,0.04,0x37474f,HW-0.12,0.37);npc(g,'Suit_Female',null,HW-0.12,0.35,Math.PI);spot(HW-0.12,0.41,'Swedavia information desk',()=>toast('Swedavia information: trains, coaches and taxis are straight ahead through the doors'),0.07);
+    apSign(g,['Information'],0.1,0.026,HW-0.12,0.07,0.392,0,{small:1,bg:'#0b3a6e'});
     // glass front with sliding doors
     for(const sx of [-1,1]){solid(g,HW-0.1,0.05,0.008,0x90a4ae,sx*(HW+0.1)/2,AP_Z.doors);const gl=new THREE.Mesh(new THREE.BoxGeometry(HW-0.1,0.07,0.003),new THREE.MeshLambertMaterial({color:0x9cc8e8,transparent:true,opacity:0.32}));gl.position.set(sx*(HW+0.1)/2,0.085,AP_Z.doors);g.add(gl)}
     apSign(g,['Utgång · Exit','Tåg · Buss · Taxi'],0.2,0.044,0,0.11,AP_Z.doors-0.01,0,{icon:'exit',back:1});
     // ---- the kerb: taxis, coaches and cars waiting or picking up; a taxi rank officer
-    const dec=(v,x,dir,stall)=>{v.position.set(x,0,AP_Z.kerb+0.02);v.rotation.y=dir>0?0:Math.PI;g.add(v);AP.veh.push({g:v,mode:'wait',t:6+Math.random()*30,dir,stall:x})};
-    [-0.48,-0.36,-0.24].forEach((x,i)=>dec(apVehicle('taxi',[0xf4f4f4,0x23272b,0xf4f4f4][i]),x,1));
-    [0.18,0.46].forEach((x,i)=>{const v=apVehicle('bus',i?0x1a6b8a:0x0b3a6e);v.position.set(x,0,AP_Z.kerb+0.03);v.rotation.y=Math.PI;g.add(v);AP.veh.push({g:v,mode:'wait',t:10+Math.random()*30+i*9,dir:-1,stall:x})});
-    [-0.12,0.0].forEach((x,i)=>dec(apVehicle('car',[0x7b1fa2,0xb0bec5][i]),x,-1));
-    apOfficer(g,'taxi',-0.36,0.415,Math.PI/2,false);npc(g,null,null,-0.3,0.418,Math.PI/2);npc(g,null,null,0.14,0.418,Math.PI);npc(g,null,null,0.3,0.418,Math.PI);npc(g,null,null,0.36,0.418,Math.PI);
+    const LK=AP_Z.kerb+0.085,LO=AP_Z.kerb+0.19;   // lane z: kerb lane (westbound) and through lane (eastbound)
+    const put=(v,x,lane,dir,stall,t)=>{if(stall==null)x=-HW-1.5;v.position.set(x,0,lane==='k'?LK:LO);v.rotation.y=dir>0?0:Math.PI;g.add(v);AP.veh.push({g:v,mode:stall==null?'gone':'wait',t,dir,stall,lane,sp:stall==null?0.09:0.06})};
+    [[-0.62,'taxi',0xf4f4f4],[-0.5,'taxi',0x23272b],[-0.38,'taxi',0xf4f4f4],[-0.24,'car',0x7b1fa2],[-0.12,'car',0xb0bec5],[0.16,'bus',0x0b3a6e],[0.6,'bus',0x1a6b8a]]
+      .forEach(([x,k,c],i)=>put(apVehicle(k,c),x,'k',-1,x,6+Math.random()*30+i*3));
+    [['car',0xc62828,4],['taxi',0xf4f4f4,12],['bus',0x0b3a6e,20]].forEach(([k,c,t])=>put(apVehicle(k,c),0,'o',1,null,t));
+    const PV=AP_Z.doors+0.035;apOfficer(g,'taxi',-0.5,PV,Math.PI/2,false);npc(g,null,null,-0.44,PV,Math.PI/2);npc(g,null,null,0.1,PV,Math.PI);npc(g,null,null,0.2,PV,Math.PI);npc(g,null,null,0.55,PV,Math.PI);npc(g,null,null,0.64,PV,Math.PI);
     IN.col.push([-HW,HW,AP_Z.kerb-0.004,HD+0.1]);
-    apSign(g,['Taxi','Swedavias avtalstaxi'],0.2,0.04,-0.36,0.085,AP_Z.doors+0.03,0,{bg:'#e3e01c',fg:'#14181c',back:1,small:1});
-    apSign(g,['Flygbussarna','Stockholm City'],0.2,0.04,0.32,0.085,AP_Z.doors+0.03,0,{bg:'#0b3a6e',fg:'#ffffff',back:1,small:1});
-    apSign(g,['Hämta och lämna','Pick-up and drop-off'],0.2,0.04,-0.1,0.085,AP_Z.doors+0.03,0,{bg:'#1b5e20',fg:'#ffffff',back:1,small:1});
-    spot(-0.36,0.395,'Taxi rank: Swedavia\'s contracted taxis',()=>toast('Taxis wait outside the arrivals hall, 24 h. Use the exit to ride one'),0.06);
-    spot(0.32,0.395,'Flygbussarna coaches to Stockholm City',()=>toast('Coaches to the city leave from the stop outside. Use the exit to take one'),0.06);
-    spot(-0.1,0.395,'Pick-up point: friends and family',()=>toast('Friends and family wait here. Use the exit to meet them'),0.06);
-    spot(0,0.395,'Exit: trains, buses and taxis',()=>exitInterior(),0.07);inBox(g,0.1,0.002,0.03,0x2a9d5a,0,0.395,0.004,true)}
-  function buildRoom(kind,p,opts){const g=new THREE.Group();if(kind==='arlanda'){HW=0.58;HD=0.5}else{HW=0.34;HD=0.25}const HT=(HOMES[S&&S.home]||{}).type;const [fl,wl]=kind==='arlanda'?[0xc9ced3,0xeef1f3]:kind==='home'?({andrahand:[0x9c8a74,0xd9d2c4],student:[0xb5a48c,0xeae6dc],parents:[0xa47c55,0xe9dfc9],forstahand:[0xc9a77c,0xf2efe8]}[HT]||RPAL.home||[0xc9a77c,0xf2efe8]):(RPAL[kind]||RPAL.shop);
+    apSign(g,['Taxi','Swedavias avtalstaxi'],0.2,0.04,-0.5,0.085,AP_Z.doors+0.03,0,{bg:'#e3e01c',fg:'#14181c',back:1,small:1});
+    apSign(g,['Flygbussarna','Stockholm City'],0.2,0.04,0.4,0.085,AP_Z.doors+0.03,0,{bg:'#0b3a6e',fg:'#ffffff',back:1,small:1});
+    apSign(g,['Hämta och lämna','Pick-up and drop-off'],0.2,0.04,-0.18,0.085,AP_Z.doors+0.03,0,{bg:'#1b5e20',fg:'#ffffff',back:1,small:1});
+    spot(-0.5,AP_Z.doors-0.005,'Taxi rank: Swedavia\'s contracted taxis',()=>toast('Taxis wait outside the arrivals hall, 24 h. Use the exit to ride one'),0.06);
+    spot(0.4,AP_Z.doors-0.005,'Flygbussarna coaches to Stockholm City',()=>toast('Coaches to the city leave from the stop outside. Use the exit to take one'),0.06);
+    spot(-0.18,AP_Z.doors-0.005,'Pick-up point: friends and family',()=>toast('Friends and family wait here. Use the exit to meet them'),0.06);
+    spot(0,AP_Z.doors-0.005,'Exit: trains, buses and taxis',()=>exitInterior(),0.07);inBox(g,0.1,0.002,0.03,0x2a9d5a,0,AP_Z.doors-0.005,0.004,true)}
+  function buildRoom(kind,p,opts){const g=new THREE.Group();if(kind==='arlanda'){HW=0.82;HD=0.8}else{HW=0.34;HD=0.25}const HT=(HOMES[S&&S.home]||{}).type;const [fl,wl]=kind==='arlanda'?[0xc9ced3,0xeef1f3]:kind==='home'?({andrahand:[0x9c8a74,0xd9d2c4],student:[0xb5a48c,0xeae6dc],parents:[0xa47c55,0xe9dfc9],forstahand:[0xc9a77c,0xf2efe8]}[HT]||RPAL.home||[0xc9a77c,0xf2efe8]):(RPAL[kind]||RPAL.shop);
     inBox(g,HW*2,0.004,HD*2,fl,0,0,-0.004);inBox(g,HW*2,0.14,0.01,wl,0,-HD);inBox(g,0.01,0.14,HD*2,wl,-HW,0);inBox(g,0.01,0.14,HD*2,wl,HW,0);
     if(kind!=='arlanda'){inBox(g,0.08,0.002,0.03,0x2a9d5a,0,HD-0.02,0.001,true);spot(0,HD-0.02,'Leave',()=>exitInterior(),0.06)}
     const title=p?p.name:'';const TX=[-0.25,-0.13,0.13,0.25];const tables=(n,y0)=>{for(let i=0;i<n;i++){const x=TX[i%4],z=y0;solid(g,0.07,0.03,0.07,0x6d4c41,x,z);inBox(g,0.03,0.025,0.03,0x8d6e63,x-0.055,z);inBox(g,0.03,0.025,0.03,0x8d6e63,x+0.055,z)}};
@@ -5621,7 +5627,7 @@ const POSTERS_CITY=[['#f2b705','#1b1b1b','KANELBULLE','Färskt varje morgon','Ba
       if(t===0)JR.depAt=Math.max(JR.depAt,csClk()+1);else{JR.si=t-1;JR.d=JR.stops[t].d+HALF*CM;JR.v=0;JR.doors=0;jrArrive()}
       csLine(`Back on pendeltåg ${d.ref} to ${d.to} · ${JR.stops[JR.si].disp}`,6)});return true}
   tick();
-  const API={startLesson,inLesson:()=>!!COACH.mode,inJourney:()=>!!(CS&&CS.mode==='ride'),lookAtFlight,placeAvatar,landAt:info=>{if(IN.on)exitInterior(true);playLanding(info,()=>enterInterior('arlanda',{name:'Stockholm Arlanda Airport · Terminal 5 · Arrivals'},{}))},openGate:k=>{const gt=IN.gates&&IN.gates[k];if(!gt)return;IN.col=IN.col.filter(c=>!gt.c.includes(c));gt.m.forEach(m=>m.visible=false)},leaveAirportBy:(mode,dst,cb)=>{exitInterior(true);arriveBy(mode,dst,cb)},enterAirport:()=>{if(IN.on)exitInterior(true);enterInterior('arlanda',{name:'Stockholm Arlanda Airport · Terminal 5 · Arrivals'},{})},leaveAirport:(x,z)=>{exitInterior(true);const f=freeSpot(x,z)||[x,z];placeAvatar(f[0],f[1],true)},stationPos:k=>{const ll=k==='cityterminal'?[59.3318,18.0560]:[59.3303,18.0581];const [x,z]=P(ll[0],ll[1]);const f=freeSpot(x,z)||[x,z];return {x:f[0],z:f[1]}},avPos:()=>({x:av.position.x,z:av.position.z}),avSet:(x,z)=>{av.position.x=x;av.position.z=z},lieDown,hideAv:h=>{avHidden=h;av.visible=!h},emergency,leaveScene,isDriving:()=>DR.on,busLinesAt,transitLinesAt,busRide,hospitalNear:(x,z)=>{const L=[['Karolinska Universitetssjukhuset Solna',59.3488,18.0307],['Södersjukhuset',59.3106,18.0521],['S:t Görans sjukhus',59.3376,18.0221],['Danderyds sjukhus',59.3919,18.0412]].map(([n,a,b])=>{const [hx,hz]=P(a,b);const f=freeSpot(hx,hz)||[hx,hz];return {name:n,x:f[0],z:f[1]}});return L.sort((a,b)=>Math.hypot(a.x-x,a.z-z)-Math.hypot(b.x-x,b.z-z))[0]},setCoat,walkPath,ride,emote,refresh,season:()=>{lastSeason=''},snapTime,aurora:()=>{auroraT=1.2},route,streetName,isMoving:()=>inputVec().mag>0.08,setLook:n=>setLook(n),applyOutfit,setHome,syncCar,startDrive,stopDrive,nearPlaces,kindFor,poi:i=>POIS[i],
+  const API={startLesson,inLesson:()=>!!COACH.mode,inJourney:()=>!!(CS&&CS.mode==='ride'),lookAtFlight,placeAvatar,landAt:info=>{if(IN.on)exitInterior(true);playLanding(info,()=>enterInterior('arlanda',{name:'Stockholm Arlanda Airport · Terminal 5 · Arrivals'},{}))},openGate:k=>{const gt=IN.gates&&IN.gates[k];if(!gt)return;IN.col=IN.col.filter(c=>!gt.c.includes(c));gt.m.forEach(m=>m.visible=false)},leaveAirportBy:(mode,dst,cb)=>{exitInterior(true);arriveBy(mode,dst,cb)},enterAirport:()=>{if(IN.on)exitInterior(true);enterInterior('arlanda',{name:'Stockholm Arlanda Airport · Terminal 5 · Arrivals'},{})},leaveAirport:(x,z)=>{exitInterior(true);const f=freeSpot(x,z)||[x,z];placeAvatar(f[0],f[1],true)},stationPos:k=>{const ll=k==='cityterminal'?[59.3318,18.0560]:[59.3303,18.0581];const [x,z]=P(ll[0],ll[1]);const f=freeSpot(x,z)||[x,z];return {x:f[0],z:f[1]}},avPos:()=>({x:av.position.x,z:av.position.z}),avSet:(x,z)=>{av.position.x=x;av.position.z=z},apVeh:()=>AP.veh.map(v=>({x:v.g.position.x,z:v.g.position.z,len:v.g.userData.len,lane:v.lane,mode:v.mode,h:v.g.userData.len>0.3?1:0})),lieDown,hideAv:h=>{avHidden=h;av.visible=!h},emergency,leaveScene,isDriving:()=>DR.on,busLinesAt,transitLinesAt,busRide,hospitalNear:(x,z)=>{const L=[['Karolinska Universitetssjukhuset Solna',59.3488,18.0307],['Södersjukhuset',59.3106,18.0521],['S:t Görans sjukhus',59.3376,18.0221],['Danderyds sjukhus',59.3919,18.0412]].map(([n,a,b])=>{const [hx,hz]=P(a,b);const f=freeSpot(hx,hz)||[hx,hz];return {name:n,x:f[0],z:f[1]}});return L.sort((a,b)=>Math.hypot(a.x-x,a.z-z)-Math.hypot(b.x-x,b.z-z))[0]},setCoat,walkPath,ride,emote,refresh,season:()=>{lastSeason=''},snapTime,aurora:()=>{auroraT=1.2},route,streetName,isMoving:()=>inputVec().mag>0.08,setLook:n=>setLook(n),applyOutfit,setHome,syncCar,startDrive,stopDrive,nearPlaces,kindFor,poi:i=>POIS[i],
     enterPlace:(p,o)=>{const k=kindFor(p);if(!k){showPoi(p);return}if(k==='club'&&!(S.hour>=21.5||S.hour<2)){toast('The club opens late in the evening');return}if(k==='club'&&!S.flags['club'+S.day]){if(S.money<200){toast('Entry is 200 kr');return}S.money-=200;S.flags['club'+S.day]=1;log('Paid 200 kr entry at '+p.name+'.');render()}enterInterior(k,p,o)},
     enterHome:()=>enterInterior('home',null,{}),showCrowd,exitInterior,setQueue:n=>{IN.queue=n},inside:()=>IN.on,driving:()=>DR.on,
     centralEntrance:()=>{csDoorsWorld();return CS_DOORS[0].w},inStation:()=>CS.mode,leaveStation:csForceOut,placeState,restorePlace};

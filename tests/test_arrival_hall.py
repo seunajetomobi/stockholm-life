@@ -34,7 +34,7 @@ def test_hall_looks_right(browser, server, size):
         _arrive(page, mobile=mob)
         game.shot(page, f'arr-{size}-start')
         if size == 'laptop':
-            for name, z in [('passport', -0.36), ('belt', -0.05), ('customs', 0.1), ('hall', 0.33), ('kerb', 0.41)]:
+            for name, z in [('passport', -0.55), ('belt', -0.05), ('customs', 0.12), ('hall', 0.36), ('kerb', 0.49)]:
                 page.evaluate("(z) => { window.__TS.W.avSet(0.05, z) }", z)
                 time.sleep(2.5)
                 game.shot(page, f'arr-{size}-{name}')
@@ -51,7 +51,7 @@ def test_popups_never_overlap(browser, server, size):
         game.boot(page)
         _arrive(page, mobile=mob)
         bad = {}
-        for step, (x, z) in {'start': (0, -0.43), 'gate': (0, -0.36), 'belt': (0.05, 0.0), 'customs': (-0.18, 0.1), 'kerb': (0, 0.37)}.items():
+        for step, (x, z) in {'start': (0, -0.73), 'gate': (0, -0.55), 'belt': (0.05, 0.0), 'customs': (-0.3, 0.12), 'kerb': (0, 0.45)}.items():
             page.evaluate("([x, z]) => window.__TS.W.avSet(x, z)", [x, z]); time.sleep(1.5)
             for open_ in (False, True):
                 page.evaluate("(o) => { const g = document.getElementById('apguide'); if (g && g.classList.contains('open') !== o) g.querySelector('.apmain').click() }", open_)
@@ -61,6 +61,39 @@ def test_popups_never_overlap(browser, server, size):
                     bad[f'{step}/{"open" if open_ else "closed"}'] = o
                     game.shot(page, f'overlap-{size}-{step}-{"open" if open_ else "closed"}')
         assert not bad, bad
+        assert err.uncaught == [], err.uncaught
+    finally:
+        ctx.close()
+
+
+def test_vehicles_keep_their_lane_and_never_overlap(browser, server):
+    """Coaches, taxis and cars outside the arrivals hall stay in two lanes and keep a gap to the vehicle ahead."""
+    ctx, page, err = game.new_page(browser, hook=True)
+    page.set_default_timeout(90000)
+    try:
+        game.boot(page)
+        _arrive(page, mobile=False)
+        page.evaluate("() => window.__TS.W.avSet(0, 0.49)")
+        seen_move = set()
+        last = None
+        for _ in range(90):
+            time.sleep(1)
+            vs = page.evaluate("() => window.__TS.W.apVeh()")
+            lanes = {}
+            for i, v in enumerate(vs):
+                if v['mode'] == 'gone':
+                    continue
+                lanes.setdefault(round(v['z'], 3), []).append(v)
+                if last and abs(last[i]['x'] - v['x']) > 0.002:
+                    seen_move.add(i)
+            assert len(lanes) <= 2, ('more than two lanes', list(lanes))
+            for z, row in lanes.items():
+                row.sort(key=lambda v: v['x'])
+                for a, b in zip(row, row[1:]):
+                    assert b['x'] - a['x'] >= (a['len'] + b['len']) / 2 - 0.002, ('vehicles overlap', a, b)
+            last = vs
+        assert any(v['len'] > 0.3 for v in vs), 'coaches should be large'
+        assert seen_move, 'no vehicle moved in 90 s'
         assert err.uncaught == [], err.uncaught
     finally:
         ctx.close()

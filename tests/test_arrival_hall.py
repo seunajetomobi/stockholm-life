@@ -67,33 +67,17 @@ def test_popups_never_overlap(browser, server, size):
 
 
 def test_vehicles_keep_their_lane_and_never_overlap(browser, server):
-    """Coaches, taxis and cars outside the arrivals hall stay in two lanes and keep a gap to the vehicle ahead."""
+    """Coaches, taxis and cars outside the arrivals hall stay in two lanes and keep a gap to the vehicle ahead (10 minutes of simulated traffic)."""
     ctx, page, err = game.new_page(browser, hook=True)
     page.set_default_timeout(90000)
     try:
         game.boot(page)
         _arrive(page, mobile=False)
-        page.evaluate("() => window.__TS.W.avSet(0, 0.49)")
-        seen_move = set()
-        last = None
-        for _ in range(90):
-            time.sleep(1)
-            vs = page.evaluate("() => window.__TS.W.apVeh()")
-            lanes = {}
-            for i, v in enumerate(vs):
-                if v['mode'] == 'gone':
-                    continue
-                lanes.setdefault(round(v['z'], 3), []).append(v)
-                if last and abs(last[i]['x'] - v['x']) > 0.002:
-                    seen_move.add(i)
-            assert len(lanes) <= 2, ('more than two lanes', list(lanes))
-            for z, row in lanes.items():
-                row.sort(key=lambda v: v['x'])
-                for a, b in zip(row, row[1:]):
-                    assert b['x'] - a['x'] >= (a['len'] + b['len']) / 2 - 0.002, ('vehicles overlap', a, b)
-            last = vs
-        assert any(v['len'] > 0.3 for v in vs), 'coaches should be large'
-        assert seen_move, 'no vehicle moved in 90 s'
+        r = page.evaluate("() => window.__TS.W.apVehSim(6000)")
+        assert not r['bad'], r['bad'][:5]
+        assert r['lanes'] <= 2, r
+        assert r['moved'] >= 5, r
+        assert r['big'], 'coaches should be large'
         assert err.uncaught == [], err.uncaught
     finally:
         ctx.close()

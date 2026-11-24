@@ -559,6 +559,14 @@ h1,h2,h3,.placehead h2{font-family:var(--body)}
 #zout{--tile:linear-gradient(135deg,#ffd23f,#f2a100)}#zme{--tile:linear-gradient(135deg,#a86bff,#6d3be0)}
 .ctrls button{background:var(--tile)!important;border-radius:14px!important;color:#fff!important;box-shadow:0 2px 6px rgba(0,20,40,.45),inset 0 1px 0 rgba(255,255,255,.35)!important}
 .ctrls .ic2{stroke:#fff!important}
+
+/* friendlier: names next to place buttons on larger screens, a clear Run toggle, wrapping goal text, tappable needs */
+.need{cursor:pointer;pointer-events:auto}.need:focus-visible,.ctrls button:focus-visible,.places button:focus-visible,.dock button:focus-visible{outline:3px solid var(--sv-yellow);outline-offset:2px}
+@media (min-width:900px) and (pointer:fine){.places button{position:relative;width:auto;overflow:visible}.places button span{display:block!important;position:absolute;left:44px;top:50%;transform:translateY(-50%);font:600 13px var(--body);color:#fff;text-shadow:0 1px 3px rgba(0,20,40,.9);white-space:nowrap;pointer-events:none}}
+.runbtn{display:flex;align-items:center;gap:6px;padding:9px 16px!important;border-radius:99px!important;background:linear-gradient(135deg,#27c4f4,#1480d6)!important;color:#fff!important;font:700 13px var(--body)!important;letter-spacing:.1em;box-shadow:0 2px 8px rgba(0,20,40,.5)!important;text-transform:uppercase}
+.runbtn::before{content:"\25B6\25B6";font-size:9px;letter-spacing:-1px}
+.runbtn.on{background:linear-gradient(135deg,#ffd23f,#f2a100)!important;color:#0b2740!important}.runbtn.on::after{content:"on";font-weight:600;opacity:.75}
+.next b,.next small{white-space:normal!important;overflow:visible!important;text-overflow:clip!important}.next small{display:block;line-height:1.25}
 </style>
 </head>
 <body>
@@ -1104,8 +1112,13 @@ function openTravelPicker(){const ks=Object.keys(D);modal(`<h2>Go somewhere</h2>
   m.querySelector('#no').onclick=closeModal;m.querySelectorAll('.choice').forEach(b=>b.onclick=()=>{closeModal();openTravel(b.dataset.k)})})}
 // ---------- need gauges on the board
 const GAUGES=[['energy','Energy','zap'],['mood','Mood','smile'],['hunger','Food','utensils'],['hygiene','Hygiene','droplets'],['fun','Fun','party-popper'],['social','Social','message-circle']];
+function tipsFromLabels(){document.querySelectorAll('.ctrls button,.dock button').forEach(b=>{if(!b.title&&b.getAttribute('aria-label'))b.title=b.getAttribute('aria-label')})}
 function renderNeeds(){const C=2*Math.PI*16;$('needs').innerHTML=GAUGES.map(([k,l,ic])=>{const v=clamp(Math.round(S[k]||0),0,100);const cls=v<25?'lo':v<50?'mid':'';
-  return `<div class="need ${cls}" role="img" aria-label="${l} ${v} of 100" title="${l} ${v}/100"><svg class="ring" viewBox="0 0 38 38"><circle class="rb" cx="19" cy="19" r="16" fill="none" stroke-width="2.5"/><circle class="rv" cx="19" cy="19" r="16" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="${C*v/100} ${C}" transform="rotate(-90 19 19)"/></svg>${ico(ic)}<span>${l}</span></div>`}).join('')}
+  return `<div class="need ${cls}" data-k="${k}" role="button" tabindex="0" aria-label="${l} ${v} of 100" title="${l} ${v}/100"><svg class="ring" viewBox="0 0 38 38"><circle class="rb" cx="19" cy="19" r="16" fill="none" stroke-width="2.5"/><circle class="rv" cx="19" cy="19" r="16" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="${C*v/100} ${C}" transform="rotate(-90 19 19)"/></svg>${ico(ic)}<span>${l}</span></div>`}).join('')}
+const NEEDTIP={energy:'Sleep at home, or rest for an hour.',mood:'Meet a friend, go outside or do something you enjoy.',hunger:'Eat at home, or buy food at a shop or café.',hygiene:'Take a shower at home.',fun:'Do something fun: a fika, a walk or a game.',social:'Call or meet a friend or family.'};
+function needTap(el){const k=el.dataset.k,g=GAUGES.find(x=>x[0]===k);if(!g||!S)return;const v=clamp(Math.round(S[k]||0),0,100);toast(`${g[1]} ${v}/100 · ${v<25?'Low! ':''}${NEEDTIP[k]||''}`)}
+document.addEventListener('click',e=>{const n=e.target.closest&&e.target.closest('#needs .need');if(n)needTap(n)});
+document.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&document.activeElement&&document.activeElement.matches&&document.activeElement.matches('#needs .need')){e.preventDefault();needTap(document.activeElement)}});
 // ---------- the guide: what makes sense to do next
 function nextSteps(){const out=[];if(!S||busy)return out;const add=(l,s,fn,btn,u)=>out.push({l,s,fn,btn:btn||'Go',u:u||0});
   if(S.flags&&S.flags.arlanda){if(!S.flags.passport&&!S.schengen)add('Passport control','Walk to the booths at the back of the hall',()=>airportSpot('passport'),'Go',100);if(!S.flags.bags)add('Collect your suitcase','Baggage claim, in the middle of the hall',()=>airportSpot('bags'),'Go',99);add('Travel into Stockholm','Arlanda Express, pendeltåg, Flygbussarna or taxi',()=>airportSpot('exit'),'Go',98);return out}const d=S.docs;
@@ -2642,7 +2655,7 @@ function render(){try{if(S){renderTodo();badges();renderAbout()}}catch(e){}
   $('papers').innerHTML=[...papers(),{s:canDrive()?'ok':'todo',l:canDrive()?'OK':'—',n:'Driving licence',w:licText()},{s:S.addr?'ok':'todo',l:S.addr?'OK':'—',n:'Home address',w:addrText()},...Object.keys(S.certs).map(c=>({s:'ok',l:'✓',n:'Certificate',w:(Object.values(COURSES).find(x=>x.cert===c)||{name:c}).name}))].map(p=>`<li><span class="st ${p.s}">${p.l}</span><b>${p.n}</b><small>${p.w}</small></li>`).join('');
   $('goals').innerHTML=`<li class="${aspirationDone()?'done':''}"><span class="box"></span><span><b>Life goal:</b> ${ASPIRATIONS[S.aspiration].l}</span><span class="p">${S.points} pts</span></li>`+(S.aspiration==='stockholmer'?'':`<li><span></span><span style="font-size:12px">${ASPIRATIONS[S.aspiration].d}</span><span></span></li>`)+goals().map(g=>`<li class="${g.done?'done':''}"><span class="box"></span><span>${g.l}</span><span class="p">${g.p}</span></li>`).join('')+S.wants.map(w=>{const W8=WANTS.find(x=>x[0]===w.id);return `<li class="${w.done?'done':''}"><span class="box"></span><span>Today: ${W8?W8[1]:w.id}</span><span class="p">+10</span></li>`}).join('');
   $('log').innerHTML=S.log.slice(0,30).map(e=>`<li><time>d${e.d} ${hhmm(e.h)}</time><span class="${e.cls}">${e.t}</span></li>`).join('');
-  W&&W.refresh();renderNeeds();renderGuide();renderPlaces();renderSOS();if(TAB==='civic')renderCivic();
+  W&&W.refresh();renderNeeds();tipsFromLabels();renderGuide();renderPlaces();renderSOS();if(TAB==='civic')renderCivic();
 }
 
 /* =================== 3D WORLD =================== */

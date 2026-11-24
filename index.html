@@ -602,7 +602,9 @@ body.ringing-on .dock [data-tab="phone"] svg,body.ringing-on .dock [data-tab="ph
 .title .glass{background:none!important;border:0!important;box-shadow:none!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
 .title .tl button,.title .tr button{color:#fff!important;text-shadow:0 1px 6px rgba(0,0,0,.75),0 0 2px rgba(0,0,0,.6)}
 .title .tr i{background:rgba(255,255,255,.55)}
-.title .tr button[aria-pressed=true]{background:rgba(254,204,2,.95)!important;color:#0b2740!important;text-shadow:none}
+.title .tr button{position:relative;border-radius:6px!important}
+.title .tr button[aria-pressed=true]{background:none!important;color:#fff!important}
+.title .tr button[aria-pressed=true]::after{content:"";position:absolute;left:10px;right:10px;bottom:2px;height:3px;border-radius:3px;background:#fecc02;box-shadow:0 1px 4px rgba(0,0,0,.5)}
 </style>
 </head>
 <body>

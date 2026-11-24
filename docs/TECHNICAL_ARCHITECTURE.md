@@ -10,7 +10,7 @@ How Stockholm Life is built today, its known weaknesses, and the target architec
 | --- | --- |
 | Language | Plain JavaScript (ES2020+), HTML and CSS; no build step, no `package.json` |
 | Rendering | three.js **r128** from cdnjs and jsdelivr, with the `examples/js` add-ons OrbitControls, GLTFLoader, SkeletonUtils, BufferGeometryUtils, SimplifyModifier |
-| Hosting | GitHub Pages, published by the "Deploy to GitHub Pages" workflow (see §4) |
+| Hosting | Cloudflare Workers static assets at https://stockholmsliv.app/ (also www.stockholmsliv.app), built from the `live` branch; GitHub Pages was switched off on 2026-11-22 (see §4) |
 | Backend | One optional Cloudflare Worker (`tools/flights-worker.js`) relaying flights, news feeds and Swedavia wait times |
 | External services | Open-Meteo, SL Transport, adsbdb.com, Sveriges Radio, frankfurter.dev, the relay |
 | Tests | Python: pytest + Playwright with Chromium (`tests/`) |
@@ -128,9 +128,9 @@ State changes as recordable actions, seeded randomness and the explicit clock ma
 | --- | --- |
 | Pull-request tests | `.github/workflows/tests.yml` on `pull_request` to `main`: jobs `tests-syntax` and `tests-browser` (Playwright's pinned Chromium 145.0.7632.6, version-checked) |
 | Branch protection | Ruleset "Protect main": pull request required, required checks `tests-syntax` and `tests-browser` from GitHub Actions (integration 15368), branches up to date, no force pushes or deletion, no bypass |
-| Deployment | `.github/workflows/deploy.yml`, manual (`workflow_dispatch`) from `main`: resolves the requested ref to one commit already on `main`, runs the tests on it, checks the game files, publishes `index.html`, `data/` and a generated `version.txt`, then polls `version.txt` for up to 11 minutes |
+| Deployment | **Since 2026-11-22: promoting a verified `main` to the `live` branch (the owner approves each promotion); Cloudflare builds and publishes it, about one minute.** Cloudflare's Git connection must stay connected (it was disconnected once, which silently stopped builds). The older Pages workflow below is dormant and kept only because `tests/test_syntax.py` and `tests/test_live_check.py` still read it; retiring it means rewriting those tests and `tools/live_check.py`. `.github/workflows/deploy.yml`, manual (`workflow_dispatch`) from `main`: resolves the requested ref to one commit already on `main`, runs the tests on it, checks the game files, publishes `index.html`, `data/` and a generated `version.txt`, then polls `version.txt` for up to 11 minutes |
 | Approval | Environment `github-pages`: reviewer approval required, deployments from `main` only, no administrator bypass |
-| Pages source | GitHub Actions (since 2026-10-31); pushes to `main` do not publish |
+| Pages source | Disabled on 2026-11-22 (the Pages API returns 404); it can be turned on again in the repository settings |
 | Actions security | GitHub-owned actions only, full-SHA pinning required, approval for all external contributors' workflows, read-only default token |
 | Rollback | Run the Deploy workflow with an earlier commit from `main` |
 

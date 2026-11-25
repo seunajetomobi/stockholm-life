@@ -1,0 +1,19 @@
+{
+  "id": "./",
+  "name": "Stockholmsliv",
+  "short_name": "Stockholmsliv",
+  "description": "Live a life in Stockholm. Real map, real time, real weather.",
+  "lang": "en",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0c2c62",
+  "theme_color": "#006aa7",
+  "categories": ["games", "simulation"],
+  "icons": [
+    { "src": "assets/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "assets/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "assets/icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

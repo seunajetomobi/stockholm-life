@@ -120,7 +120,7 @@ def test_game_uses_the_module(browser):
     """The game script's JOBS and COUNTRIES are the module's own objects, and their consumers work."""
     expose = 'window.__G={JOBS,COUNTRIES,OPEN,COURSES,ITEMS,HOMES,routesFrom,workPlace,EU_GOODS,hoursFor,shopItemsFor,homeD,assignAddress,openHousing,S,D};return API;'
     body = game.hooked_html().replace('return API;', expose)
-    ctx = browser.new_context(viewport={'width': 1366, 'height': 768})
+    ctx = game.new_context(browser, viewport={'width': 1366, 'height': 768})
     ctx.route('**/index.html', lambda route: route.fulfill(status=200, content_type='text/html; charset=utf-8', body=body))
     page = ctx.new_page()
     err = game.Errors(page)
@@ -156,7 +156,7 @@ def test_game_uses_the_module(browser):
 
 @pytest.mark.browser
 def test_missing_module_stops_with_a_message(browser):
-    ctx = browser.new_context(viewport={'width': 1366, 'height': 768})
+    ctx = game.new_context(browser, viewport={'width': 1366, 'height': 768})
     ctx.route('**/src/tables.js', lambda route: route.fulfill(status=404, content_type='text/plain', body='not found'))
     page = ctx.new_page()
     err = game.Errors(page)

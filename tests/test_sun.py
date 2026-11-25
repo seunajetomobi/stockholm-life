@@ -154,7 +154,7 @@ def test_game_uses_the_module(browser):
     the city starts, and the module adds no name to the page but its own."""
     expose = 'window.__F={sunInfo,daylight,sunrise,sunset,isLight,wmo,WXICON,today};return API;'
     body = game.hooked_html().replace('return API;', expose)
-    ctx = browser.new_context(viewport={'width': 1366, 'height': 768})
+    ctx = game.new_context(browser, viewport={'width': 1366, 'height': 768})
     ctx.route('**/index.html', lambda route: route.fulfill(status=200, content_type='text/html; charset=utf-8', body=body))
     page = ctx.new_page()
     err = game.Errors(page)
@@ -169,7 +169,7 @@ def test_game_uses_the_module(browser):
             for (let h = -1; h <= 25; h += 0.25) if (F.isLight(h) !== M.isLight(h, d)) bad.push('isLight ' + h);
             return bad }""")
         assert same == [], same
-        assert sorted(page.evaluate("() => Object.keys(window.StockholmLife)")) == ['city-data', 'clock', 'format', 'geography', 'holidays', 'life-start', 'namnsdag', 'realtime', 'stockholm-time', 'sun', 'tables']
+        assert sorted(page.evaluate("() => Object.keys(window.StockholmLife)")) == ['city-data', 'clock', 'format', 'geography', 'holidays', 'life-start', 'namnsdag', 'realtime', 'stockholm-time', 'sun', 'tables', 'world']
         assert page.evaluate("() => ['SUN','sunInfo','sunrise','sunset','isLight','daylight','wmo','WMO','WXICON','RAD','LAT','lastSun'].filter(k => k in window)") == []
         assert err.uncaught == []
         assert err.local_failures() == []
@@ -179,7 +179,7 @@ def test_game_uses_the_module(browser):
 
 @pytest.mark.browser
 def test_missing_module_stops_with_a_message(browser):
-    ctx = browser.new_context(viewport={'width': 1366, 'height': 768})
+    ctx = game.new_context(browser, viewport={'width': 1366, 'height': 768})
     ctx.route('**/src/rules/sun.js', lambda route: route.fulfill(status=404, content_type='text/plain', body='not found'))
     page = ctx.new_page()
     err = game.Errors(page)

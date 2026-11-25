@@ -1,4 +1,5 @@
 """The game's name is Stockholmsliv (owner decision, 2026-11-21): the title, the board, the loading box and the start screen say so."""
+import re
 import game
 
 HTML = (game.ROOT / 'index.html').read_text(encoding='utf-8')
@@ -7,7 +8,10 @@ HTML = (game.ROOT / 'index.html').read_text(encoding='utf-8')
 def test_title_and_visible_names_say_stockholmsliv():
     assert '<title>Stockholmsliv</title>' in HTML
     assert '<div class="brand">Stockholms<span>liv</span></div>' in HTML
-    assert '<b>Stockholmsliv</b>' in HTML and '<h2 class="hero">Stockholmsliv</h2>' in HTML
+    # the loading screen's wordmark: its first O is the progress indicator (an <em>), so the name is checked as text
+    m = re.search(r'<div class="loading" id="loading"><div class="box"><b>(.*?)</b>', HTML)
+    assert m and re.sub(r'<[^>]+>', '', m.group(1)) == 'Stockholmsliv', m and m.group(1)
+    assert '<h2 class="hero">Stockholmsliv</h2>' in HTML
 
 
 def test_no_visible_text_still_says_stockholm_life():

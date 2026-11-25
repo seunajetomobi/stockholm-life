@@ -120,7 +120,7 @@ def game_ctx(browser):
     made = []
 
     def make(seed=None, **faults):
-        ctx = browser.new_context(viewport={'width': 960, 'height': 600})
+        ctx = game.new_context(browser, viewport={'width': 960, 'height': 600})
         ctx.add_init_script(INIT % (json.dumps(seed or {}), json.dumps(faults)))
         body = game.hooked_html()
         ctx.route('**/index.html', lambda route: route.fulfill(status=200, content_type='text/html; charset=utf-8', body=body))

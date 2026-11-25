@@ -301,6 +301,94 @@ def test_short_span_warns(tmp_path, site_for):
     assert code == 0 and any('cannot confirm a mismatch' in w for w in rep['warnings']), out
 
 
+# ---------------------------------------------------------------- hosts without version.txt (Cloudflare, --no-version-file)
+
+IGNORE = b'# not published\n.git\n.github\n.assetsignore\ndocs\ntests\ntools\nREADME.md\n'
+CF_EXTRA = {'src/geography.js': b'// module', 'assets/icon.svg': b'<svg/>', 'manifest.webmanifest': b'{}',
+            '.assetsignore': IGNORE, 'docs/x.md': b'x', 'tests/t.py': b't', 'tools/live_check.py': b'#', 'README.md': b'r'}
+CF_SERVED = ['index.html', 'data/b.json', 'data/r.json', 'data/m.json', 'src/geography.js', 'assets/icon.svg', 'manifest.webmanifest']
+
+
+@pytest.fixture
+def cf_site(tmp_path):
+    """cf_site() -> (repo, sha, Site): a repository with .assetsignore, served the way Cloudflare does (no version.txt)."""
+    made = []
+
+    def make():
+        files = {**game_files(), **CF_EXTRA}
+        repo = tmp_path / 'cfrepo'
+        sha = commit(repo, files)
+        s = Site({p: files[p] for p in CF_SERVED})
+        s.files[''] = files['index.html']                      # like Cloudflare: the page is at /
+        s.hooks['index.html'] = lambda h: send(h, 307, b'', {'Location': '/'}) or True
+        made.append(s)
+        return repo, sha, s
+    yield make
+    for s in made:
+        s.close()
+
+
+def test_no_version_targets_are_what_assetsignore_leaves(tmp_path, cf_site):
+    repo, sha, site = cf_site()
+    exp = lc.expected_from_git(repo, sha, version_file=False)
+    assert sorted(exp['targets']) == sorted(CF_SERVED) and exp['identified_by'] == 'file contents'
+    assert 'version.txt' in lc.expected_from_git(repo, sha)['targets']        # the default is unchanged
+
+
+def test_no_version_all_match_passes(tmp_path, cf_site):
+    repo, sha, site = cf_site()
+    code, rep, out = check(tmp_path, repo, sha, site, '--no-version-file', '--rounds', '2')
+    assert code == 0 and rep['result'] == 'PASS', out
+    assert f'Targets: {len(CF_SERVED)} files' in out and 'not by a version file' in out
+    assert not site.hits('version.txt')
+
+
+def test_no_version_index_is_read_at_the_root(tmp_path, cf_site):
+    """Cloudflare answers /index.html with a redirect to /; the page itself is read at /."""
+    repo, sha, site = cf_site()
+    code, rep, out = check(tmp_path, repo, sha, site, '--no-version-file')
+    assert code == 0, out
+    site.files[''] = b'<html>an older build</html>'
+    code, rep, out = check(tmp_path, repo, sha, site, '--no-version-file')
+    assert code == 1 and rep['content']['targets']['index.html']['state'] == 'mismatch', out
+
+
+def test_no_version_one_file_differs_fails(tmp_path, cf_site):
+    repo, sha, site = cf_site()
+    site.files['src/geography.js'] = b'// an older build'
+    code, rep, out = check(tmp_path, repo, sha, site, '--no-version-file')
+    assert code == 1 and rep['categories'] == ['content-mismatch'], out
+    assert rep['content']['targets']['src/geography.js']['state'] == 'mismatch'
+    code, rep, out = run_tool(tmp_path, '--expect', sha, '--url', site.url, '--repo', str(repo), '--interval', '0',
+                              '--no-browser', '--no-version-file')
+    assert code == 2 and 'unconfirmed mismatch' in out                       # default window, as for version hosts
+
+
+def test_no_version_missing_file_fails(tmp_path, cf_site):
+    repo, sha, site = cf_site()
+    del site.files['assets/icon.svg']
+    code, rep, out = check(tmp_path, repo, sha, site, '--no-version-file')
+    assert code == 1 and rep['content']['targets']['assets/icon.svg']['state'] == 'mismatch', out
+    assert [o['value'] for o in rep['rounds'][0]['observations'] if o['target'] == 'assets/icon.svg'] == ['MISSING']
+
+
+def test_no_version_needs_assetsignore_and_git_source(tmp_path, site_for):
+    repo, sha, site = site_for(game_files())
+    code, rep, out = check(tmp_path, repo, sha, site, '--no-version-file')
+    assert code == 3 and '.assetsignore' in out
+    code, rep, out = check(tmp_path, repo, sha, site, '--no-version-file', '--source', 'github')
+    assert code == 3 and '--source git' in out
+
+
+def test_assetsignore_rules():
+    pats = lc.parse_assetsignore('# c\n\n.git\ndocs\n/top.txt\n*.md\nsrc/skip/\n')
+    ign = lambda p: lc.assets_ignored(p, pats)
+    assert all(map(ign, ['.git/config', 'docs/a/b.md', 'top.txt', 'x/y.md', 'src/skip/a.js']))
+    assert not any(map(ign, ['index.html', 'src/a.js', 'data/b.json', 'sub/top.txt', 'src/skipper/a.js']))
+    with pytest.raises(lc.UsageError):
+        lc.parse_assetsignore('!keep')
+
+
 # ---------------------------------------------------------------- expected sources and targets (T1, T2, G1-G7, S6)
 
 def test_targets_follow_the_commit(tmp_path):                                                    # T1

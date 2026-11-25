@@ -123,6 +123,7 @@ python3 tools/live_check.py --expect <sha> --source github                      
 
 `--expect` is required and must be a full SHA; the tool never compares against a branch. What it checks:
 
+0. **Hosts without `version.txt`** (Cloudflare, `https://stockholmsliv.app/`): `--no-version-file` (implied for that host, `--source git` only). The targets are every file of the commit that `.assetsignore` does not exclude, `index.html` is read at `/` (Cloudflare redirects `/index.html`), there is no `version.txt` target, and the report says the commit is identified by file contents.
 1. **Files.** The expected list comes from the commit itself (`index.html`, every file under `data/`, and `version.txt` = the SHA and a newline, as the Deploy workflow writes it), from the local repository (`git ls-tree`, read-only) or with `--source github` from the Git Trees API. Each live file is compared by its Git blob ID over the exact bytes served (gzip in transit removed, gzip files kept).
 2. **Rounds and the CDN.** GitHub Pages caches files for 10 minutes (`max-age=600`), so a difference counts as a confirmed mismatch only if it stays the same over at least that window (`--rounds`, `--interval`). A difference seen once, or edges disagreeing, is INCONCLUSIVE, not FAIL. Every round is reported.
 3. **Data.** The bytes that match are checked with exactly the Deploy workflow's rules for `b`, `r` and `m` (`test_live_check.py` fails if the two ever differ).

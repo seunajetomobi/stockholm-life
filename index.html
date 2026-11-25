@@ -1490,6 +1490,11 @@ function slotRestart(id,typed){let e=slotBusy()||slotGate();if(e)return e;const 
   SV.mode='superseded';clearTimeout(SV.timer);SV.timer=0;// the index now names this slot, so this tab must stop writing
   try{localStorage.removeItem(slotKey(id));if(id===1)localStorage.removeItem(SAVE_OLD);if(localStorage.getItem(slotKey(id))!==null||(id===1&&localStorage.getItem(SAVE_OLD)!==null))return 'This slot could not be cleared. Reload the page; your life is still there.'}catch(x){return 'This slot could not be cleared. Reload the page; your life is still there.'}
   if(b.k)savePrune(slotKey(id)+'-before-replace-',SLOT_KEEP);location.reload();return null}
+// a new life from the title page over the life being played (the form then replaces it in this slot): that life is saved
+// and read back, then a verified before-replace copy is kept, as Start over does. Returns why not, or ''.
+function lifeReplaceCopy(){if(!S||!S.flags||!S.flags.started)return '';let e=slotBusy()||slotGate();if(e)return e;e=slotFlush();if(e)return e;
+  const b=slotBackup(SL.id,'before-replace');if(!b.ok)return 'Storage is full, so a copy of this life could not be made first. Nothing was changed.';
+  if(b.k)savePrune(slotKey(SL.id)+'-before-replace-',SLOT_KEEP);return ''}
 // put a kept copy back: it must be a readable life, the slot's current content is copied first (before-restore), and the copy chosen is never changed
 function slotRestore(id,bk){let e=slotGate();if(e)return e;const bs=slotBackups(id).find(x=>x.k===bk);if(!bs||!bs.ok)return 'This copy cannot be restored.';
   const act=id===SL.id;if(act){e=slotBusy();if(e)return e}
@@ -5736,7 +5741,7 @@ const POSTERS_CITY=[['#f2b705','#1b1b1b','KANELBULLE','Färskt varje morgon','Ba
 }
 
 /* =================== START =================== */
-$('restart').onclick=()=>modal(`<h2>Start over?</h2><p>Your current life in Stockholm will be lost.</p><div class="row2"><button class="btn" id="yes">Start a new life</button><button class="btn ghost" id="no">Keep playing</button></div>`,m=>{m.querySelector('#yes').onclick=()=>{closeModal();intro()};m.querySelector('#no').onclick=closeModal});
+$('restart').onclick=()=>modal(`<h2>Start over?</h2><p>Your current life in Stockholm will be replaced by a new one. A copy is kept first and can be restored from Saves.</p><div class="row2"><button class="btn" id="yes">Start a new life</button><button class="btn ghost" id="no">Keep playing</button></div><p class="note" id="rsErr"></p>`,m=>{m.querySelector('#yes').onclick=()=>{const e=lifeReplaceCopy();if(e){m.querySelector('#rsErr').textContent=e;return}closeModal();intro()};m.querySelector('#no').onclick=closeModal});// as on the title page: a verified copy first, or nothing changes
 
 function loadO(pct){const o=document.getElementById('loadO');if(o)o.style.setProperty('--p',Math.round(pct)+'%')}
 async function loadCity(){
@@ -5787,7 +5792,7 @@ const TXT={
   tooMany:'You have chosen the most you can. Tap one to remove it first.',errGender:'Please select your gender identity.',errTown:'Please write your home town.',
 
 
-  newTitle:'New life?',newBody:'Your current life in Stockholm will be lost. Export a backup from Saves first if you want to keep it.',newYes:'Start a new life',newNo:'Keep playing',
+  newTitle:'New life?',newBody:'Your current life in Stockholm will be replaced by a new one. A copy is kept first and can be restored from Saves.',newYes:'Start a new life',newNo:'Keep playing',
   optTitle:'Options',hints:'Control hints',hintsD:'The line of tips at the bottom of the screen.',tips:'Weather tips',tipsD:'A short message about what to wear when the weather changes.',on:'On',off:'Off',
   setTitle:'Settings',gfx:'Graphics',gfxD:'Low saves battery; High is sharper on a good screen. Applies after a reload.',low:'Low',auto:'Auto',high:'High',live:'Live data',liveD:'Weather, flights and departures from the internet. Off keeps the game offline-friendly.',
   intro:'Introduction',introD:'See the how-to-play slides again on the next new life.',replay:'Replay',saved:'✓ Saved. Graphics and live data apply after a reload.',savedNow:'✓ Saved',replayed:'The introduction will show on your next new life.',
@@ -5826,7 +5831,7 @@ const TXT={
   tooMany:'Du har valt så många du kan. Tryck på en för att ta bort den först.',errGender:'Välj din könsidentitet.',errTown:'Skriv din hemort.',
 
 
-  newTitle:'Nytt liv?',newBody:'Ditt nuvarande liv i Stockholm går förlorat. Exportera en säkerhetskopia under Sparade liv först om du vill behålla det.',newYes:'Starta ett nytt liv',newNo:'Fortsätt spela',
+  newTitle:'Nytt liv?',newBody:'Ditt nuvarande liv i Stockholm ersätts av ett nytt. En kopia sparas först och kan återställas under Sparade liv.',newYes:'Starta ett nytt liv',newNo:'Fortsätt spela',
   optTitle:'Alternativ',hints:'Kontrolltips',hintsD:'Tipsraden längst ned på skärmen.',tips:'Vädertips',tipsD:'Ett kort meddelande om vad du ska ha på dig när vädret ändras.',on:'På',off:'Av',
   setTitle:'Inställningar',gfx:'Grafik',gfxD:'Låg sparar batteri; Hög är skarpare på en bra skärm. Gäller efter omladdning.',low:'Låg',auto:'Auto',high:'Hög',live:'Live-data',liveD:'Väder, flyg och avgångar från internet. Av gör spelet mer offlinevänligt.',
   intro:'Introduktion',introD:'Se bilderna om hur man spelar igen vid nästa nya liv.',replay:'Visa igen',saved:'✓ Sparat. Grafik och live-data gäller efter en omladdning.',savedNow:'✓ Sparat',replayed:'Introduktionen visas vid ditt nästa nya liv.',
@@ -5876,7 +5881,8 @@ function startChoice(fresh){const here=!!(S&&S.flags&&S.flags.started)&&!fresh,o
   titleShow(`<h2>${tt('choose')}</h2>${who?`<div class="resume"><b>${esc2(who.n)}</b><span>${tt('dayN')} ${who.d} · ${kr(who.m)}</span></div>`:''}<div class="btns">${canCont?`<button class="primary" id="cCont">${tt('contLife')}</button>`:''}
     <button ${canCont?'':'class="primary" '}id="cNew">${tt('newLifeGo')}</button><button id="cBack">${tt('back')}</button></div><small id="cNote"></small>`,t=>{
     const c=t.querySelector('#cCont');if(c)c.onclick=()=>{if(here){titleHide();return}const e=slotSwitch(other.id);if(e)t.querySelector('#cNote').textContent=e};
-    t.querySelector('#cNew').onclick=()=>titleGo(()=>newLifeForm(()=>titleGo(()=>startChoice(fresh))));
+    const form=()=>titleGo(()=>newLifeForm(()=>titleGo(()=>startChoice(fresh))));
+    t.querySelector('#cNew').onclick=()=>{if(here)titleGo(()=>titleNewLife(form,titleHide));else form()};// a life is being played: ask first
     t.querySelector('#cBack').onclick=back})}
 function loadScreen(back){
   const all=SLOT_IDS.map(slotInfo),rows=all.filter(r=>r.st!=='empty'),any=rows.length>0;
@@ -5993,6 +5999,7 @@ function newLifeForm(back,step){
       const town=NL.town==='__other'?NL.townText.trim():NL.town;F.homeTown=town;
       if(isSwe){F.nat='Sweden';F.from='Sweden';if(NL.town==='Stockholm'){F.kind='stockholm';F.over=false}else{F.kind='sweden';F.city=NL.town}}
       else{const nm=worldCountry(NL.iso);F.kind='abroad';F.nat=nm;F.from=nm;F.route=0;F.status=NL.status==='eu'?'':NL.status;F.purpose=NL.status==='student'?'study':'work'}
+      const copy=lifeReplaceCopy();if(copy){err.textContent=copy;return}// the life being played is kept as a copy first, or nothing changes
       const go=()=>{titleHide();lifeFromForm(F)};if(!seenIntro())titleGo(()=>introSlides(go));else go()}})}
 
 /* ---------- more menus: accessibility, privacy and my data, help, what's new, install ---------- */
@@ -6069,10 +6076,10 @@ function aboutScreen(back){
     ${row(tt('abType'),'Jost, Barlow Condensed, Familjen Grotesk, IBM Plex Mono (SIL Open Font License)')}
     ${row(tt('abEngine'),'three.js (MIT)')}
     <small>© 2026 Helekt</small><button class="primary" id="abBack">${tt('back')}</button>`,t=>{t.querySelector('#abBack').onclick=back})}
-function titleNewLife(){titleShow(`<h2>${tt('newTitle')}</h2><p class="tag">${tt('newBody')}</p>
-  <button class="primary" id="tYes">${tt('newYes')}</button><button id="tNo">${tt('newNo')}</button>`,t=>{
-  t.querySelector('#tNo').onclick=()=>titleGo(()=>titleMain(false));
-  t.querySelector('#tYes').onclick=()=>{const r=$('restart');if(r)r.click();titleHide()}})}
+// "Start a new life" while a life is being played: yes opens the form, no goes back to that life
+function titleNewLife(yes,no){titleShow(`<h2>${tt('newTitle')}</h2><p class="tag">${tt('newBody')}</p>
+  <div class="btns"><button class="primary" id="tYes">${tt('newYes')}</button><button id="tNo">${tt('newNo')}</button></div>`,t=>{
+  t.querySelector('#tNo').onclick=no;t.querySelector('#tYes').onclick=yes})}
 function introSlides(done,fromTitle){
   let i=0;const draw=()=>{const L=tt('slides'),last=i===L.length-1,[h,b]=L[i];
     titleShow(`<div class="slides"><h3>${h}</h3><p>${b}</p></div><div class="dots">${L.map((_,k)=>`<i class="${k===i?'on':''}"></i>`).join('')}</div>

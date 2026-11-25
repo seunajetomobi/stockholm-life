@@ -10,7 +10,7 @@ Status: in progress on branch `feat/gfx-lighting` (approved by the owner 2026-11
   night), so lamps, lit windows and signs glow after dark and the bright daytime sky does not.
 - **Loaded on demand** from the same jsDelivr version as the other three.js add-ons (`three@0.128.0/examples/js/`,
   MIT licence), about 90 KB. If any file fails, the game logs one console warning and keeps the plain look.
-- **Off switch:** localStorage `sl-gfx` = `0`. A Settings toggle follows once the title-page menus (#56) have merged.
+- **Off switch:** localStorage `sl-gfx` = `0`. The Settings screen (quality slider) is separate and does not control it yet; a toggle is a later slice.
 - **Only the outdoor city.** Interiors, the train ride and the arrival cutscene render as before.
 
 ## Checked facts behind the design

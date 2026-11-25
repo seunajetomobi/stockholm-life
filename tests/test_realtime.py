@@ -61,3 +61,16 @@ def test_fake_clock_needs_the_developer_flag():
     q = "'?fakeclock=2026-12-24T12:00:00Z'"
     r = node(f"console.log(JSON.stringify([R.fakeNow({q},st({{}})),R.fakeNow({q},st({{'stockholmsliv-dev':'1'}})),R.fakeNow('?fakeclock=junk',st({{'stockholmsliv-dev':'1'}})),R.fakeNow('',st({{'stockholmsliv-dev':'1'}}))]))")
     assert r == [None, 1798113600000, None, None]
+
+
+@pytest.mark.parametrize('search,store,dflt,want', [
+    ('', '{}', 'true', True), ('', '{"stockholmsliv-realtime":"0"}', 'true', False), ('?realtime=0', '{}', 'true', False),
+    ('?realtime=1', '{"stockholmsliv-realtime":"0"}', 'true', True), ('', '{"stockholmsliv-realtime":"1"}', 'false', True),
+    ('', '{}', 'false', False), ('', '{"stockholmsliv-realtime":"yes"}', 'true', True)])
+def test_default_on_and_explicit_off(search, store, dflt, want):
+    assert node(f"console.log(R.enabled({json.dumps(search)},st({store}),{dflt}))") is want
+
+
+def test_default_survives_missing_or_broken_storage():
+    r = node("console.log(JSON.stringify([R.enabled('',null,true),R.enabled('',{getItem(){throw new Error('x')}},true),R.enabled('?realtime=0',null,true)]))")
+    assert r == [True, True, False]

@@ -2964,7 +2964,8 @@ function buildWorld(){
   const GS=D.gamlastan,SO=D.sodermalm,OS=D.ostermalm,KI=D.kista;
   function bColor(ti,ci,seedv,x,z,h){const T=CITY.b.types[ti],col=CITY.b.cols[ci];
     let wall=null,roof,glass=false;
-    if(col){const n=col.toLowerCase().trim();if(n in OSMCOL)wall=OSMCOL[n]===null?null:C(OSMCOL[n]);else{try{wall=C(n.startsWith('#')||/^[a-z]+$/.test(n)?n:'#'+n)}catch(e){wall=null}}
+    if(col){const n=col.toLowerCase().trim();if(n in OSMCOL)wall=OSMCOL[n]===null?null:C(OSMCOL[n]);else{// only a real colour: a tag like "4" would become "#4", or "mustard" is no CSS name, and THREE.Color warns about both (KNOWN_ISSUES L11)
+      const nm=n in THREE.Color.NAMES;if(nm||/^#?([0-9a-f]{3}|[0-9a-f]{6})$/.test(n)){try{wall=C(nm||n[0]==='#'?n:'#'+n)}catch(e){wall=null}}}
       // painted render, not neon: keep tagged colours within what Stockholm facades actually look like
       if(wall){const hsl={};wall.getHSL(hsl);wall.setHSL(hsl.h,Math.min(hsl.s,0.55),clamp(hsl.l,0.3,0.86))}}
     const pick=a=>a[seedv%a.length],r2=(seedv>>>8)%100;

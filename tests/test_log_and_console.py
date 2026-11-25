@@ -59,3 +59,18 @@ def test_unknown_callsign_is_asked_once_and_quietly(browser):
         ctx.close()
 
 
+def test_no_unknown_colour_warning(browser):
+    """L11: a building colour tag such as "4" became "#4" and THREE.Color logged "Unknown color #4". Every colour tag in the city data is run through bColor."""
+    ctx, page, err = game.new_page(browser, hook=True)
+    msgs = []
+    page.on('console', lambda m: msgs.append(m.text))
+    try:
+        game.boot(page)
+        n = page.evaluate("() => { const T = window.__T, c = T.CITY.b.cols; for (let i = 0; i < c.length; i++) T.bColor(0, i, 7, 0, 0, 10); return c.length }")
+        assert n > 100, n
+        assert [m for m in msgs if 'Unknown color' in m] == [], msgs
+        start(page)
+        assert [m for m in msgs if 'Unknown color' in m] == [], msgs
+        assert err.uncaught == []
+    finally:
+        ctx.close()

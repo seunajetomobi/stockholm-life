@@ -24,7 +24,7 @@ def chrome_path():
 # at boot with a ReferenceError naming it.
 HOOK_NAMES = ['incomingCall', 'showTitle', 'render', 'isOpen', 'openDay', 'csEnter', 'CS_DOORS', 'ptNext', 'csClk', 'csLine', 'promptSet', 'PRM',
               'jrStart', 'jrSit', 'jrStand', 'jrCam', 'jrArm', 'jrBlockers', 'jrAlight', 'jrSkipNext', 'jrSkipStop',
-              'icam', 'av', 'camera', 'controls', 'scene', 'ring', 'IW', 'IH', 'HALF', 'CARM', 'zcOf', 'DOORZ', 'JRC']
+              'bColor', 'CITY', 'icam', 'av', 'camera', 'controls', 'scene', 'ring', 'IW', 'IH', 'HALF', 'CARM', 'zcOf', 'DOORZ', 'JRC']
 HOOK_LIVE = ['CS', 'JR', 'JRS', 'avHidden']  # reassigned during play, so read through getters
 # The rules layer for tests/test_save_safety.py. Names missing from an older index.html read as null, so the
 # negative control (SL_INDEX_HTML=<baseline>) still boots and the tests fail on behaviour, not on the hook.

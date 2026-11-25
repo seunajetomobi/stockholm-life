@@ -2765,7 +2765,7 @@ function render(){try{if(S){renderTodo();badges();renderAbout()}}catch(e){}
     b.onclick=()=>doAct(a);box.appendChild(b)});
   $('papers').innerHTML=[...papers(),{s:canDrive()?'ok':'todo',l:canDrive()?'OK':'—',n:'Driving licence',w:licText()},{s:S.addr?'ok':'todo',l:S.addr?'OK':'—',n:'Home address',w:addrText()},...Object.keys(S.certs).map(c=>({s:'ok',l:'✓',n:'Certificate',w:(Object.values(COURSES).find(x=>x.cert===c)||{name:c}).name}))].map(p=>`<li><span class="st ${p.s}">${p.l}</span><b>${p.n}</b><small>${p.w}</small></li>`).join('');
   $('goals').innerHTML=`<li class="${aspirationDone()?'done':''}"><span class="box"></span><span><b>Life goal:</b> ${ASPIRATIONS[S.aspiration].l}</span><span class="p">${S.points} pts</span></li>`+(S.aspiration==='stockholmer'?'':`<li><span></span><span style="font-size:12px">${ASPIRATIONS[S.aspiration].d}</span><span></span></li>`)+goals().map(g=>`<li class="${g.done?'done':''}"><span class="box"></span><span>${g.l}</span><span class="p">${g.p}</span></li>`).join('')+S.wants.map(w=>{const W8=WANTS.find(x=>x[0]===w.id);return `<li class="${w.done?'done':''}"><span class="box"></span><span>Today: ${W8?W8[1]:w.id}</span><span class="p">+10</span></li>`}).join('');
-  $('log').innerHTML=S.log.slice(0,30).map(e=>`<li><time>d${e.d} ${hhmm(e.h)}</time><span class="${e.cls}">${e.t}</span></li>`).join('');
+  $('log').innerHTML=S.log.slice(0,30).map(e=>`<li><time>d${e.d} ${hhmm(e.h)}</time><span class="${esc2(e.cls)}">${esc2(e.t)}</span></li>`).join('');
   W&&W.refresh();renderNeeds();renderGuide();renderPlaces();renderSOS();if(TAB==='civic')renderCivic();
 }
 

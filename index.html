@@ -605,6 +605,26 @@ h2.hero{font-size:34px;background:linear-gradient(90deg,var(--sweblue),#3a86ff 4
 .dep.fl{border:0;width:100%;text-align:left;cursor:pointer;font:inherit}.dep .dst{font-size:13.5px;line-height:1.25}.dep .dst small{display:block;color:#9fb0bd;font-size:11px}.dep .tm{font:600 14px "IBM Plex Mono",monospace;color:var(--amber);text-align:right}.dep .tm small{display:block}.dep .late{color:#ff8a80;font-size:11px}.dep.can .dst,.dep.can .tm{text-decoration:line-through;opacity:.6}
 .devs p{margin:6px 0 0;font-size:12px;color:var(--warn)}
 .wxdays{width:100%;border-collapse:collapse;font-size:12.5px}.wxdays td{padding:4px 3px;border-top:1px solid var(--line)}.wxdays td:nth-child(2){font-size:16px}.wxdays td:last-child,.wxdays td:nth-child(5){color:var(--muted);text-align:right}
+/* Inside buildings and the arrivals hall: one layout for every screen size, so nothing overlaps.
+   Top: the board, then the Leave bar, then the arrival guide (right-hand column; the full width on a phone).
+   Bottom: joystick on the left, zoom buttons on the right, the action prompt between them, the dock under all of it. */
+body.inside.arr .next,body.inside.arr .places,body.inside.arr #hint,body.inside.arr .hint,body.inside.arr .carechip,body.inside.arr .sos112{display:none!important}
+body.inside.arr{--apTop:calc(var(--boardH,74px) + 84px + env(safe-area-inset-top,0px));--apLimit:230px}
+body.inside.arr .apsteps{top:var(--apTop)}
+body.inside.arr .apsteps .apbody{max-height:max(96px,calc(100dvh - var(--apTop) - var(--apLimit) - 84px));overflow:auto;overscroll-behavior:contain}
+body.inside.arr .inact{bottom:calc(100px + env(safe-area-inset-bottom,0px));max-width:calc(100vw - 2*(var(--gut,16px) + 130px));white-space:normal;text-align:center;overflow:visible}
+body.inside.arr .toast{bottom:calc(166px + env(safe-area-inset-bottom,0px))}
+@media (max-width:899px){body.inside.arr{--apLimit:290px}}
+@media (max-height:700px){body.inside.arr{--apTop:calc(var(--boardH,74px) + 76px + env(safe-area-inset-top,0px));--apLimit:384px}body.inside.arr .apsteps .apbody{max-height:max(0px,calc(100dvh - var(--apTop) - var(--apLimit) - 84px))}}
+@media (max-width:640px){body.inside.arr{--apLimit:370px}
+  body.inside.arr .apsteps{left:8px;right:8px;width:auto;max-width:none}
+  body.inside.arr .inact{bottom:calc(292px + env(safe-area-inset-bottom,0px));max-width:calc(100vw - 32px);padding:10px 16px;font-size:14px}
+  body.inside.arr .toast{bottom:calc(366px + env(safe-area-inset-bottom,0px))}}
+
+.officer{border-left:4px solid #1c2b44;background:color-mix(in srgb,#1c2b44 10%,transparent);padding:8px 12px;border-radius:8px;margin:6px 0 10px}.officer b{font:700 12px var(--display);letter-spacing:.08em;text-transform:uppercase;color:#1c2b44}.officer p{margin:4px 0 0;font-style:italic}
+.passbook{background:linear-gradient(135deg,#7a1f2b,#4d1019);color:#f4e7c1;border-radius:10px;padding:10px 12px;margin:0 0 8px;box-shadow:0 6px 16px rgba(0,0,0,.25)}.passbook .pbh{display:flex;justify-content:space-between;font:700 12px var(--display);letter-spacing:.14em;text-transform:uppercase}
+.passbook .pbr{display:grid;grid-template-columns:64px 1fr;gap:12px;margin-top:8px;align-items:start}.passbook .pbph{width:64px;height:78px;border-radius:6px;background:#e9dcb4;color:#4d1019;display:grid;place-items:center;font:700 34px var(--display)}
+.passbook small{display:block;font-size:10px;opacity:.7;margin-top:4px}.passbook b{display:block;font:600 14px var(--body)}
 
 /* a ringing phone: the icon shakes and pulses rings; the Phone button in the dock shakes too */
 .ringico{position:relative;width:64px;height:64px;margin:0 auto 10px;border-radius:50%;background:linear-gradient(135deg,#2bd96b,#119a48);display:grid;place-items:center}
@@ -2448,9 +2468,15 @@ function customsChannel(ch){if(!S.flags.bags){toast('Collect your suitcase from 
   custFinish(res,'check')}
 function airportSpot(what){if(!S.flags.arlanda)return;
   if(what==='passport'){if(S.schengen){toast('Schengen arrival: no passport control here');return}if(S.flags.passport){toast('Already through passport control');return}
-    const lane=['eu','nordic','se'].includes(S.fromGroup)?'the EU/EEA lane':'the lane for other passports';
-    const msg=S.fromGroup==='noneu'?`In ${lane}, Gränspolisen checks your passport and your residence permit decision for ${S.bg==='student'?'studies':'work'}. A stamp, and "Välkommen till Sverige."`:`In ${lane}, Gränspolisen glances at your passport. "Välkommen."`;
-    S.flags.passport=1;spendTime(S.fromGroup==='noneu'?0.5:0.2);log('Passport control: '+msg,'plus');toast('Passport checked ✓');W.openGate('passport');save();render();return}
+    const lane=['eu','nordic','se'].includes(S.fromGroup)?'the EU/EEA lane':'the lane for other passports';const noneu=S.fromGroup==='noneu';
+    const reason=S.bg==='student'?'studies':S.bg==='asylum'?'asylum':'work';
+    const msg=noneu?`In ${lane}, Gränspolisen checks your passport and your residence permit decision for ${reason}. A stamp, and "Välkommen till Sverige."`:`In ${lane}, Gränspolisen glances at your passport. "Välkommen."`;
+    const nat=(S.me&&S.me.nat)||S.from||'',fl=(COUNTRIES.find(c=>c[0]===nat)||['',''])[1],num=String(([...((S.name||'')+nat)].reduce((h,ch)=>(h*31+ch.charCodeAt(0))>>>0,7)%90000000)+10000000);
+    const done=()=>{S.flags.passport=1;spendTime(noneu?0.5:0.2);log('Passport control: '+msg,'plus');toast('Passport checked ✓');W.openGate('passport');save();render();closeModal()};
+    modal(`<h2>Passport control</h2><div class="officer"><b>Polisen · Gränskontroll</b><p>${noneu?'"Passport, please. And your decision from Migrationsverket."':'"Passport, please."'}</p></div>
+      <div class="passbook"><div class="pbh"><span>${esc2(fl)} ${esc2(nat)}</span><b>PASSPORT</b></div><div class="pbr"><div class="pbph">${esc2((S.name||'?').slice(0,1))}</div><div><small>Surname, given names</small><b>${esc2(S.name||'')}</b><small>Passport no.</small><b>${num}</b><small>Travelling from</small><b>${esc2(S.lastLeg||'abroad')}</b></div></div></div>
+      ${noneu?`<p class="note">You also carry your permit decision for ${reason}.</p>`:''}
+      <div class="row2"><button class="btn" id="hand">Hand over your passport${noneu?' and papers':''}</button><button class="btn ghost" id="no">Not yet</button></div>`,m=>{m.querySelector('#hand').onclick=done;m.querySelector('#no').onclick=closeModal});return}
   if(what==='bags'){if(!S.schengen&&!S.flags.passport){toast('Passport control first');return}if(S.flags.bags){toast('You already have your suitcase');return}S.flags.bags=1;S.suitcase=packSuitcase();
     spendTime(0.3);log('Baggage claim, belt 4: you have your suitcase.','plus');save();render();openSuitcase(true);return}
   if(['green','red','blue'].includes(what)){customsChannel(what);return}
@@ -4128,45 +4154,175 @@ const POSTERS_CITY=[['#f2b705','#1b1b1b','KANELBULLE','Färskt varje morgon','Ba
   function npc(g,model,look,x,z,ry){let o;const keys=Object.keys(MODELS.chars||{});if(keys.length){const tpl=MODELS.chars[model]||MODELS.chars[pickR(keys)];const inst=THREE.SkeletonUtils.clone(tpl);tintModel(inst,look||randomOutfit());
       o=new THREE.Group();const s=new THREE.Group();s.add(inst);s.scale.setScalar(0.078);o.add(s);if(MODELS.clips.Idle){const mx=new THREE.AnimationMixer(inst);const a=mx.clipAction(MODELS.clips.Idle);a.play();a.time=Math.random()*2;IN.mixers.push(mx)}}
     else{o=person(pickR(CLOTHES),AV_S);scene.remove(o)}o.position.set(x,0,z);o.rotation.y=ry||0;g.add(o);IN.col.push([x-0.025,x+0.025,z-0.025,z+0.025]);return o}
-  const HW=0.34,HD=0.25;
-  function buildRoom(kind,p,opts){const g=new THREE.Group();const HT=(HOMES[S&&S.home]||{}).type;const [fl,wl]=kind==='arlanda'?[0xc9ced3,0xeef1f3]:kind==='home'?({andrahand:[0x9c8a74,0xd9d2c4],student:[0xb5a48c,0xeae6dc],parents:[0xa47c55,0xe9dfc9],forstahand:[0xc9a77c,0xf2efe8]}[HT]||RPAL.home||[0xc9a77c,0xf2efe8]):(RPAL[kind]||RPAL.shop);
+  let HW=0.34,HD=0.25;
+  // ---------- Arlanda arrivals hall (Terminal 5), rebuilt: 58 m x 50 m hall + the kerb outside ----------
+  // Layout from the north (planes) to the south (city): gate corridor, passport control (Polisen), baggage hall with belt 4 and
+  // trolleys, customs (Tullverket), the arrivals hall with people waiting, glass doors, the kerb with taxis, coaches and cars.
+  // Research notes and sources: docs/ARRIVAL_HALL.md. Uniform colours are stylised (navy) and not taken from an official source.
+  const AP_BZ=-0.03,AP_Z={pass:-0.46,customs:0.2,doors:0.44,kerb:0.54};
+  function apLabelTex(w,h,draw){return ccnv(w,h,draw)}
+  // Swedish officers: navy uniform and cap. Customs add a yellow hi-vis vest with blue panels and a blue-white check trim, a radio and a
+  // "TULL Customs" sleeve badge; passport control wears the police-style uniform and only the sleeve badge differs (Polisen or Migrationsverket).
+  function apBadge(kind){return apLabelTex(256,256,(q,W,H)=>{q.fillStyle='#10192a';q.fillRect(0,0,W,H);q.strokeStyle='#e0b84a';q.lineWidth=10;q.strokeRect(8,8,W-16,H-16);q.fillStyle='#e0b84a';q.textAlign='center';q.textBaseline='middle';
+      if(kind==='customs'){q.font=`800 70px ${CF}`;q.fillText('TULL',W/2,52);q.font=`700 34px ${CF}`;q.fillText('Customs',W/2,100)}
+      else if(kind==='police'){q.font=`800 64px ${CF}`;q.fillText('POLIS',W/2,52);q.font=`700 30px ${CF}`;q.fillText('Gränspolis',W/2,98)}
+      else{q.font=`800 38px ${CF}`;q.fillText('MIGRATIONS-',W/2,46);q.fillText('VERKET',W/2,88)}
+      q.fillStyle='#d6a52a';q.beginPath();q.arc(W/2,168,34,0,7);q.fill();q.fillStyle='#1d4f91';q.fillRect(W/2-24,176,48,44);q.fillStyle='#e0b84a';q.fillRect(W/2-14,186,28,24)})}
+  function apOfficer(g,kind,x,z,ry,female){
+    const lk=randomOutfit();if(kind==='taxi'){lk.top=0xe3e01c;lk.bottom=0x2b3138}else{lk.top=0x1c2b44;lk.bottom=0x141d2d}
+    const o=npc(g,female?'Suit_Female':'Suit_Male',lk,x,z,ry);if(!AP.H){const bb=new THREE.Box3().setFromObject(o);AP.H=Math.max(0.03,bb.max.y-bb.min.y)}const H=AP.H;
+    if(kind!=='taxi'){const cap=new THREE.Mesh(new THREE.BoxGeometry(0.02,0.006,0.02),inMat(0x0f1826));cap.position.set(0,H+0.001,0);o.add(cap);
+      const brim=new THREE.Mesh(new THREE.BoxGeometry(0.018,0.0015,0.008),inMat(0x0a101a));brim.position.set(0,H-0.0015,0.013);o.add(brim);
+      const cb=new THREE.Mesh(new THREE.BoxGeometry(0.0045,0.0045,0.001),inMat(kind==='customs'?0xe0b84a:0xdfe6ee));cb.position.set(0,H+0.0015,0.0105);o.add(cb);
+      const belt=new THREE.Mesh(new THREE.BoxGeometry(0.0205,0.003,0.0125),inMat(0x0a0f18));belt.position.set(0,H*0.45,0);o.add(belt);
+      const bm=new THREE.MeshBasicMaterial({map:apBadge(kind).t});for(const sx of [-1,1]){const p=new THREE.Mesh(new THREE.PlaneGeometry(0.0058,0.0058),bm);p.position.set(sx*0.0118,H*0.64,0);p.rotation.y=sx*Math.PI/2;o.add(p)}
+      const radio=new THREE.Mesh(new THREE.BoxGeometry(0.0035,0.0055,0.002),inMat(0x1a1d21));radio.position.set(0.0075,H*0.76,0.005);o.add(radio)}
+    if(kind==='customs'){// yellow hi-vis vest with blue side panels and a blue-white check trim
+      const vest=new THREE.Mesh(new THREE.BoxGeometry(0.0215,H*0.3,0.0132),inMat(0xd7f01c));vest.position.set(0,H*0.62,0);o.add(vest);
+      for(const sx of [-1,1]){const pn=new THREE.Mesh(new THREE.BoxGeometry(0.0022,H*0.3,0.0136),inMat(0x1f5fbf));pn.position.set(sx*0.0095,H*0.62,0);o.add(pn)}
+      const tx=apLabelTex(128,32,(q,W,Hh)=>{for(let i=0;i<8;i++){q.fillStyle=i%2?'#ffffff':'#1f5fbf';q.fillRect(i*16,0,16,Hh)}});const tm=new THREE.MeshBasicMaterial({map:tx.t});
+      for(const [zz,r] of [[0.0068,0],[-0.0068,Math.PI]]){const tr=new THREE.Mesh(new THREE.PlaneGeometry(0.0215,0.0035),tm);tr.position.set(0,H*0.5,zz);tr.rotation.y=r;o.add(tr)}
+      const C=apLabelTex(256,96,(q,W,Hh)=>{q.fillStyle='#d7f01c';q.fillRect(0,0,W,Hh);q.fillStyle='#14202c';q.font=`800 70px ${CF}`;q.textAlign='center';q.textBaseline='middle';q.fillText('TULL',W/2,Hh/2+3)});
+      const bk=new THREE.Mesh(new THREE.PlaneGeometry(0.016,0.006),new THREE.MeshBasicMaterial({map:C.t}));bk.position.set(0,H*0.66,-0.0069);bk.rotation.y=Math.PI;o.add(bk)}
+    if(kind==='taxi'){const C=apLabelTex(256,96,(q,W,Hh)=>{q.fillStyle='#e3e01c';q.fillRect(0,0,W,Hh);q.fillStyle='#14181c';q.font=`800 64px ${CF}`;q.textAlign='center';q.textBaseline='middle';q.fillText('TAXI',W/2,Hh/2+3)});
+      const mat=new THREE.MeshBasicMaterial({map:C.t});for(const [ry2,zz] of [[0,0.0105],[Math.PI,-0.0105]]){const p=new THREE.Mesh(new THREE.PlaneGeometry(0.02,0.0075),mat);p.position.set(0,H*0.64,zz);p.rotation.y=ry2;o.add(p)}}
+    const lab={police:'Polisen · Gränskontroll',migration:'Migrationsverket',customs:'Tullverket · Tull',taxi:'Taxi rank officer'}[kind];
+    const sp=textSprite(lab,{fs:26,bg:kind==='taxi'?'rgba(227,224,28,.96)':'rgba(20,32,52,.94)',fg:kind==='taxi'?'#14181c':'#ffffff',scale:0.00016});sp.position.set(0,H+0.022,0);o.add(sp);
+    return o}
+  function apTrolley(){const t=new THREE.Group();const m=inMat(0xaab2b9),d=inMat(0x2b2f33);
+    const base=new THREE.Mesh(new THREE.BoxGeometry(0.016,0.002,0.028),m);base.position.set(0,0.006,0);t.add(base);
+    const back=new THREE.Mesh(new THREE.BoxGeometry(0.016,0.012,0.001),m);back.position.set(0,0.012,-0.0135);t.add(back);
+    for(const sx of [-0.007,0.007]){const bar=new THREE.Mesh(new THREE.BoxGeometry(0.001,0.012,0.001),m);bar.position.set(sx,0.012,-0.0135);t.add(bar);const w=new THREE.Mesh(new THREE.BoxGeometry(0.003,0.004,0.004),d);w.position.set(sx,0.002,-0.011);t.add(w);const w2=w.clone();w2.position.z=0.011;t.add(w2)}
+    const handle=new THREE.Mesh(new THREE.BoxGeometry(0.018,0.0015,0.003),d);handle.position.set(0,0.0175,-0.0155);t.add(handle);return t}
+  function apCarry(on){ // backpack and a cabin bag on the avatar while you are travelling
+    if(!on){if(av.userData.carry){av.remove(av.userData.carry);av.userData.carry=null}return}
+    if(av.userData.carry)return;const c=new THREE.Group();
+    const pack=new THREE.Mesh(new THREE.BoxGeometry(0.016,0.022,0.009),inMat(0x2f5d50));pack.position.set(0,0.026,-0.0105);c.add(pack);
+    const pk=new THREE.Mesh(new THREE.BoxGeometry(0.01,0.008,0.003),inMat(0x1e3d34));pk.position.set(0,0.02,-0.016);c.add(pk);
+    for(const sx of [-0.006,0.006]){const st=new THREE.Mesh(new THREE.BoxGeometry(0.0015,0.02,0.0015),inMat(0x1b1b1b));st.position.set(sx,0.027,-0.0055);c.add(st)}
+    const hb=new THREE.Mesh(new THREE.BoxGeometry(0.008,0.012,0.016),inMat(0x37474f));hb.position.set(-0.016,0.008,0.002);c.add(hb);
+    const hh=new THREE.Mesh(new THREE.BoxGeometry(0.004,0.002,0.002),inMat(0x111111));hh.position.set(-0.016,0.0155,0.002);c.add(hh);
+    av.add(c);av.userData.carry=c}
+  function apTrolleyToggle(rx){const rack=AP.racks&&AP.racks[rx];// rx: the rack the player stands at
+    if(AP.trolley){av.remove(AP.trolley);AP.trolley=null;if(rack){const i=rack.length,t=apTrolley();t.position.set(rx,i*0.0025,-0.2+i*0.0055);AP.g.add(t);rack.push(t)}toast('Trolley returned');return}
+    if(rack){if(!rack.length){toast('No trolleys left here. Try the other rack.');return}AP.g.remove(rack.pop())}
+    const t=apTrolley();t.position.set(0,0,0.034);av.add(t);AP.trolley=t;if(S.flags.bags)apBagOnTrolley();toast('You take a luggage trolley')}
+  function apBagOnTrolley(){if(!AP.trolley||AP.trolley.userData.bag)return;const b=new THREE.Mesh(new THREE.BoxGeometry(0.012,0.016,0.018),inMat(0x2c4a6e));b.position.set(0,0.0165,0.002);AP.trolley.add(b);AP.trolley.userData.bag=b}
+  function apHandOut(){const free=AP.crowd.filter(c=>!c.has);if(!free.length)return;const c=pickR(free);c.has=true;
+    const b=new THREE.Mesh(new THREE.BoxGeometry(0.012,0.016,0.018),inMat(pickR(BAGC)));b.position.set(c.x+(c.x<0?0.016:-0.016),0.008,c.z);b.rotation.y=Math.random()*3;AP.g.add(b)}
+  function apVehicle(kind,col){const v=new THREE.Group();const dk=inMat(0x1d2024);
+    if(kind==='bus'){const body=new THREE.Mesh(new THREE.BoxGeometry(0.24,0.046,0.052),inMat(col));body.position.y=0.027;v.add(body);
+      const win=new THREE.Mesh(new THREE.BoxGeometry(0.236,0.016,0.054),new THREE.MeshLambertMaterial({color:0x2a3a4a}));win.position.y=0.037;v.add(win);
+      const C=apLabelTex(512,128,(q,W,H)=>{q.fillStyle='#' +col.toString(16).padStart(6,'0');q.fillRect(0,0,W,H);q.fillStyle='#fff';q.font=`800 54px ${CF}`;q.textAlign='center';q.textBaseline='middle';q.fillText('FLYGBUSSARNA',W/2,H*0.36);q.font=`600 34px ${CF}`;q.fillText('Stockholm City · Cityterminalen',W/2,H*0.76)});
+      const mat=new THREE.MeshBasicMaterial({map:C.t});for(const sz of [1,-1]){const p=new THREE.Mesh(new THREE.PlaneGeometry(0.2,0.0125),mat);p.position.set(0,0.0125,sz*0.0262);p.rotation.y=sz>0?0:Math.PI;v.add(p)}
+      for(const sx of [-0.08,0.08])for(const sz of [-0.022,0.022]){const w=new THREE.Mesh(new THREE.BoxGeometry(0.014,0.014,0.006),dk);w.position.set(sx,0.007,sz);v.add(w)}v.scale.set(1.45,1.6,1.45);v.userData.len=0.26*1.45}
+    else{const body=new THREE.Mesh(new THREE.BoxGeometry(0.09,0.014,0.036),inMat(col));body.position.y=0.011;v.add(body);
+      const cab=new THREE.Mesh(new THREE.BoxGeometry(0.046,0.013,0.032),new THREE.MeshLambertMaterial({color:0x2a3a4a}));cab.position.set(-0.004,0.0245,0);v.add(cab);
+      for(const sx of [-0.028,0.028])for(const sz of [-0.016,0.016]){const w=new THREE.Mesh(new THREE.BoxGeometry(0.012,0.012,0.005),dk);w.position.set(sx,0.006,sz);v.add(w)}
+      if(kind==='taxi'){const s=new THREE.Mesh(new THREE.BoxGeometry(0.014,0.004,0.008),new THREE.MeshBasicMaterial({color:0xfff1a8}));s.position.set(-0.004,0.033,0);v.add(s)}v.scale.set(1.25,1.25,1.25);v.userData.len=0.1*1.25}
+    return v}
+  // Vehicles keep to two lanes. Lane 'k' (next to the kerb) runs west and is where cars, taxis and coaches stop (right-hand traffic: the kerb is on the right).
+  // Lane 'o' runs east for through traffic. Every vehicle keeps a safe gap to the one ahead of it in its lane and waits behind it.
+  // a vehicle may enter its lane only where no other vehicle in that lane overlaps it, ahead or behind (two timers can end in the same tick)
+  function apClear(v){return AP.veh.every(o=>o===v||o.lane!==v.lane||o.mode==='gone'||Math.abs(o.g.position.x-v.g.position.x)>=(v.g.userData.len+o.g.userData.len)/2+0.03)}
+  function apAhead(v){let best=1e9;for(const o of AP.veh){if(o===v||o.lane!==v.lane||o.mode==='gone')continue;const d=(o.g.position.x-v.g.position.x)*v.dir;if(d>0){const gap=d-(v.g.userData.len+o.g.userData.len)/2-0.03;if(gap<best)best=gap}}return best}
+  function apVehTick(dt){const OUT=HW+0.5;dt=Math.min(dt,0.1);
+    for(const v of AP.veh){v.t-=dt;const g=v.g,sp=v.sp||0.06;
+      const drive=()=>{g.position.x+=v.dir*Math.min(sp*dt,Math.max(0,apAhead(v)))};
+      if(v.mode==='wait'){if(v.t<=0)v.mode='leave'}
+      else if(v.mode==='leave'||v.mode==='pass'){drive();if(Math.abs(g.position.x)>OUT){v.mode='gone';v.t=5+Math.random()*16}}
+      else if(v.mode==='gone'){if(v.t<=0){const sx=-v.dir*OUT;g.position.x=sx;if(apAhead(v)>0.1&&apClear(v)){v.mode=v.stall==null?'pass':'arrive'}else{g.position.x=-v.dir*(OUT+1);v.t=1.5}}}
+      else if(v.mode==='arrive'){drive();if((v.dir>0&&g.position.x>=v.stall)||(v.dir<0&&g.position.x<=v.stall)){g.position.x=v.stall;v.mode='wait';v.t=10+Math.random()*25}}}}
+  function buildArrivalHall(g){
+    const nonS=!(S&&S.schengen);IN.gates={};apReset();AP.crowd=[];AP.veh=[];AP.trolley=null;AP.H=0;AP.g=g;
+    const tape=(x,z,w)=>inBox(g,w,0.012,0.006,0xd32f2f,x,z,0.03,true);
+    // ground: terminal floor, the kerb and the road outside
+    inBox(g,HW*2,0.003,HD-AP_Z.doors+0.02,0x3b4047,0,(AP_Z.doors+HD)/2,0);inBox(g,HW*2,0.004,0.018,0xaeb4ba,0,AP_Z.kerb-0.03,0);
+    for(let i=-8;i<=8;i++)inBox(g,0.06,0.001,0.004,0xffffff,i*0.1,AP_Z.kerb+0.13,0.003,true);inBox(g,HW*2,0.001,0.002,0xf2c94c,0,AP_Z.kerb+0.025,0.001,true);
+    inBox(g,HW*2,0.012,0.006,0x6f7a84,0,HD+0.004,0);
+    // welcome signs on the north wall
+    apSign(g,['Välkommen till Stockholm','Welcome to Stockholm'],0.4,0.07,0,0.12,-HD+0.006,0,{bg:'#0b3a6e',fg:'#ffffff'});
+    apSign(g,['Ankomst · Arrival '+apFlight().no,'från · from '+((S&&S.lastLeg)||'abroad')],0.2,0.04,0.45,0.075,-HD+0.006,0,{small:1});
+    // ---- passport control (Polisen): eight booths, the gate in the middle; flights from Schengen walk straight through
+    const bxL=[-0.72,-0.6,-0.48,-0.36],bxR=[0.36,0.48,0.6,0.72],zb=AP_Z.pass;
+    if(nonS){solid(g,0.54,0.04,0.014,0x78909c,-0.54,zb+0.012);solid(g,0.54,0.04,0.014,0x78909c,0.54,zb+0.012);
+      for(const x of [...bxL,...bxR]){solid(g,0.07,0.05,0.03,0x37474f,x,zb+0.03);inBox(g,0.05,0.012,0.003,0x6fc3e8,x,zb+0.0155,0.052,true)}
+      bxL.slice(1).concat(bxR.slice(0,3)).forEach((x,i)=>apOfficer(g,i%3===2?'migration':'police',x,zb+0.055,Math.PI,i%2===1));
+      apSign(g,['Passkontroll','Passport control'],0.26,0.05,0,0.118,zb-0.02,0,{icon:'pass',back:1});apSign(g,['EU · EES · CH'],0.16,0.03,-0.54,0.088,zb-0.02,0,{small:1,back:1});apSign(g,['Alla pass · All passports'],0.18,0.03,0.54,0.088,zb-0.02,0,{small:1,back:1});
+      const b=[-0.1,0.1,zb-0.002,zb+0.03];IN.col.push(b);IN.gates.passport={c:[b],m:[tape(0,zb+0.01,0.2)]};spot(0,zb-0.07,'Passport control',()=>airportSpot('passport'),0.1);
+      // queue behind the booths: people waiting between tape posts
+      for(const sx of [-1,1])for(let i=0;i<7;i++){const x=sx*(0.2+(i%3)*0.13),z=zb-0.09-Math.floor(i/3)*0.06;npc(g,null,null,x,z,0)}
+      for(const sx of [-1,1])for(let i=0;i<5;i++){inBox(g,0.003,0.016,0.003,0x37474f,sx*(0.18+i*0.12),zb-0.05,0);inBox(g,0.003,0.016,0.003,0x37474f,sx*(0.18+i*0.12),zb-0.21,0)}}
+    else apSign(g,['Schengen · ingen passkontroll','No passport control'],0.3,0.05,0,0.098,zb,0,{bg:'#1b5e20',fg:'#ffffff',back:1});
+    // ---- baggage hall: belt 4 (long racetrack), belts 3 and 5 at the walls, waiting passengers, trolley racks
+    const bz=AP_BZ;inBox(g,2*(BL+BR)+0.02,0.014,2*BR+0.025,0x2b2f33,0,bz,0);inBox(g,2*(BL+BR),0.004,2*BR+0.008,0x3c4146,0,bz,0.014);inBox(g,2*BL,0.026,0.022,0xaab2b9,0,bz,0);
+    IN.col.push([-(BL+BR+0.012),BL+BR+0.012,bz-BR-0.016,bz+BR+0.016]);
+    inBox(g,0.03,0.05,0.03,0x5e666e,-BL-BR-0.025,bz-0.04,0);apSign(g,['4'],0.03,0.03,-BL-BR-0.025,0.065,bz-0.0255,0,{big:1,back:1});
+    AP.beltC=ccnv(512,256);{const m=new THREE.MeshBasicMaterial({map:AP.beltC.t});for(const ry of [0,Math.PI]){const p=new THREE.Mesh(new THREE.PlaneGeometry(0.15,0.075),m);p.position.set(0,0.14,bz+(ry?-0.001:0.001));p.rotation.y=ry;g.add(p)}inBox(g,0.003,0.04,0.003,0x5e666e,0,bz,0)}
+    for(const [bx,n] of [[-0.7,'3'],[0.7,'5']]){inBox(g,0.1,0.012,0.3,0x2b2f33,bx,-0.04,0);inBox(g,0.08,0.004,0.28,0x3c4146,bx,-0.04,0.012);IN.col.push([bx-0.06,bx+0.06,-0.2,0.12]);
+      apSign(g,[n],0.04,0.04,bx,0.07,-0.2,0,{big:1,back:1});for(let i=0;i<4;i++){const b=new THREE.Mesh(new THREE.BoxGeometry(0.012,0.014,0.018),inMat(pickR(BAGC)));b.position.set(bx,0.023,-0.15+i*0.07);b.rotation.y=Math.random()*3;g.add(b)}
+      for(let i=0;i<4;i++)npc(g,null,null,bx+(bx<0?0.075:-0.075),-0.15+i*0.08,bx<0?Math.PI/2:-Math.PI/2)}
+    AP.boardC=ccnv(768,448);{const p=new THREE.Mesh(new THREE.PlaneGeometry(0.16,0.093),new THREE.MeshBasicMaterial({map:AP.boardC.t}));p.position.set(HW-0.007,0.075,0.2);p.rotation.y=-Math.PI/2;g.add(p);inBox(g,0.006,0.1,0.17,0x111417,HW-0.004,0.2,0.026)}
+    spot(HW-0.06,0.2,'Arrivals screen',()=>apBoardModal(),0.06);
+    apSign(g,['Bagage · Baggage claim'],0.18,0.034,0,0.092,-0.17,0,{icon:'bag',back:1});
+    // people waiting at belt 4, some with trolleys, with gaps so you can stand at the belt
+    const slots=[];for(let i=0;i<9;i++){slots.push([-0.36+i*0.09,bz+BR+0.05,Math.PI]);slots.push([-0.36+i*0.09+0.04,bz-BR-0.05,0])}
+    slots.forEach(([x,z,ry],i)=>{if(i%5===4)return;if(Math.abs(x)<0.035&&z>bz)return;const o=npc(g,null,null,x,z,ry);const c={x,z,has:i%3===0};AP.crowd.push(c);
+      if(c.has){if(i%2===0){const t=apTrolley();t.position.set(x+(x<0?0.014:-0.014),0,z+(ry?0.012:-0.012));t.rotation.y=ry;g.add(t);const b=new THREE.Mesh(new THREE.BoxGeometry(0.012,0.016,0.018),inMat(pickR(BAGC)));b.position.set(0,0.0165,0.002);t.add(b)}
+        else{const b=new THREE.Mesh(new THREE.BoxGeometry(0.012,0.016,0.018),inMat(pickR(BAGC)));b.position.set(x+(x<0?0.016:-0.016),0.008,z);g.add(b)}}});
+    // luggage trolley racks (one on each side before the belt hall)
+    AP.racks={};for(const rx of [-0.46,0.46]){AP.racks[rx]=[];for(let i=0;i<5;i++){const t=apTrolley();t.position.set(rx,i*0.0025,-0.2+i*0.0055);g.add(t);AP.racks[rx].push(t)}IN.col.push([rx-0.015,rx+0.015,-0.215,-0.165]);
+      IN.spots.push({x:rx,z:-0.145,get label(){return AP.trolley?'Return the luggage trolley':'Take a luggage trolley'},fn:()=>apTrolleyToggle(rx),r:0.07})}
+    apSign(g,['Bagagevagnar · gratis','Luggage trolleys · free'],0.14,0.03,-0.46,0.07,-0.235,0,{back:1,small:1});apSign(g,['Bagagevagnar · gratis','Luggage trolleys · free'],0.14,0.03,0.46,0.07,-0.235,0,{back:1,small:1});
+    // ---- customs (Tullverket): green, red and (after EU flights) blue lane; uniformed officers behind the counter
+    const cz=AP_Z.customs;const lanes=S.euFlight?[[-0.44,'green'],[0,'red'],[0.44,'blue']]:[[-0.3,'green'],[0.3,'red']];const gx=lanes.map(l=>l[0]);
+    const wallSeg=(a,b)=>{if(b-a>0.01)solid(g,b-a,0.05,0.012,0xb0bec5,(a+b)/2,cz)};let prev=-HW;for(const x of gx){wallSeg(prev,x-0.07);prev=x+0.07}wallSeg(prev,HW);
+    IN.gates.customs={c:[],m:[]};const LANE={green:['Ingenting att förtulla','Nothing to declare','#1b7a3a'],red:['Varor att förtulla','Goods to declare','#c62828'],blue:['EU-flyg · EU flights','No customs check','#1565c0']};
+    for(const [x,k] of lanes){const col={green:0x2e7d32,red:0xc62828,blue:0x1565c0}[k];inBox(g,0.13,0.002,0.08,col,x,cz,0.001,true);const b=[x-0.07,x+0.07,cz-0.012,cz+0.012];IN.col.push(b);IN.gates.customs.c.push(b);IN.gates.customs.m.push(tape(x,cz,0.14));
+      apSign(g,LANE[k].slice(0,2),0.13,0.036,x,0.088,cz-0.01,0,{bg:LANE[k][2],fg:'#ffffff',back:1});spot(x,cz-0.05,{green:'Green channel: nothing to declare',red:'Red channel: goods to declare',blue:'Blue exit: flights from EU countries'}[k],()=>airportSpot(k),0.055)}
+    {const red=lanes.find(l=>l[1]==='red');if(red){const rx=red[0];solid(g,0.08,0.03,0.04,0xcfd8dc,rx+0.11,cz+0.05);inBox(g,0.022,0.012,0.016,0x6a1b9a,rx+0.11,cz+0.05,0.03);apOfficer(g,'customs',rx+0.11,cz+0.085,Math.PI,true);apOfficer(g,'customs',rx+0.145,cz+0.03,-Math.PI/2);npc(g,null,null,rx+0.075,cz+0.035,Math.PI/2)}
+      const gr=lanes.find(l=>l[1]==='green');if(gr)apOfficer(g,'customs',gr[0]+0.1,cz+0.03,Math.PI,false)}
+    apSign(g,['Tull · Customs'],0.16,0.034,HW-0.1,0.07,cz-0.02,0,{icon:'cust',back:1});
+    {const tc=ccnv(512,384,(q,W,H)=>{q.fillStyle='#ffffff';q.fillRect(0,0,W,H);q.fillStyle='#1b4d8c';q.fillRect(0,0,W,70);q.fillStyle='#fff';q.font=`700 36px ${CF}`;q.textBaseline='middle';q.fillText('Tullverket',24,36);
+        q.fillStyle='#14202c';q.font=`700 30px ${CF}`;q.fillText('Vad får du ta med?',24,110);q.font=`500 24px ${CF}`;['What can I bring into Sweden?','• Spirits 1 l · wine 4 l · beer 16 l','• 200 cigarettes · goods SEK 5 000','• No meat or dairy from outside the EU','• Cash €10 000+: declare'].forEach((t,i)=>q.fillText(t,24,150+i*40))});
+      const p=new THREE.Mesh(new THREE.PlaneGeometry(0.1,0.075),new THREE.MeshBasicMaterial({map:tc.t}));p.position.set(-HW+0.007,0.07,0.165);p.rotation.y=Math.PI/2;g.add(p);spot(-HW+0.06,0.165,'Customs rules (Tullverket)',()=>custRules(),0.06)}
+    // ---- arrivals hall: people waiting behind the barrier, a kiosk, information, then the glass doors
+    const names=['Anna','Welcome Mum!','Ibrahim','Svensson','Min Jae','Dr. Lindqvist','Olu','Mamma'];
+    for(let i=0;i<10;i++){const x=-0.66+i*0.15+(i%2)*0.02,z=0.315+(i%3)*0.02;npc(g,null,null,x,z,Math.PI);
+      if(i<8)apSign(g,[names[i]],0.034,0.016,x,0.045,z+0.012,0,{small:1,bg:'#ffffff',fg:'#14181c'})}
+    for(let k=0;k<10;k++)inBox(g,0.14,0.014,0.004,0x78909c,-0.72+k*0.16,0.285,0);
+    solid(g,0.1,0.05,0.045,0xd84315,-HW+0.07,0.37);npc(g,'Worker_Female',null,-HW+0.07,0.35,Math.PI);spot(-HW+0.13,0.37,'Pressbyrån: snacks and a SIM card',()=>shopMenu({type:'convenience',name:'Pressbyrån Arlanda',i:-1}),0.07);
+    apSign(g,['Pressbyrån'],0.1,0.026,-HW+0.07,0.07,0.392,0,{small:1,bg:'#d84315'});
+    solid(g,0.12,0.04,0.04,0x37474f,HW-0.12,0.37);npc(g,'Suit_Female',null,HW-0.12,0.35,Math.PI);spot(HW-0.12,0.41,'Swedavia information desk',()=>toast('Swedavia information: trains, coaches and taxis are straight ahead through the doors'),0.07);
+    apSign(g,['Information'],0.1,0.026,HW-0.12,0.07,0.392,0,{small:1,bg:'#0b3a6e'});
+    // glass front with sliding doors
+    for(const sx of [-1,1]){solid(g,HW-0.1,0.05,0.008,0x90a4ae,sx*(HW+0.1)/2,AP_Z.doors);const gl=new THREE.Mesh(new THREE.BoxGeometry(HW-0.1,0.07,0.003),new THREE.MeshLambertMaterial({color:0x9cc8e8,transparent:true,opacity:0.32}));gl.position.set(sx*(HW+0.1)/2,0.085,AP_Z.doors);g.add(gl)}
+    apSign(g,['Utgång · Exit','Tåg · Buss · Taxi'],0.2,0.044,0,0.11,AP_Z.doors-0.01,0,{icon:'exit',back:1});
+    // ---- the kerb: taxis, coaches and cars waiting or picking up; a taxi rank officer. Neighbouring stalls are at least
+    // both half-lengths plus apAhead's 0.03 gap apart, or an arriving vehicle stops short behind the one parked ahead
+    const LK=AP_Z.kerb+0.085,LO=AP_Z.kerb+0.19;   // lane z: kerb lane (westbound) and through lane (eastbound)
+    const put=(v,x,lane,dir,stall,t)=>{if(stall==null)x=-HW-1.5;v.position.set(x,0,lane==='k'?LK:LO);v.rotation.y=dir>0?0:Math.PI;g.add(v);AP.veh.push({g:v,mode:stall==null?'gone':'wait',t,dir,stall,lane,sp:stall==null?0.09:0.06})};
+    [[-0.76,'taxi',0xf4f4f4],[-0.6,'taxi',0x23272b],[-0.44,'taxi',0xf4f4f4],[-0.28,'car',0x7b1fa2],[-0.12,'car',0xb0bec5],[0.18,'bus',0x0b3a6e],[0.62,'bus',0x1a6b8a]]
+      .forEach(([x,k,c],i)=>put(apVehicle(k,c),x,'k',-1,x,6+Math.random()*30+i*3));
+    [['car',0xc62828,4],['taxi',0xf4f4f4,12],['bus',0x0b3a6e,20]].forEach(([k,c,t])=>put(apVehicle(k,c),0,'o',1,null,t));
+    const PV=AP_Z.doors+0.035;apOfficer(g,'taxi',-0.5,PV,Math.PI/2,false);npc(g,null,null,-0.44,PV,Math.PI/2);npc(g,null,null,0.1,PV,Math.PI);npc(g,null,null,0.2,PV,Math.PI);npc(g,null,null,0.55,PV,Math.PI);npc(g,null,null,0.64,PV,Math.PI);
+    IN.col.push([-HW,HW,AP_Z.kerb-0.004,HD+0.1]);
+    apSign(g,['Taxi','Swedavias avtalstaxi'],0.2,0.04,-0.5,0.085,AP_Z.doors+0.03,0,{bg:'#e3e01c',fg:'#14181c',back:1,small:1});
+    apSign(g,['Flygbussarna','Stockholm City'],0.2,0.04,0.4,0.085,AP_Z.doors+0.03,0,{bg:'#0b3a6e',fg:'#ffffff',back:1,small:1});
+    apSign(g,['Hämta och lämna','Pick-up and drop-off'],0.2,0.04,-0.18,0.085,AP_Z.doors+0.03,0,{bg:'#1b5e20',fg:'#ffffff',back:1,small:1});
+    spot(-0.5,AP_Z.doors-0.005,'Taxi rank: Swedavia\'s contracted taxis',()=>toast('Taxis wait outside the arrivals hall, 24 h. Use the exit to ride one'),0.06);
+    spot(0.4,AP_Z.doors-0.005,'Flygbussarna coaches to Stockholm City',()=>toast('Coaches to the city leave from the stop outside. Use the exit to take one'),0.06);
+    spot(-0.18,AP_Z.doors-0.005,'Pick-up point: friends and family',()=>toast('Friends and family wait here. Use the exit to meet them'),0.06);
+    spot(0,AP_Z.doors-0.005,'Exit: trains, buses and taxis',()=>exitInterior(),0.07);inBox(g,0.1,0.002,0.03,0x2a9d5a,0,AP_Z.doors-0.005,0.004,true)}
+  function buildRoom(kind,p,opts){const g=new THREE.Group();if(kind==='arlanda'){HW=0.82;HD=0.8}else{HW=0.34;HD=0.25}const HT=(HOMES[S&&S.home]||{}).type;const [fl,wl]=kind==='arlanda'?[0xc9ced3,0xeef1f3]:kind==='home'?({andrahand:[0x9c8a74,0xd9d2c4],student:[0xb5a48c,0xeae6dc],parents:[0xa47c55,0xe9dfc9],forstahand:[0xc9a77c,0xf2efe8]}[HT]||RPAL.home||[0xc9a77c,0xf2efe8]):(RPAL[kind]||RPAL.shop);
     inBox(g,HW*2,0.004,HD*2,fl,0,0,-0.004);inBox(g,HW*2,0.14,0.01,wl,0,-HD);inBox(g,0.01,0.14,HD*2,wl,-HW,0);inBox(g,0.01,0.14,HD*2,wl,HW,0);
-    inBox(g,0.08,0.002,0.03,0x2a9d5a,0,HD-0.02,0.001,true);spot(0,HD-0.02,kind==='arlanda'?'Exit: trains, buses and taxis':'Leave',()=>exitInterior(),0.06);
+    if(kind!=='arlanda'){inBox(g,0.08,0.002,0.03,0x2a9d5a,0,HD-0.02,0.001,true);spot(0,HD-0.02,'Leave',()=>exitInterior(),0.06)}
     const title=p?p.name:'';const TX=[-0.25,-0.13,0.13,0.25];const tables=(n,y0)=>{for(let i=0;i<n;i++){const x=TX[i%4],z=y0;solid(g,0.07,0.03,0.07,0x6d4c41,x,z);inBox(g,0.03,0.025,0.03,0x8d6e63,x-0.055,z);inBox(g,0.03,0.025,0.03,0x8d6e63,x+0.055,z)}};
     if(kind==='restaurant'||kind==='cafe'||kind==='bar'){solid(g,0.36,0.05,0.05,kind==='bar'?0x3e2723:0xd7ccc8,0,-HD+0.05);signPlane(g,[title||'Meny',...menuFor(p).slice(0,4).map(m=>`${m.n}  ${m.c} kr`)],0.26,0.08,0,0.1,-HD+0.006,kind==='cafe'?'#5d4037':'#1b1b1b');
       npc(g,kind==='restaurant'?'Chef_Female':'Casual_Female',null,0.06,-HD+0.022,0);spot(0,-HD+0.11,kind==='bar'?'Order at the bar':'Order at the counter',()=>orderMenu(p,null));
       tables(4,0.02);tables(4,0.13);[[-0.25,0.02],[0.25,0.13],[-0.13,0.13]].forEach(([x,z])=>npc(g,null,null,x+0.055,z,-Math.PI/2));
       if(opts&&opts.date){const dp=opts.date;npc(g,dp.look.model,dp.look,0.185,0.02,-Math.PI/2);spot(0.06,0.02,`Sit down with ${dp.n}`,()=>{orderMenu(p,dp)})}}
-    else if(kind==='arlanda'){const nonS=!(S&&S.schengen);IN.gates={};apReset();const tape=(x,z,w)=>inBox(g,w,0.012,0.006,0xd32f2f,x,z,0.03,true);
-      apSign(g,['Välkommen till Stockholm','Welcome to Stockholm'],0.32,0.06,0,0.112,-HD+0.006,0,{bg:'#0b3a6e',fg:'#ffffff'});
-      apSign(g,['Ankomst · Arrival '+apFlight().no,'från · from '+((S&&S.lastLeg)||'abroad')],0.15,0.034,0.2,0.068,-HD+0.006,0,{small:1});
-      // passport control, only after a flight from outside Schengen
-      for(const x of [-0.29,-0.22,-0.15,0.15,0.22,0.29]){solid(g,0.06,0.05,0.035,nonS?0x37474f:0x9aa7b0,x,-0.1);if(nonS&&(x===-0.15||x===0.15))npc(g,'Suit_Male',null,x,-0.115,0)}
-      solid(g,0.18,0.04,0.012,0x78909c,-0.04-0.09-0.025,-0.1);solid(g,0.18,0.04,0.012,0x78909c,0.04+0.09+0.025,-0.1);
-      if(nonS){apSign(g,['Passkontroll','Passport control'],0.2,0.042,0,0.105,-0.082,0,{icon:'pass',back:1});apSign(g,['EU · EES · CH'],0.1,0.022,-0.22,0.082,-0.082,0,{small:1,back:1});apSign(g,['Alla pass · All passports'],0.1,0.022,0.22,0.082,-0.082,0,{small:1,back:1});
-        const b=[-0.06,0.06,-0.112,-0.088];IN.col.push(b);IN.gates.passport={c:[b],m:[tape(0,-0.1,0.1)]};spot(0,-0.15,'Passport control',()=>airportSpot('passport'),0.08)}
-      else apSign(g,['Schengen · ingen passkontroll','No passport control'],0.24,0.04,0,0.095,-0.082,0,{bg:'#1b5e20',fg:'#ffffff',back:1});
-      // baggage belt 4: a moving loop with a steel island in the middle; the screen above says what is on it
-      inBox(g,0.31,0.014,0.1,0x2b2f33,0,0.015,0);inBox(g,0.29,0.004,0.084,0x3c4146,0,0.015,0.014);inBox(g,0.21,0.026,0.022,0xaab2b9,0,0.015,0);IN.col.push([-0.167,0.167,-0.047,0.077]);
-      inBox(g,0.03,0.05,0.03,0x5e666e,-0.15,-0.03,0);apSign(g,['4'],0.03,0.03,-0.15,0.065,-0.0145,0,{big:1,back:1});
-      AP.beltC=ccnv(512,256);{const m=new THREE.MeshBasicMaterial({map:AP.beltC.t});for(const ry of [0,Math.PI]){const p=new THREE.Mesh(new THREE.PlaneGeometry(0.1,0.05),m);p.position.set(0.04,0.128,0.015);p.rotation.y=ry;g.add(p)}inBox(g,0.002,0.03,0.002,0x5e666e,0.04,0.015,0.153)}
-      AP.boardC=ccnv(768,448);{const p=new THREE.Mesh(new THREE.PlaneGeometry(0.16,0.093),new THREE.MeshBasicMaterial({map:AP.boardC.t}));p.position.set(HW-0.007,0.075,-0.03);p.rotation.y=-Math.PI/2;g.add(p);inBox(g,0.006,0.1,0.17,0x111417,HW-0.004,-0.03,0.026)}
-      spot(HW-0.06,-0.03,'Arrivals screen',()=>apBoardModal(),0.06);
-      apSign(g,['Bagage · Baggage claim'],0.14,0.03,-0.2,0.075,-0.055,0,{icon:'bag',back:1});
-      AP.g=g;
-      // customs: green, red and (after EU flights) blue channels; closed until you have chosen one
-      const cz=0.17;const lanes=S.euFlight?[[-0.2,'green'],[0,'red'],[0.2,'blue']]:[[-0.12,'green'],[0.12,'red']];const gx=lanes.map(l=>l[0]);
-      const wallSeg=(a,b)=>{if(b-a>0.01)solid(g,b-a,0.05,0.012,0xb0bec5,(a+b)/2,cz)};let prev=-HW;for(const x of gx){wallSeg(prev,x-0.05);prev=x+0.05}wallSeg(prev,HW);
-      IN.gates.customs={c:[],m:[]};const LANE={green:['Ingenting att förtulla','Nothing to declare','#1b7a3a'],red:['Varor att förtulla','Goods to declare','#c62828'],blue:['EU-flyg · EU flights','No customs check','#1565c0']};
-      for(const [x,k] of lanes){const col={green:0x2e7d32,red:0xc62828,blue:0x1565c0}[k];inBox(g,0.09,0.002,0.06,col,x,cz,0.001,true);const b=[x-0.05,x+0.05,cz-0.012,cz+0.012];IN.col.push(b);IN.gates.customs.c.push(b);IN.gates.customs.m.push(tape(x,cz,0.1));
-        apSign(g,LANE[k].slice(0,2),0.1,0.03,x,0.082,cz-0.01,0,{bg:LANE[k][2],fg:'#ffffff',back:1});spot(x,cz-0.04,{green:'Green channel: nothing to declare',red:'Red channel: goods to declare',blue:'Blue exit: flights from EU countries'}[k],()=>airportSpot(k),0.045)}
-      apSign(g,['Tull · Customs'],0.12,0.03,HW-0.08,0.07,cz-0.02,0,{icon:'cust',back:1});
-      {const tc=ccnv(512,384,(q,W,H)=>{q.fillStyle='#ffffff';q.fillRect(0,0,W,H);q.fillStyle='#1b4d8c';q.fillRect(0,0,W,70);q.fillStyle='#fff';q.font=`700 36px ${CF}`;q.textBaseline='middle';q.fillText('Tullverket',24,36);
-          q.fillStyle='#14202c';q.font=`700 30px ${CF}`;q.fillText('Vad får du ta med?',24,110);q.font=`500 24px ${CF}`;['What can I bring into Sweden?','• Spirits 1 l · wine 4 l · beer 16 l','• 200 cigarettes · goods SEK 5 000','• No meat or dairy from outside the EU','• Cash €10 000+: declare'].forEach((t,i)=>q.fillText(t,24,150+i*40))});
-        const p=new THREE.Mesh(new THREE.PlaneGeometry(0.1,0.075),new THREE.MeshBasicMaterial({map:tc.t}));p.position.set(-HW+0.007,0.07,0.1);p.rotation.y=Math.PI/2;g.add(p);spot(-HW+0.06,0.1,'Customs rules (Tullverket)',()=>custRules(),0.06)}
-      apSign(g,['Utgång · Exit','Tåg · Buss · Taxi'],0.16,0.04,0,0.105,HD-0.03,Math.PI,{icon:'exit',back:1});
-      solid(g,0.09,0.05,0.04,0xd84315,-HW+0.06,0.22);npc(g,'Worker_Female',null,-HW+0.06,0.2,Math.PI/2);spot(-HW+0.11,0.22,'Pressbyrån: snacks and a SIM card',()=>shopMenu({type:'convenience',name:'Pressbyrån Arlanda',i:-1}));
-      const sc=[0xc62828,0x1565c0,0x2e7d32,0x6a1b9a,0xef6c00,0x37474f];[[-0.25,0.09],[0.25,0.09],[0.2,-0.065],[-0.22,-0.065]].forEach(([x,z],i)=>{npc(g,null,null,x,z,i<2?Math.PI:0);inBox(g,0.022,0.03,0.016,sc[i],x+0.03,z,0.0)})}
+    else if(kind==='arlanda'){buildArrivalHall(g)}
     else if(kind==='museum'){const art=[0x9b2226,0x005f73,0xee9b00,0x0a9396,0x6a4c93,0x3a5a40,0xbb3e03];for(let i=0;i<5;i++){const x=-0.26+i*0.13;inBox(g,0.08,0.06,0.004,0x3e2723,x,-HD+0.008,0.05);inBox(g,0.07,0.05,0.003,art[i%art.length],x,-HD+0.011,0.055,true)}
       for(const sd of [-1,1])for(let i=0;i<3;i++){const z=-0.12+i*0.12;inBox(g,0.004,0.06,0.08,0x3e2723,sd*(HW-0.008),z,0.05);inBox(g,0.003,0.05,0.07,art[(i+3)%art.length],sd*(HW-0.012),z,0.055,true)}
       if(p&&/vasa/i.test(p.name)){solid(g,0.3,0.05,0.08,0x5d4037,0,-0.04);inBox(g,0.008,0.13,0.008,0x4e342e,-0.06,-0.04,0.05);inBox(g,0.008,0.15,0.008,0x4e342e,0.04,-0.04,0.05)}
@@ -4226,15 +4382,15 @@ const POSTERS_CITY=[['#f2b705','#1b1b1b','KANELBULLE','Färskt varje morgon','Ba
     else if(kind==='shelter'){for(let i=0;i<5;i++){solid(g,0.05,0.06,0.12,0x5d4037,-0.26+i*0.13,-0.1)}spot(0,0.08,'Find your bed',()=>{exitInterior();sleep(false,'shelter')})}
     else{for(let r=0;r<2;r++)solid(g,0.34,0.07,0.04,0xd7ccc8,0,-0.1+r*0.12);solid(g,0.12,0.045,0.04,0xbcaaa4,-0.2,-HD+0.04);npc(g,null,null,-0.2,-HD+0.015,0);spot(-0.2,-HD+0.1,'Counter',()=>actionsMenu(p))}
     return g}
-  function enterInterior(kind,p,opts){if(IN.on||DR.on||CS.mode)return;document.body.classList.add('inside');IN.spots=[];IN.col=[];IN.mixers=[];IN.lights=[];IN.near=null;IN.kind=kind;IN.p=p;
+  function enterInterior(kind,p,opts){if(IN.on||DR.on||CS.mode)return;document.body.classList.add('inside');document.body.classList.toggle('arr',kind==='arlanda');IN.spots=[];IN.col=[];IN.mixers=[];IN.lights=[];IN.near=null;IN.kind=kind;IN.p=p;
     inScene=new THREE.Scene();inScene.background=new THREE.Color(kind==='club'?0x05050d:0x20262e);inScene.add(new THREE.HemisphereLight(0xffffff,0x8a7a6a,kind==='club'?0.35:0.95));
     const dl=new THREE.DirectionalLight(0xffffff,kind==='club'?0.2:0.55);dl.position.set(0.3,1,0.6);inScene.add(dl);inScene.add(buildRoom(kind,p,opts||{}));
     IN.prev=av.position.clone();IN.prevVis=av.visible;scene.remove(av);inScene.add(av);av.position.set(0,0,HD-0.06);av.rotation.y=Math.PI;av.visible=true;vel.set(0,0);
     IN.cam={p:camera.position.clone(),t:controls.target.clone(),min:controls.minDistance,max:controls.maxDistance};controls.minDistance=0.15;controls.maxDistance=1.1;controls.target.set(0,0.02,0.04);camera.position.set(0,0.42,0.62);
-    if(kind==='arlanda'){av.position.set(0,0,-HD+0.07);av.rotation.y=0}if(kind==='home'&&S.flags.luggage){S.flags.luggage=0;log('You unpack your suitcase. Home at last.','plus');setTimeout(()=>save(),50)}scene.fog&&(IN.fog=scene.fog);IN.on=true;$('inhud').style.display='flex';$('inTitle').textContent=p?p.name:(kind==='home'?'Home · '+addrText():'Inside');if(p)S.seen[kindSeen(kind)]=S.day;hideHint()}
+    if(kind==='arlanda'){av.position.set(0,0,-HD+0.07);av.rotation.y=0;controls.maxDistance=2.6;controls.target.set(0,0.02,-HD+0.25);camera.position.set(0,0.8,-HD+1.2);apCarry(true)}if(kind==='home'&&S.flags.luggage){S.flags.luggage=0;log('You unpack your suitcase. Home at last.','plus');setTimeout(()=>save(),50)}scene.fog&&(IN.fog=scene.fog);IN.on=true;$('inhud').style.display='flex';$('inTitle').textContent=p?p.name:(kind==='home'?'Home · '+addrText():'Inside');if(p)S.seen[kindSeen(kind)]=S.day;hideHint()}
   function kindSeen(k){return k==='restaurant'||k==='cafe'?'eatout':k==='gym'?'gym':k==='clothes'?'clothes':'visit'}
-  function exitInterior(force){if(!IN.on)return;{const el=document.getElementById('apguide');if(el&&!(IN.kind==='arlanda'&&S&&S.flags.arlanda&&force!==true))el.remove()}guideWalk=null;if(IN.kind==='arlanda'&&S&&S.flags.arlanda&&force!==true){airportSpot('exit');return}inScene.remove(av);scene.add(av);av.position.copy(IN.prev);av.visible=IN.prevVis;controls.minDistance=IN.cam.min;controls.maxDistance=IN.cam.max;camera.position.copy(IN.cam.p);controls.target.copy(IN.cam.t);
-    IN.on=false;IN.mixers=[];inScene=null;document.body.classList.remove('inside');$('inhud').style.display='none';$('inAct').style.display='none';DESK=null;closeModal();vel.set(0,0)}
+  function exitInterior(force){if(!IN.on)return;{const el=document.getElementById('apguide');if(el&&!(IN.kind==='arlanda'&&S&&S.flags.arlanda&&force!==true))el.remove()}guideWalk=null;if(IN.kind==='arlanda'&&S&&S.flags.arlanda&&force!==true){airportSpot('exit');return}if(AP.trolley){av.remove(AP.trolley);AP.trolley=null}apCarry(!!(S&&S.flags&&S.flags.luggage));inScene.remove(av);scene.add(av);av.position.copy(IN.prev);av.visible=IN.prevVis;controls.minDistance=IN.cam.min;controls.maxDistance=IN.cam.max;camera.position.copy(IN.cam.p);controls.target.copy(IN.cam.t);
+    IN.on=false;IN.mixers=[];inScene=null;document.body.classList.remove('inside','arr');$('inhud').style.display='none';$('inAct').style.display='none';DESK=null;closeModal();vel.set(0,0)}
   function inMove(x,z,dx,dz){const hit=(a,b)=>a<-HW+0.025||a>HW-0.025||b<-HD+0.025||b>HD-0.015||IN.col.some(c=>a>c[0]&&a<c[1]&&b>c[2]&&b<c[3]);
     if(!hit(x+dx,z+dz))return [x+dx,z+dz];if(!hit(x+dx,z))return [x+dx,z];if(!hit(x,z+dz))return [x,z+dz];return [x,z]}
   // ---------- Arlanda arrivals hall: airport signs, the arrivals screen, belt 4 and your suitcase, and the step-by-step guide ----------
@@ -4248,11 +4404,11 @@ const POSTERS_CITY=[['#f2b705','#1b1b1b','KANELBULLE','Färskt varje morgon','Ba
   // your flight: the airline of the last leg, a number that stays the same for the whole arrival
   const AIRL={Amsterdam:['KL','KLM'],Frankfurt:['LH','Lufthansa'],Paris:['AF','Air France'],Copenhagen:['SK','SAS'],Helsinki:['AY','Finnair'],Warsaw:['LO','LOT'],Istanbul:['TK','Turkish Airlines'],Doha:['QR','Qatar Airways'],Dubai:['EK','Emirates'],London:['BA','British Airways']};
   function apFlight(){if(!S)return {no:'',air:''};if(!S.arrFlight){const a=AIRL[S.lastLeg]||(Math.random()<0.5?['SK','SAS']:['DY','Norwegian']);S.arrFlight={no:a[0]+' '+(100+Math.floor(Math.random()*1800)),air:a[1]}}return S.arrFlight}
-  const AP={t:0,start:null,myAt:0,next:0,bags:[],mine:null,spot:null,beltC:null,boardC:null,g:null,drawT:0};
+  const AP={crowd:[],veh:[],trolley:null,H:0,t:0,start:null,myAt:0,next:0,bags:[],mine:null,spot:null,beltC:null,boardC:null,g:null,drawT:0};
   function apReset(){AP.t=0;AP.start=null;AP.myAt=0;AP.next=0;AP.bags=[];AP.mine=null;AP.spot=null;AP.drawT=0}
   // the loop the bags ride on: two straights and two half circles round the island of belt 4
-  const BL=0.105,BR=0.04,BPER=4*BL+2*Math.PI*BR;
-  function beltPos(s){s=((s%BPER)+BPER)%BPER;const z0=0.015;if(s<2*BL)return {x:-BL+s,z:z0-BR,ry:Math.PI/2};s-=2*BL;if(s<Math.PI*BR){const a=-Math.PI/2+s/BR;return {x:BL+Math.cos(a)*BR,z:z0+Math.sin(a)*BR,ry:Math.PI/2-a-Math.PI/2}}s-=Math.PI*BR;
+  const BL=0.26,BR=0.05,BPER=4*BL+2*Math.PI*BR;
+  function beltPos(s){s=((s%BPER)+BPER)%BPER;const z0=AP_BZ;if(s<2*BL)return {x:-BL+s,z:z0-BR,ry:Math.PI/2};s-=2*BL;if(s<Math.PI*BR){const a=-Math.PI/2+s/BR;return {x:BL+Math.cos(a)*BR,z:z0+Math.sin(a)*BR,ry:Math.PI/2-a-Math.PI/2}}s-=Math.PI*BR;
     if(s<2*BL)return {x:BL-s,z:z0+BR,ry:-Math.PI/2};s-=2*BL;const a=Math.PI/2+s/BR;return {x:-BL+Math.cos(a)*BR,z:z0+Math.sin(a)*BR,ry:Math.PI/2-a-Math.PI/2}}
   const BAGC=[0x1d1d1d,0x8b1e2d,0x37474f,0x6a1b9a,0x2e7d32,0xc62828,0xb0bec5,0xef6c00,0x5d4037,0x0d47a1];
   function apBag(mine){const g=new THREE.Group(),w=0.018+Math.random()*0.006,col=mine?0x2c4a6e:pickR(BAGC);const b=new THREE.Mesh(new THREE.BoxGeometry(w,0.014,0.026),inMat(col));b.position.y=0.007;g.add(b);
@@ -4265,17 +4421,17 @@ const POSTERS_CITY=[['#f2b705','#1b1b1b','KANELBULLE','Färskt varje morgon','Ba
     if(AP.start===null&&apReady()){AP.start=AP.t+4;AP.myAt=AP.start+10+Math.random()*10;AP.next=AP.start}
     if(AP.start!==null&&AP.t>=AP.next&&AP.bags.length<12){AP.bags.push(apBag(false));AP.next=AP.t+1.6+Math.random()*2.2}
     if(AP.start!==null&&!S.flags.bags&&!AP.mine&&AP.t>=AP.myAt){AP.mine=apBag(true);AP.bags.push(AP.mine);sfxTone()}
-    for(let i=AP.bags.length-1;i>=0;i--){const b=AP.bags[i],prev=b.s;b.s+=0.03*dt;if(Math.floor(b.s/BPER)>Math.floor(prev/BPER))b.loops++;
-      if(!b.mine&&b.loops>=b.leave&&(b.s%BPER)>BPER*0.55){AP.g.remove(b.g);AP.bags.splice(i,1);continue}const p=beltPos(b.s);b.g.position.x=p.x;b.g.position.z=p.z;b.g.rotation.y=p.ry}
+    for(let i=AP.bags.length-1;i>=0;i--){const b=AP.bags[i],prev=b.s;b.s+=0.07*dt;if(Math.floor(b.s/BPER)>Math.floor(prev/BPER))b.loops++;
+      if(!b.mine&&b.loops>=b.leave&&(b.s%BPER)>BPER*0.55){AP.g.remove(b.g);AP.bags.splice(i,1);apHandOut();continue}const p=beltPos(b.s);b.g.position.x=p.x;b.g.position.z=p.z;b.g.rotation.y=p.ry}
     // your suitcase: a "Take your suitcase" button whenever it passes within reach
     if(AP.mine&&!S.flags.bags){const p=AP.mine.g.position,d=Math.hypot(av.position.x-p.x,av.position.z-p.z);if(!AP.spot)AP.spot={x:p.x,z:p.z,label:'🧳 Take your suitcase',fn:apTake,r:0.075};AP.spot.x=p.x;AP.spot.z=p.z;
       const has=IN.spots.includes(AP.spot);if(d<0.09&&!has)IN.spots.push(AP.spot);else if(d>=0.09&&has)IN.spots.splice(IN.spots.indexOf(AP.spot),1)}
-    AP.drawT-=dt;if(AP.drawT<=0){AP.drawT=1;apDraw()}}
-  function apTake(){if(!AP.mine)return;const i=IN.spots.indexOf(AP.spot);if(i>=0)IN.spots.splice(i,1);AP.g.remove(AP.mine.g);AP.bags.splice(AP.bags.indexOf(AP.mine),1);AP.mine=null;AP.spot=null;IN.near=null;airportSpot('bags')}
+    apVehTick(dt);AP.drawT-=dt;if(AP.drawT<=0){AP.drawT=1;apDraw()}}
+  function apTake(){if(!AP.mine)return;const i=IN.spots.indexOf(AP.spot);if(i>=0)IN.spots.splice(i,1);AP.g.remove(AP.mine.g);AP.bags.splice(AP.bags.indexOf(AP.mine),1);AP.mine=null;AP.spot=null;IN.near=null;apBagOnTrolley();airportSpot('bags')}
   function sfxTone(){try{audInit();tone(880,0,0.25,0.06);tone(1175,0.18,0.35,0.06)}catch(e){}}
   function apStatus(){if(S.flags.bags)return ['Your suitcase is collected','#7ee0a1'];if(AP.start===null)return [S.schengen?'Baggage on its way':'After passport control','#ffd200'];
     if(AP.t<AP.start)return ['Baggage coming now','#ffd200'];if(AP.mine)return ['Your suitcase is on the belt','#7ee0a1'];return ['Baggage on the belt','#ffffff']}
-  function apDraw(){const f=apFlight(),[st,sc]=apStatus();
+  function apDraw(){AP.drawN=(AP.drawN||0)+1;const f=apFlight(),[st,sc]=apStatus();
     if(AP.beltC){const q=AP.beltC.g,W=512,H=256;q.fillStyle='#0b0f14';q.fillRect(0,0,W,H);q.fillStyle='#ffd200';q.fillRect(0,0,120,H);q.fillStyle='#14181c';q.font=`800 150px ${CF}`;q.textAlign='center';q.textBaseline='middle';q.fillText('4',60,H/2+8);
       q.textAlign='left';q.fillStyle='#fff';q.font=`700 46px ${CF}`;q.fillText(f.no,142,58);q.font=`500 34px ${CF}`;q.fillStyle='#c9d1d8';q.fillText('från '+(S.lastLeg||''),142,110);q.fillStyle=sc;q.font=`700 30px ${CF}`;q.fillText(st,142,185);AP.beltC.t.needsUpdate=true}
     if(AP.boardC){const q=AP.boardC.g,W=768,H=448,rows=apArrivals(),rh=44;q.fillStyle='#0b0f14';q.fillRect(0,0,W,H);q.fillStyle='#ffd200';q.font=`700 34px ${CF}`;q.textBaseline='middle';q.textAlign='left';q.fillText('Ankomster · Arrivals',20,32);
@@ -4291,7 +4447,7 @@ const POSTERS_CITY=[['#f2b705','#1b1b1b','KANELBULLE','Färskt varje morgon','Ba
   let guideMark=null,guideWalk=null,apOpen=innerWidth>640;
   const AP_STEP={passport:['#b388ff','🛂'],bags:['#ffc23d','🧳'],customs:['#ff5d8f','🛃'],exit:['#3ddc84','🚆']};
   function airportNext(){if(!S.flags.arlanda)return null;const sp=l=>IN.spots.find(s=>typeof l==='string'?s.label===l:l(s));
-    if(!S.schengen&&!S.flags.passport)return {k:'passport',s:sp('Passport control')};if(!S.flags.bags)return {k:'bags',s:AP.spot&&IN.spots.includes(AP.spot)?AP.spot:{x:AP.mine?AP.mine.g.position.x:0,z:0.098}};
+    if(!S.schengen&&!S.flags.passport)return {k:'passport',s:sp('Passport control')};if(!S.flags.bags)return {k:'bags',s:AP.spot&&IN.spots.includes(AP.spot)?AP.spot:{x:AP.mine?AP.mine.g.position.x:0,z:AP_BZ+0.08}};
     if(!S.flags.customs)return {k:'customs',s:sp(x=>/^(Green|Blue)/.test(x.label)&&(S.euFlight||/^Green/.test(x.label)))};return {k:'exit',s:sp(x=>/^Exit/.test(x.label))}}
   function airportGuide(dt,T){const el=document.getElementById('apguide');if(!IN.on||IN.kind!=='arlanda'){if(el)el.remove();if(guideMark){inScene&&inScene.remove(guideMark);guideMark=null}return}
     const n=airportNext();if(!n)return;if(!guideMark||guideMark.parent!==inScene){guideMark=new THREE.Mesh(new THREE.RingGeometry(0.018,0.03,24),new THREE.MeshBasicMaterial({color:0xffc21a,transparent:true,depthWrite:false}));guideMark.rotation.x=-Math.PI/2;inScene.add(guideMark)}
@@ -4314,10 +4470,12 @@ const POSTERS_CITY=[['#f2b705','#1b1b1b','KANELBULLE','Färskt varje morgon','Ba
     const go=()=>{const m=airportNext();if(m&&m.s)guideWalk={x:m.s.x,z:m.s.z+(m.k==='customs'||m.k==='passport'?-0.04:0)}};
     b.querySelector('.apgo').onclick=go;b.querySelector('.apstub').onclick=()=>{apOpen=!apOpen;airportGuide(0,0)};b.querySelector('.apmain').onclick=()=>{apOpen=!apOpen;airportGuide(0,0)};
     const sc=b.querySelector('.sc');if(sc)sc.onclick=()=>openSuitcase(false);const ru=b.querySelector('.ru');if(ru)ru.onclick=()=>custRules();b.querySelector('.ar').onclick=()=>apBoardModal()}
+  // the hall is large: the camera follows you
+  function apFollow(dt){const t=controls.target,k=Math.min(1,dt*3),nx=t.x+(av.position.x-t.x)*k,nz=t.z+(av.position.z-t.z)*k;camera.position.x+=nx-t.x;camera.position.z+=nz-t.z;t.x=nx;t.z=nz}
   function apWalk(dt){if(!guideWalk)return;const dx=guideWalk.x-av.position.x,dz=guideWalk.z-av.position.z,d=Math.hypot(dx,dz),st=Math.min(d,dt*0.35);if(d<0.02){guideWalk=null;return}
     const [nx,nz]=inMove(av.position.x,av.position.z,dx/d*st,dz/d*st);if(Math.hypot(nx-av.position.x,nz-av.position.z)<st*0.2){guideWalk=null;return}av.position.x=nx;av.position.z=nz;av.rotation.y=Math.atan2(dx,dz)}
   function interiorTick(dt,T){IN.mixers.forEach(m=>m.update(dt));IN.lights.forEach((L,i)=>{L.intensity=0.8+Math.sin(T*4+i*2)*0.6});
-    if(IN.kind==='arlanda'){try{apTick(dt,T);airportGuide(dt,T);apWalk(dt)}catch(e){console.warn('arrivals',e)}}
+    if(IN.kind==='arlanda'){try{apTick(dt,T);airportGuide(dt,T);apWalk(dt);apFollow(dt)}catch(e){console.warn('arrivals',e)}}
     let best=null,bd=1e9;for(const s of IN.spots){const d=Math.hypot(av.position.x-s.x,av.position.z-s.z)-(s===AP.spot?1:0);if(d<s.r&&d<bd){bd=d;best=s}}// your passing suitcase comes before anything else
     if(best!==IN.near||(best&&$('inAct').dataset.l!==best.label)){IN.near=best;const b=$('inAct');if(best){b.innerHTML=`${esc2(best.label)} <kbd>E</kbd>`;b.dataset.l=best.label;b.style.display='block'}else{b.style.display='none';b.dataset.l=''}}}
   // ---------- driving ----------
@@ -5755,7 +5913,7 @@ const POSTERS_CITY=[['#f2b705','#1b1b1b','KANELBULLE','Färskt varje morgon','Ba
       if(t===0)JR.depAt=Math.max(JR.depAt,csClk()+1);else{JR.si=t-1;JR.d=JR.stops[t].d+HALF*CM;JR.v=0;JR.doors=0;jrArrive()}
       csLine(`Back on pendeltåg ${d.ref} to ${d.to} · ${JR.stops[JR.si].disp}`,6)});return true}
   tick();
-  const API={startLesson,inLesson:()=>!!COACH.mode,inJourney:()=>!!(CS&&CS.mode==='ride'),lookAtFlight,placeAvatar,landAt:info=>{if(IN.on)exitInterior(true);playLanding(info,()=>enterInterior('arlanda',{name:'Stockholm Arlanda Airport · Terminal 5 · Arrivals'},{}))},openGate:k=>{const gt=IN.gates&&IN.gates[k];if(!gt)return;IN.col=IN.col.filter(c=>!gt.c.includes(c));gt.m.forEach(m=>m.visible=false)},leaveAirportBy:(mode,dst,cb)=>{exitInterior(true);arriveBy(mode,dst,cb)},enterAirport:()=>{if(IN.on)exitInterior(true);enterInterior('arlanda',{name:'Stockholm Arlanda Airport · Terminal 5 · Arrivals'},{})},leaveAirport:(x,z)=>{exitInterior(true);const f=freeSpot(x,z)||[x,z];placeAvatar(f[0],f[1],true)},stationPos:k=>{const ll=k==='cityterminal'?[59.3318,18.0560]:[59.3303,18.0581];const [x,z]=P(ll[0],ll[1]);const f=freeSpot(x,z)||[x,z];return {x:f[0],z:f[1]}},avPos:()=>({x:av.position.x,z:av.position.z}),lieDown,hideAv:h=>{avHidden=h;av.visible=!h},emergency,leaveScene,isDriving:()=>DR.on,busLinesAt,transitLinesAt,busRide,hospitalNear:(x,z)=>{const L=[['Karolinska Universitetssjukhuset Solna',59.3488,18.0307],['Södersjukhuset',59.3106,18.0521],['S:t Görans sjukhus',59.3376,18.0221],['Danderyds sjukhus',59.3919,18.0412]].map(([n,a,b])=>{const [hx,hz]=P(a,b);const f=freeSpot(hx,hz)||[hx,hz];return {name:n,x:f[0],z:f[1]}});return L.sort((a,b)=>Math.hypot(a.x-x,a.z-z)-Math.hypot(b.x-x,b.z-z))[0]},setCoat,walkPath,ride,emote,refresh,season:()=>{lastSeason=''},snapTime,aurora:()=>{auroraT=1.2},route,streetName,isMoving:()=>inputVec().mag>0.08,setLook:n=>setLook(n),applyOutfit,setHome,syncCar,startDrive,stopDrive,nearPlaces,kindFor,poi:i=>POIS[i],
+  const API={startLesson,inLesson:()=>!!COACH.mode,inJourney:()=>!!(CS&&CS.mode==='ride'),lookAtFlight,placeAvatar,landAt:info=>{if(IN.on)exitInterior(true);playLanding(info,()=>enterInterior('arlanda',{name:'Stockholm Arlanda Airport · Terminal 5 · Arrivals'},{}))},openGate:k=>{const gt=IN.gates&&IN.gates[k];if(!gt)return;IN.col=IN.col.filter(c=>!gt.c.includes(c));gt.m.forEach(m=>m.visible=false)},leaveAirportBy:(mode,dst,cb)=>{exitInterior(true);arriveBy(mode,dst,cb)},enterAirport:()=>{if(IN.on)exitInterior(true);enterInterior('arlanda',{name:'Stockholm Arlanda Airport · Terminal 5 · Arrivals'},{})},leaveAirport:(x,z)=>{exitInterior(true);const f=freeSpot(x,z)||[x,z];placeAvatar(f[0],f[1],true)},stationPos:k=>{const ll=k==='cityterminal'?[59.3318,18.0560]:[59.3303,18.0581];const [x,z]=P(ll[0],ll[1]);const f=freeSpot(x,z)||[x,z];return {x:f[0],z:f[1]}},avPos:()=>({x:av.position.x,z:av.position.z}),avSet:(x,z)=>{av.position.x=x;av.position.z=z},apVehSim:(n)=>{const out={bad:[],moved:0,lanes:0};const x0=AP.veh.map(v=>v.g.position.x);for(let k=0;k<n;k++){apVehTick(0.1);const by={};for(const v of AP.veh){if(v.mode==='gone')continue;(by[v.g.position.z.toFixed(3)]=by[v.g.position.z.toFixed(3)]||[]).push(v)}out.lanes=Math.max(out.lanes,Object.keys(by).length);for(const r of Object.values(by)){r.sort((a,b)=>a.g.position.x-b.g.position.x);for(let i=1;i<r.length;i++){const a=r[i-1],b=r[i];if(b.g.position.x-a.g.position.x<(a.g.userData.len+b.g.userData.len)/2-0.002)out.bad.push([k,a.lane,a.g.position.x,b.g.position.x])}}}out.moved=AP.veh.filter((v,i)=>Math.abs(v.g.position.x-x0[i])>0.01).length;out.big=AP.veh.some(v=>v.g.userData.len>0.3);return out},apDrawn:()=>AP.drawN||0,camAt:()=>[camera.position.x,camera.position.y,camera.position.z],apRacks:()=>Object.fromEntries(Object.entries(AP.racks||{}).map(([k,v])=>[k,v.length])),apTrolleyAt:rx=>{apTrolleyToggle(rx);return !!AP.trolley},apSpawnPair:()=>{const o=AP.veh.filter(v=>v.lane==='o'),r=o.slice(0,2);for(const v of o){v.mode='gone';v.t=r.includes(v)?0:99;v.g.position.x=-v.dir*(HW+1.5)}apVehTick(0.1);const live=r.filter(v=>v.mode!=='gone');return {live:live.length,gap:live.length===2?Math.abs(live[0].g.position.x-live[1].g.position.x)-(live[0].g.userData.len+live[1].g.userData.len)/2:null}},apVeh:()=>AP.veh.map(v=>({x:v.g.position.x,z:v.g.position.z,len:v.g.userData.len,lane:v.lane,mode:v.mode,stall:v.stall,h:v.g.userData.len>0.3?1:0})),lieDown,hideAv:h=>{avHidden=h;av.visible=!h},emergency,leaveScene,isDriving:()=>DR.on,busLinesAt,transitLinesAt,busRide,hospitalNear:(x,z)=>{const L=[['Karolinska Universitetssjukhuset Solna',59.3488,18.0307],['Södersjukhuset',59.3106,18.0521],['S:t Görans sjukhus',59.3376,18.0221],['Danderyds sjukhus',59.3919,18.0412]].map(([n,a,b])=>{const [hx,hz]=P(a,b);const f=freeSpot(hx,hz)||[hx,hz];return {name:n,x:f[0],z:f[1]}});return L.sort((a,b)=>Math.hypot(a.x-x,a.z-z)-Math.hypot(b.x-x,b.z-z))[0]},setCoat,walkPath,ride,emote,refresh,season:()=>{lastSeason=''},snapTime,aurora:()=>{auroraT=1.2},route,streetName,isMoving:()=>inputVec().mag>0.08,setLook:n=>setLook(n),applyOutfit,setHome,syncCar,startDrive,stopDrive,nearPlaces,kindFor,poi:i=>POIS[i],
     enterPlace:(p,o)=>{const k=kindFor(p);if(!k){showPoi(p);return}if(k==='club'&&!(S.hour>=21.5||S.hour<2)){toast('The club opens late in the evening');return}if(k==='club'&&!S.flags['club'+S.day]){if(S.money<200){toast('Entry is 200 kr');return}S.money-=200;S.flags['club'+S.day]=1;log('Paid 200 kr entry at '+p.name+'.');render()}enterInterior(k,p,o)},
     enterHome:()=>enterInterior('home',null,{}),showCrowd,exitInterior,setQueue:n=>{IN.queue=n},inside:()=>IN.on,driving:()=>DR.on,
     centralEntrance:()=>{csDoorsWorld();return CS_DOORS[0].w},inStation:()=>CS.mode,leaveStation:csForceOut,placeState,restorePlace};

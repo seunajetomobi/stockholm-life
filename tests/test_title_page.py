@@ -127,10 +127,13 @@ def test_top_widgets_language_and_options(browser, server):
         assert order == ['tPlay', 'tOpt', 'tHow'], order
         # language: Swedish changes the page and is remembered
         page.click('#tLang button[data-l="sv"]')
-        assert 'Starta' in page.evaluate("() => document.getElementById('titleCard').innerText")
+        # the main menu is in capitals through CSS, so innerText reads "STARTA": compare in lower case
+        sv = page.evaluate("() => document.getElementById('titleCard').innerText").lower()
+        assert 'starta' in sv and 'så spelar du' in sv, sv
         assert page.evaluate("() => localStorage.getItem('stockholmsliv-lang')") == 'sv'
         page.click('#tLang button[data-l="en"]')
-        assert 'start' in page.evaluate("() => document.getElementById('titleCard').innerText").lower()
+        en = page.evaluate("() => document.getElementById('titleCard').innerText").lower()
+        assert 'start' in en and 'how to play' in en and 'starta' not in en, en
         # options: switching the control hints off hides the hint line, and it is saved
         page.click('#tOpt')
         page.click('.tog[data-k="hints"]')

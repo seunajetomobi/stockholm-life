@@ -36,7 +36,7 @@ def test_title_intro_settings_flow(browser, server):
         page.click('#nfGo')
         page.click('#nfGo')
         assert game.wait_for(page, "() => { const t = document.getElementById('title'); return t && !t.hidden && /Skip/.test(t.innerText) }", 20), 'no introduction'
-        page.screenshot(path='/tmp/title_intro.png')
+        game.shot(page, 'title_intro')
         page.click('#iSkip')
         assert game.wait_for(page, "() => document.getElementById('title').hidden && window.__TS.S && window.__TS.S.name", 30), 'game did not start'
         assert page.evaluate("() => localStorage.getItem('stockholmsliv-intro-seen')") == '1'

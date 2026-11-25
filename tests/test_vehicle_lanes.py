@@ -16,7 +16,7 @@ import game
 
 # a place in Vasastan (world units, 1 unit = 50 m) where a bus route line runs along the edge of a carriageway
 SPOT = (-11.37, -25.59)
-EXPOSE = 'window.__V={busKerb,busPlace,roadDepth,TRANSIT,agents,get G(){return G}};return API;'
+EXPOSE = 'window.__V={busKerb,busPlace,roadDepth,TRANSIT,agents,agentEdge,RW,get G(){return G}};return API;'
 
 # every bus route line within 8 units of the spot, in steps of 0.02 units (1 m): where the game's own busPlace puts a bus (the same function updateTransit calls) and,
 # for the old rule, where the uncapped shift would have put it. A bus is given a large smoothed shift (v.lo = 1) first, as one that has just come from a wide
@@ -77,3 +77,44 @@ def test_traffic_stays_on_carriageways(city):
     assert len(seen) >= 8 and any(v > 0.01 for _, _, v in seen), f'no moving cars to check: {len(seen)} samples'
     out = [s for s in seen if s[1] < 0]
     assert out == [], f'cars on road classes 4 to 9 outside the carriageway: {out[:5]}'
+
+
+# A car that has just left a wide road keeps its sideways offset and eases it to the new road's lane. On a narrow street that
+# offset lay beyond the carriageway for a moment (CI run 45521784213: a car 1.1 m outside a class-9 street, test above).
+# This puts a car with the outer-lane offset of a four-lane road onto residential edges near the spot through the game's own
+# agentEdge, then checks the offset it starts with and, two frames later, where it is drawn.
+OFFSET = """() => { const V = window.__V, G = V.G, out = {edges: 0, wide: [], drawn: []};
+  const car = V.agents.find(a => a.kind === 'car' && a.g.visible && a.e >= 0); if (!car) return null;
+  const near = []; for (let ei = 0; ei < G.E.length && near.length < 6; ei++) { const e = G.E[ei]; if (e[2] !== 9) continue;
+    const x = G.nx(e[0]), z = G.nz(e[0]); if (Math.hypot(x - car.g.position.x, z - car.g.position.z) > 3) continue;
+    if (V.roadDepth(x, z)[1]) near.push(ei) }
+  out.edges = near.length; out.car = V.agents.indexOf(car); out.list = near; return out }"""
+
+
+@pytest.mark.browser
+@pytest.mark.hook
+def test_a_car_from_a_wide_road_starts_inside_a_narrow_one(city):
+    found = city.evaluate(OFFSET)
+    assert found and found['edges'] >= 1, f'no loaded residential street next to a visible car: {found}'
+    measured = 0
+    # the car is a live agent of the shared city page: keep its state and put it back afterwards
+    city.evaluate("(ci) => { const a = window.__V.agents[ci]; window.__carWas = Object.assign({}, a) }", found['car'])
+    try:
+        measured = _probe(city, found)
+    finally:
+        city.evaluate("(ci) => { Object.assign(window.__V.agents[ci], window.__carWas); delete window.__carWas }", found['car'])
+    assert measured >= 1, 'the car left every test edge before it was drawn: nothing was measured'
+
+
+def _probe(city, found):
+    measured = 0
+    for ei in found['list']:
+        r = city.evaluate("""([ci, ei]) => { const V = window.__V, a = V.agents[ci], e = V.G.E[ei], wide = V.RW[4] / 2 - V.RW[4] / 8;
+            a.offS = wide; a.pull = 0; V.agentEdge(a, ei, e[0], a.ok);
+            return {off: a.offS, lim: V.RW[9] / 2} }""", [found['car'], ei])
+        assert abs(r['off']) <= r['lim'], f'edge {ei}: the car starts {r["off"]:.3f} from the centre line of a street {r["lim"]:.3f} half wide'
+        depth = city.evaluate("""([ci, ei]) => new Promise(done => requestAnimationFrame(() => requestAnimationFrame(() => {
+            const V = window.__V, a = V.agents[ci]; done(a.e === ei ? V.roadDepth(a.g.position.x, a.g.position.z)[0] : null) })))""", [found['car'], ei])
+        assert depth is None or depth >= 0, f'edge {ei}: the car is drawn {-depth * 50:.1f} m outside the carriageway'
+        measured += depth is not None
+    return measured

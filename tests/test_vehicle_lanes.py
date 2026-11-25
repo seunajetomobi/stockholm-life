@@ -42,7 +42,7 @@ CARS = """() => { const V = window.__V, out = []; for (const a of V.agents) { if
 @pytest.fixture(scope='module')
 def city(browser):
     body = game.hooked_html().replace('return API;', EXPOSE)
-    ctx = browser.new_context(viewport={'width': 1366, 'height': 768})
+    ctx = game.new_context(browser, viewport={'width': 1366, 'height': 768})
     ctx.route('**/index.html', lambda route: route.fulfill(status=200, content_type='text/html; charset=utf-8', body=body))
     page = ctx.new_page()
     err = game.Errors(page)

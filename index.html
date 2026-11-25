@@ -1918,8 +1918,11 @@ function flightPhase(a){for(const k in AIRPORTS){const [la,lo,n]=AIRPORTS[k],d=k
     if(a.gnd&&d<5)return {k,txt:'On the ground at '+n,ord:2,d};
     if(d<35&&a.alt<9000){if(a.vr<-200)return {k,txt:`Landing at ${n} · ${Math.round(d)} km out`,ord:0,d};if(a.vr>200)return {k,txt:`Departed ${n} · ${Math.round(d)} km`,ord:1,d}}}
   return {k:'',txt:a.alt>20000?'Overflying at cruise height':'Flying over the Stockholm area',ord:3,d:99}}
-async function routeOf(cs){cs=(cs||'').trim();if(!cs)return null;if(ROUTES.has(cs))return ROUTES.get(cs);
-  try{const r=await fetch('https://api.adsbdb.com/v0/callsign/'+encodeURIComponent(cs));const j=r.ok?await r.json():null;const fr=j&&j.response&&j.response.flightroute;ROUTES.set(cs,fr||null);return fr||null}catch(e){return null}}
+const ROUTE_ASK=new Map();// callsigns being asked about now, so a second call waits for the first instead of a second request
+async function routeOf(cs){cs=(cs||'').trim();if(!cs)return null;if(ROUTES.has(cs))return ROUTES.get(cs);if(ROUTE_ASK.has(cs))return ROUTE_ASK.get(cs);
+  // adsbdb answers 404 for a callsign it does not know: that is "no route", remembered for the session so we ask once (KNOWN_ISSUES L3)
+  const p=(async()=>{try{const r=await fetch('https://api.adsbdb.com/v0/callsign/'+encodeURIComponent(cs));if(r.status===404){ROUTES.set(cs,null);return null}const j=r.ok?await r.json():null;const fr=j&&j.response&&j.response.flightroute;ROUTES.set(cs,fr||null);return fr||null}catch(e){return null}finally{ROUTE_ASK.delete(cs)}})();
+  ROUTE_ASK.set(cs,p);return p}
 function openFlights(){if(!FLIGHT_RELAY){modal(`<div class="phonehead" style="--c:#2f6fd6">${glyphSVG('plane')}<h2>Flights</h2></div><p>Live flights need the small flights relay (a free Cloudflare Worker). It is in <code>tools/flights-worker.js</code>, with the steps to set it up at the top of the file.</p><p class="note">Until then, the planes at Bromma are simulated.</p><div class="row2"><button class="btn ghost" id="no">Close</button></div>`,m=>m.querySelector('#no').onclick=closeModal);return}
   let alive=true,timer=0;
   modal(`<div class="phonehead" style="--c:#2f6fd6">${glyphSVG('plane')}<h2>Flights · live</h2></div><div id="flBody"><p class="note">Loading live flights…</p></div><div class="row2"><button class="btn" id="sec">Arlanda security queues</button><button class="btn ghost" id="no">Close</button></div>`,m=>{

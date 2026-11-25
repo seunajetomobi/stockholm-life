@@ -25,7 +25,7 @@ address, host names are resolved once and pinned, redirects are checked hop by h
 import argparse
 import calendar
 import email.utils
-import fnmatch
+import functools
 import gzip
 import hashlib
 import html.parser
@@ -349,15 +349,44 @@ def check_entry(path, mode, typ):
         raise UsageError(f'{path}: unsupported entry (mode {mode}, type {typ})')
 
 
+@functools.lru_cache(maxsize=None)
+def ignore_regex(pat):
+    """One .assetsignore line (gitignore syntax, no negation) as (regex, dirs_only). A leading or inner '/' anchors the
+    pattern to the root; otherwise it matches at any depth. '**/' at the start matches any depth (the root included),
+    '/**' at the end everything inside, '/**/' in the middle zero or more folders; '*' and '?' never cross a '/'."""
+    dirs_only = pat.endswith('/')
+    pat = pat.rstrip('/')
+    anchored = '/' in pat
+    pat = pat.lstrip('/')
+    out, i = [], 0
+    while i < len(pat):
+        c = pat[i]
+        if pat.startswith('**/', i) and (i == 0 or pat[i - 1] == '/'):
+            out.append('(?:.*/)?'); i += 3
+        elif pat.startswith('/**', i) and i + 3 == len(pat):
+            out.append('/.+'); i += 3
+        elif c == '*':
+            j = i
+            while j < len(pat) and pat[j] == '*':
+                j += 1
+            out.append('[^/]*'); i = j
+        elif c == '?':
+            out.append('[^/]'); i += 1
+        elif c == '\\' and i + 1 < len(pat):
+            out.append(re.escape(pat[i + 1])); i += 2
+        else:
+            out.append(re.escape(c)); i += 1
+    return re.compile(('' if anchored else '(?:.*/)?') + ''.join(out) + r'\Z'), dirs_only
+
+
 def assets_ignored(path, patterns):
-    """True if .assetsignore (gitignore syntax) leaves this file out of what Cloudflare serves. A pattern without a
-    slash matches any one path component; one with a slash is anchored at the root. A matching folder hides its contents."""
+    """True if .assetsignore leaves this file out of what Cloudflare serves. A pattern that matches a folder hides
+    everything inside it; a pattern with a trailing '/' matches folders only."""
     parts = path.split('/')
     for pat in patterns:
-        anchored = '/' in pat.rstrip('/')
-        pat = pat.strip('/')
-        for i in range(1, len(parts) + 1):
-            if fnmatch.fnmatchcase('/'.join(parts[:i]) if anchored else parts[i - 1], pat):
+        rx, dirs_only = ignore_regex(pat) if isinstance(pat, str) else pat
+        for n in range(1, len(parts) + 1):
+            if rx.match('/'.join(parts[:n])) and (not dirs_only or n < len(parts)):
                 return True
     return False
 
@@ -732,6 +761,8 @@ def browser_check(policy, expected, base, index_bytes, opts, t0):
 
     def same_origin(route, req):
         url, path = req.url, rel(req.url)
+        if opts.get('root_index') and path == '':
+            path = 'index.html'                    # Cloudflare serves the page at /, not at /index.html
         tgt = targets.get(path)
         o = make_obs(path, 'browser', url, time.monotonic() - t0, resource_type=req.resource_type)
         fetched = None
@@ -852,7 +883,7 @@ def browser_check(policy, expected, base, index_bytes, opts, t0):
                         if not r.url.startswith(base) and not policy.loopback else None)
                 page.on('response', lambda r: res['external'].append({'url': r.url, 'result': f'HTTP {r.status}', 'required': r.url in required})
                         if r.status >= 400 and not r.url.startswith(base) and not policy.loopback else None)
-                nav = base + f'index.html?lc={opts["nonce"]}'
+                nav = base + ('' if opts.get('root_index') else 'index.html') + f'?lc={opts["nonce"]}'
                 try:
                     page.goto(nav, wait_until='load', timeout=max(1000, (deadline - time.monotonic()) * 1000))
                     early = None
@@ -1219,7 +1250,7 @@ def run(args):
                 raise UsageError('SL_LIVE_TEST_SINK must map to a loopback address')
             sink = (host, dest)
         opts = {'timeout': args.browser_timeout, 'nonce': f'{int(time.time())}-b', 'stubs': stubs, 'sink': sink,
-                'fault': os.environ.get('SL_LIVE_FAULT'), 'screenshot': bool(outputs.get('screenshot')),
+                'fault': os.environ.get('SL_LIVE_FAULT'), 'root_index': no_version, 'screenshot': bool(outputs.get('screenshot')),
                 'chrome_args': (os.environ.get('SL_LIVE_TEST_CHROME_ARGS') or '').split()}
         b = browser_check(policy, exp, policy.base, matched.get('index.html'), opts, t0)
         png = b.pop('screenshot_png', None)

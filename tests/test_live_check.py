@@ -110,7 +110,7 @@ class Site:
                 if path in site.files:
                     body = site.files[path]
                     body = body(self) if callable(body) else body
-                    ct = 'text/html; charset=utf-8' if path.endswith('.html') else 'application/json' if path.endswith('.json') \
+                    ct = 'text/html; charset=utf-8' if path.endswith('.html') or path == '' else 'application/json' if path.endswith('.json') \
                         else 'text/plain; charset=utf-8'
                     send(self, 200, body, {'Content-Type': ct, 'Cache-Control': 'max-age=600'}, site.gz)
                 else:
@@ -387,6 +387,44 @@ def test_assetsignore_rules():
     assert not any(map(ign, ['index.html', 'src/a.js', 'data/b.json', 'sub/top.txt', 'src/skipper/a.js']))
     with pytest.raises(lc.UsageError):
         lc.parse_assetsignore('!keep')
+
+
+@pytest.mark.parametrize('pattern, hidden, shown', [
+    ('**/README.md', ['README.md', 'a/README.md', 'a/b/README.md'], ['README.mdx', 'a/XREADME.md']),   # root included
+    ('docs/**', ['docs/a.md', 'docs/x/y.md'], ['docs', 'other/docs/a.md', 'docsx/a.md']),
+    ('a/**/b', ['a/b', 'a/x/b', 'a/x/y/b'], ['b', 'x/a/b', 'a/bx']),
+    ('/top.txt', ['top.txt'], ['sub/top.txt']),
+    ('sub/file.js', ['sub/file.js'], ['x/sub/file.js', 'file.js']),                  # an inner / anchors to the root
+    ('file.js', ['file.js', 'sub/file.js', 'a/b/file.js'], ['file.json']),            # no / matches at any depth
+    ('out/', ['out/a.js', 'x/out/a.js'], ['out', 'outer/a.js']),                      # a trailing / means folders only
+    ('*.log', ['a.log', 'x/y.log'], ['a.logx', 'a/logs']),   # * stops at /
+    ('a?c', ['abc'], ['a/c', 'abbc']),
+    ('\\#hash', ['#hash'], ['hash']),                                                  # an escaped # is a name
+])
+def test_assetsignore_gitignore_semantics(pattern, hidden, shown):
+    pats = lc.parse_assetsignore(pattern)
+    assert len(pats) == 1
+    for p in hidden:
+        assert lc.assets_ignored(p, pats), (pattern, p)
+    for p in shown:
+        assert not lc.assets_ignored(p, pats), (pattern, p)
+
+
+def test_assetsignore_comments_and_blanks():
+    assert lc.parse_assetsignore('# c\n\n   \n#x\n\\#y\n') == ['\\#y']
+
+
+@pytest.mark.browser
+def test_no_version_browser_check_passes_with_index_redirect(tmp_path, cf_site):
+    """The default browser check on a Cloudflare-like host: /index.html redirects (307) to /, which serves the page."""
+    pytest.importorskip('playwright')
+    repo, sha, site = cf_site()
+    code, rep, out = bcheck(tmp_path, repo, sha, site, '--no-version-file')
+    assert code == 0 and rep['browser']['verdict'] == 'PASS', out
+    b = rep['browser']
+    assert {o['target'] for o in b['observations']} == {'index.html', *GOOD}
+    assert not b['other_same_origin'] and not b['interception_failures']
+    assert site.hits('index.html') == [], 'the page must be opened at /, never at /index.html'
 
 
 # ---------------------------------------------------------------- expected sources and targets (T1, T2, G1-G7, S6)

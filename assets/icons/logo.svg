@@ -1,0 +1,9 @@
+<!-- Stockholmsliv app icon: the Swedish flag cross with a roundel holding the letter S.
+     Colours: Swedish blue #006aa7, Swedish yellow #fecc02. The S is set in Jost (SIL Open Font License). Source for the PNG icons next to it. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <rect width="512" height="512" fill="#006aa7"/>
+  <rect x="150" y="0" width="62" height="512" fill="#fecc02"/>
+  <rect x="0" y="225" width="512" height="62" fill="#fecc02"/>
+  <circle cx="181" cy="256" r="122" fill="#006aa7" stroke="#fecc02" stroke-width="16"/>
+  <text x="181" y="318" text-anchor="middle" font-family="Jost, Futura, 'Century Gothic', sans-serif" font-weight="600" font-size="196" fill="#ffffff">S</text>
+</svg>

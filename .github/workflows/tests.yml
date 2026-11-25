@@ -72,16 +72,25 @@ jobs:
       - if: steps.src.outputs.have == 'yes'
         run: python tests/test_syntax.py
 
-  browser:
-    name: tests-browser
+  # The browser suite in parallel jobs, split by tests/shard.py (about 20 minutes each instead of about 2 hours in one).
+  # The required check is the job tests-browser below, which passes only when every shard has passed.
+  browser-shard:
+    name: browser shard ${{ matrix.shard }} of ${{ strategy.job-total }}
     needs: syntax
     # Pull requests: always. A deployment (called by Deploy): only when its browser_tests box is ticked.
     # Deliberately does not name the caller's event; see the env comment above.
     if: github.event_name == 'pull_request' || inputs.browser == true
     runs-on: ubuntu-24.04
-    timeout-minutes: 180
+    timeout-minutes: 60
     permissions:
       contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4, 5, 6]
+    env:
+      SHARD: ${{ matrix.shard }}
+      SHARDS: ${{ strategy.job-total }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -124,12 +133,50 @@ jobs:
           case "$got" in *" $want"*) ;; *) echo "::error::Got '$got', expected Chromium $want"; exit 1 ;; esac
           echo "CHROME=$path" >> "$GITHUB_ENV"
           echo "- browser \`$got\` at \`$path\`" >> "$GITHUB_STEP_SUMMARY"
-      - if: steps.src.outputs.have == 'yes'
-        run: python -m pytest tests
+      - name: Pick this shard's test files, and check that every test runs in exactly one shard
+        if: steps.src.outputs.have == 'yes'
+        run: |
+          # pipefail: a step without `shell:` runs as `bash -e`, so a collection error would otherwise be ignored here
+          set -euo pipefail
+          # The split from this workflow's own commit, so that a deployment of an older commit without tests/shard.py
+          # is split too. --check fails unless every file pytest collects from tests/ is in exactly one shard.
+          git show "$GITHUB_SHA:tests/shard.py" > "$RUNNER_TEMP/shard.py"
+          python -m pytest --collect-only -q tests | python "$RUNNER_TEMP/shard.py" --tests tests --check "$SHARDS"
+          python "$RUNNER_TEMP/shard.py" --tests tests "$SHARD" "$SHARDS" > "$RUNNER_TEMP/files"
+          { echo "- shard $SHARD of $SHARDS:"; sed 's/.*/  - `&`/' "$RUNNER_TEMP/files"; } >> "$GITHUB_STEP_SUMMARY"
+      - name: Run this shard's tests
+        if: steps.src.outputs.have == 'yes'
+        run: |
+          set -eu
+          mapfile -t files < "$RUNNER_TEMP/files"
+          python -m pytest "${files[@]}"
       - if: always() && steps.src.outputs.have == 'yes'
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: screenshots-${{ github.run_id }}-${{ github.run_attempt }}
+          name: screenshots-${{ github.run_id }}-${{ github.run_attempt }}-shard${{ matrix.shard }}
           path: tests/output/
           retention-days: 7
           if-no-files-found: ignore
+
+  browser:
+    # The required check. A required check that was skipped counts as passed, so this job runs whatever happened
+    # before it (always()) and passes only when every shard passed: a shard that failed, timed out, was cancelled or
+    # was skipped (after a failed tests-syntax) fails it. In a deployment without browser tests it is skipped, as the
+    # single browser job was.
+    name: tests-browser
+    needs: [syntax, browser-shard]
+    if: always() && (github.event_name == 'pull_request' || inputs.browser == true)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions: {}
+    steps:
+      - name: Every browser shard passed
+        env:
+          SYNTAX: ${{ needs.syntax.result }}
+          SHARDS: ${{ needs.browser-shard.result }}
+        run: |
+          echo "- tests-syntax: \`$SYNTAX\`, browser shards: \`$SHARDS\`" >> "$GITHUB_STEP_SUMMARY"
+          if [ "$SHARDS" != success ]; then
+            echo "::error::Not every browser shard passed (result: $SHARDS); see the jobs 'browser shard K of N'."
+            exit 1
+          fi

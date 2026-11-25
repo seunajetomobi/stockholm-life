@@ -333,6 +333,117 @@ def test_start_over_with_a_failed_copy_changes_nothing(game_ctx):
     assert t.js("() => window.__TS.SV.mode") == 'active'
 
 
+# ---------- a new life from the title page over the life being played ----------
+SEEN = {'stockholmsliv-intro-seen': '1'}  # the short introduction is not shown, so the form starts the life at once
+# The title buttons animate, so Playwright's click waits for them to be "stable" and, on a loaded machine at 1-2 fps,
+# ran out of its 30 s on #tPlay (2026-11-25). Each title card is drawn at once (titleGo), so these tests press the
+# buttons through their handlers (Tab.press) instead.
+
+
+def title_new_life(t):
+    """Title page → Start → Start a new life, with a life being played."""
+    t.js("() => window.__T.showTitle(false)")
+    assert game.wait_for(t.page, "() => { const e = document.getElementById('title'); return !!e && !e.hidden }", 30)
+    t.press('#tPlay')
+    t.press('#cNew')
+    return t.js("() => document.getElementById('titleCard').innerText")
+
+
+def fill_form(t, name):
+    t.press('#tYes')
+    t.page.fill('#nfName', name)
+    t.page.select_option('#nfAge', '30')
+    t.page.select_option('#nfGender', 'woman')
+    t.press('#nfGo')
+    assert 'step 2 / 2' in t.js("() => document.getElementById('titleCard').innerText").lower()
+
+
+def test_title_new_life_asks_first_and_keeps_a_copy(game_ctx):
+    """Regression (save review of PR #56, 2026-11-25): "Start a new life" on the title page replaced the life being
+    played, with no warning and no copy. It must ask first; "Keep playing" changes nothing; going on keeps a verified
+    before-replace copy of that life (as Start over does), and the other slots stay byte for byte."""
+    t = tab(game_ctx, two(extra=SEEN))
+    before = t.store()
+    card = title_new_life(t)
+    assert 'will be replaced' in card and 'copy' in card.lower(), card
+    t.press('#tNo')
+    assert game.wait_for(t.page, "() => document.getElementById('title').hidden", 30), 'Keep playing must go back to the life'
+    assert t.js("() => window.__TS.S.name") == 'Real' and keys(t, 'before-replace') == []
+    untouched(t, before, flushed=True)
+    title_new_life(t)
+    fill_form(t, 'Newer')
+    t.press('#nfGo')
+    assert game.wait_for(t.page, "() => window.__TS.S && window.__TS.S.name === 'Newer'", 60), 'the new life did not start'
+    copies = keys(t, 'before-replace')
+    assert len(copies) == 1 and copies[0].startswith(V4 + '-before-replace-'), copies
+    kept = json.loads(t.raw(copies[0]))
+    assert (kept['name'], kept['day'], kept['money']) == ('Real', 3, 1200), 'the copy is the life that was replaced'
+    assert ev(t, "slotBackups(1).map(b => b.ok && b.name)") == ['Real'], 'the copy can be restored from Saves'
+    assert json.loads(t.raw(V4))['name'] == 'Newer'
+    assert t.raw(SLOT2) == before[SLOT2] and index(t)['active'] == 1
+    assert t.err.uncaught == []
+
+
+def test_title_new_life_with_a_failed_copy_changes_nothing(game_ctx):
+    t = tab(game_ctx, two(extra=SEEN))
+    title_new_life(t)
+    fill_form(t, 'Newer')
+    t.faults(set='-before-replace-')
+    before = t.store()
+    t.press('#nfGo')
+    assert game.wait_for(t.page, "() => /Nothing was changed/.test(document.getElementById('nfErr').textContent)", 30), \
+        t.js("() => document.getElementById('titleCard').innerText")
+    assert t.js("() => window.__TS.S.name") == 'Real'
+    untouched(t, before, flushed=True)
+    assert keys(t, 'before-replace') == [] and t.js("() => window.__TS.SV.mode") == 'active'
+    assert t.err.uncaught == []
+
+
+def test_panel_start_over_keeps_a_copy(game_ctx):
+    """The panel's "Start a new life" (#restart) warned but kept no copy before the new life replaced this one (same
+    save review, 2026-11-25; on main too). It now keeps the same verified before-replace copy as the title page."""
+    t = tab(game_ctx, two(extra=SEEN))
+    before = t.store()
+    t.press('#restart')
+    assert 'copy is kept' in t.js("() => document.getElementById('modalRoot').innerText")
+    t.press('#modalRoot #yes')
+    assert game.wait_for(t.page, "() => !!document.querySelector('#modalRoot #go')", 30), 'the new-life form did not open'
+    copies = keys(t, 'before-replace')
+    assert len(copies) == 1 and json.loads(t.raw(copies[0]))['name'] == 'Real', copies
+    t.go('Newer')
+    assert game.wait_for(t.page, "() => window.__TS.S && window.__TS.S.name === 'Newer'", 60), 'the new life did not start'
+    assert json.loads(t.raw(V4))['name'] == 'Newer' and t.raw(SLOT2) == before[SLOT2]
+    assert t.err.uncaught == []
+
+
+def test_panel_start_over_with_a_failed_copy_changes_nothing(game_ctx):
+    t = tab(game_ctx, two(extra=SEEN))
+    t.faults(set='-before-replace-')
+    before = t.store()
+    t.press('#restart')
+    t.press('#modalRoot #yes')
+    assert game.wait_for(t.page, "() => { const e = document.getElementById('rsErr'); return !!e && /Nothing was changed/.test(e.textContent) }", 30), \
+        'a failed copy must stop here with "Nothing was changed"'
+    assert t.js("() => !document.querySelector('#modalRoot #go') && window.__TS.S.name") == 'Real'
+    untouched(t, before, flushed=True)
+    assert keys(t, 'before-replace') == []
+    assert t.err.uncaught == []
+
+
+def test_title_new_life_keeps_the_newest_three_copies(game_ctx):
+    """Codex review, 2026-11-25: the copies this path makes are pruned like Start over's (SLOT_KEEP = 3, newest kept,
+    only after the copy was verified), and those kept can still be restored."""
+    olds = {f'{V4}-before-replace-{1000 + i}': J({**LIFE, 'name': f'Old{i}'}) for i in range(3)}
+    t = tab(game_ctx, two(extra={**SEEN, **olds}))
+    title_new_life(t)
+    fill_form(t, 'Newer')
+    t.press('#nfGo')
+    assert game.wait_for(t.page, "() => window.__TS.S && window.__TS.S.name === 'Newer'", 60), 'the new life did not start'
+    assert len(keys(t, 'before-replace')) == 3 and t.raw(f'{V4}-before-replace-1000') is None, keys(t, 'before-replace')
+    assert ev(t, "slotBackups(1).map(b => b.ok && b.name)") == ['Real', 'Old2', 'Old1'], 'newest first, the oldest pruned'
+    assert t.err.uncaught == []
+
+
 # ---------- export and import per slot ----------
 def test_export_any_readable_slot(game_ctx):
     t = tab(game_ctx, two())

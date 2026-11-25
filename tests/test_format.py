@@ -90,7 +90,7 @@ def test_game_uses_the_module(browser):
     """The game script's names are the module's own functions, not copies, and the city starts with them."""
     expose = 'window.__F={' + ','.join(NAMES) + '};return API;'
     body = game.hooked_html().replace('return API;', expose)
-    ctx = browser.new_context(viewport={'width': 1366, 'height': 768})
+    ctx = game.new_context(browser, viewport={'width': 1366, 'height': 768})
     ctx.route('**/index.html', lambda route: route.fulfill(status=200, content_type='text/html; charset=utf-8', body=body))
     page = ctx.new_page()
     err = game.Errors(page)
@@ -108,7 +108,7 @@ def test_game_uses_the_module(browser):
 
 @pytest.mark.browser
 def test_missing_module_stops_with_a_message(browser):
-    ctx = browser.new_context(viewport={'width': 1366, 'height': 768})
+    ctx = game.new_context(browser, viewport={'width': 1366, 'height': 768})
     ctx.route('**/src/util/format.js', lambda route: route.fulfill(status=404, content_type='text/plain', body='not found'))
     page = ctx.new_page()
     err = game.Errors(page)

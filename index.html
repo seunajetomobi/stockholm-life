@@ -3,7 +3,18 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<link rel="icon" href="data:,">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/icons/favicon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="assets/icons/icon-192.png">
+<link rel="apple-touch-icon" sizes="180x180" href="assets/icons/apple-touch-icon-180.png">
+<link rel="preload" as="image" href="assets/title/stadshuset-1280.jpg" media="(max-width:700px)">
+<link rel="preload" as="image" href="assets/title/stadshuset-1920.jpg" media="(min-width:701px) and (max-width:1699px) and (max-resolution:1.99dppx)">
+<link rel="preload" as="image" href="assets/title/stadshuset-3840.jpg" media="(min-width:1700px), (min-width:701px) and (min-resolution:2dppx)">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#006aa7">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Stockholmsliv">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Stockholmsliv</title>
 <meta name="description" content="Stockholmsliv is a free 3D browser game about building a life in Stockholm: a map of the real city, live weather and SL departures, jobs, housing, Swedish bureaucracy and everyday life.">
 <link rel="canonical" href="https://stockholmsliv.app/">
@@ -16,7 +27,7 @@
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"VideoGame","name":"Stockholmsliv","url":"https://stockholmsliv.app/","description":"A free 3D browser game about building a life in Stockholm.","inLanguage":"en","genre":"Life simulation","gamePlatform":"Web browser","applicationCategory":"Game","operatingSystem":"Any","isAccessibleForFree":true,"author":{"@type":"Organization","name":"Helekt","url":"https://www.helekt.net/"}}</script>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Familjen+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Jost:wght@400;500;600&family=Familjen+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=block">
 <style>
 /* Layout: the city fills the screen. A departure-board strip (time, place, money, need gauges) runs across the top,
    a "Next up" ticket sits under it, and a five-tab dock opens one panel: a drawer on the right on wide screens, a sheet on phones. */
@@ -111,12 +122,193 @@ button:focus-visible,[tabindex]:focus-visible,input:focus-visible,select:focus-v
 .drivehud{font:600 18px var(--mono)}
 .inhud button,.drivehud button{font:700 13px var(--display);letter-spacing:.08em;text-transform:uppercase;border:0;border-radius:8px;padding:8px 14px;background:var(--amber);color:#0A1219}
 .inact{position:absolute;left:50%;bottom:calc(150px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);display:none;font:700 16px var(--display);letter-spacing:.06em;text-transform:uppercase;padding:14px 22px;border-radius:12px;border:0;background:var(--amber);color:#0A1219;box-shadow:0 8px 24px rgba(0,0,0,.4);z-index:5}
-.loading{position:absolute;inset:0;display:grid;place-items:center;background:#0b1424;color:#e6eae5;z-index:8;transition:opacity .6s}
-.loading .box{display:grid;gap:10px;justify-items:center;text-align:center;padding:20px}
-.loading b{font:700 28px var(--display);letter-spacing:.06em;text-transform:uppercase}
-.loading .bar{width:240px;height:6px;border-radius:3px;background:rgba(255,255,255,.15);overflow:hidden}
-.loading .bar i{display:block;height:100%;width:0;background:var(--amber);transition:width .3s}
-.loading small{opacity:.7;font-size:12px;max-width:34ch}
+/* Title page. Design: Swedish and simple. Warm paper, ink-blue text, Swedish blue and yellow used sparingly, geometric Jost lettering, plenty of air.
+   A photograph of Stockholm City Hall at blue hour behind it (assets/title/CREDITS.md). 4K for big or sharp screens, 1080p by default, 720p for small phones. */
+.title{--bg:url(assets/title/stadshuset-1920.jpg);--blue:#006aa7;--yellow:#fecc02;--paper:#faf8f3;--ink:#14233a;--mute:#5d6b80;--line:#dcd8cc;
+  font-family:'Jost','Futura','Century Gothic',system-ui,sans-serif;position:fixed;inset:0;z-index:18;display:grid;place-items:center;align-content:safe center;overflow-y:auto;padding:76px 16px 28px;
+  background:linear-gradient(180deg,rgba(4,12,28,.16),rgba(4,12,28,0) 34%,rgba(4,12,28,.42)),var(--bg) 58% 62%/cover no-repeat,#0c2c62;color:#fff;opacity:1;transition:opacity .45s}
+@media (max-width:700px){.title{--bg:url(assets/title/stadshuset-1280.jpg)}}
+@media (min-width:1700px),(min-width:701px) and (min-resolution:2dppx){.title{--bg:url(assets/title/stadshuset-3840.jpg)}}
+.title[hidden]{display:none}.title.out{opacity:0;pointer-events:none}.title [hidden]{display:none!important}
+.title button,.title input,.title select,.title textarea{font-family:inherit}
+/* language switch, top right: a paper pill */
+.title .ttop{position:fixed;top:max(14px,env(safe-area-inset-top,0px));right:max(14px,env(safe-area-inset-right,0px));z-index:1;display:flex;align-items:center;gap:8px}
+.title .glass{position:static;background:rgba(250,248,243,.94);border:1px solid rgba(255,255,255,.6);color:var(--ink);box-shadow:0 6px 24px rgba(5,15,35,.25)}
+.title .tl{border-radius:999px;padding:5px 6px;display:flex;align-items:center}
+.title .ttop button{min-height:40px}
+@media (max-width:700px){.title .ttop button{min-height:44px}.title .tl button{min-width:44px;justify-content:center}}
+.title .ttop>.glass{flex:0 0 auto}.title .tl button{flex:0 0 auto;white-space:nowrap}.title .tl .alabel{flex:0 0 auto;white-space:nowrap}
+@media (max-width:480px){.title .tl .alabel{display:none}.title .tl button{padding:8px 10px}}
+.title .tl button{display:inline-flex;align-items:center;gap:7px;background:none;border:0;color:var(--ink);font:500 14px/1 'Jost',sans-serif;letter-spacing:.06em;padding:8px 12px;border-radius:999px;cursor:pointer;box-shadow:none}
+.title .tr{border-radius:999px;padding:5px 6px;display:flex;align-items:center;gap:2px}
+.title .tr i{width:1px;height:18px;background:var(--line)}
+.title .tr button{display:inline-flex;align-items:center;gap:6px;background:none;border:0;color:var(--ink);font:500 14px/1 'Jost',sans-serif;letter-spacing:.06em;padding:8px 10px;border-radius:999px;cursor:pointer;box-shadow:none}
+.title .tr button[aria-pressed=true]{background:var(--yellow)}.title .tr svg{width:22px;height:15px;border-radius:2px;display:block;box-shadow:0 0 0 1px rgba(20,35,58,.15)}
+.title .stack{width:min(760px,100%);margin:auto}
+.title .card{display:flex;flex-direction:column;gap:12px;text-align:center}
+.title .card.panel{width:min(440px,100%);margin:0 auto}
+/* the name */
+.title h1{margin:0;white-space:nowrap;font:600 clamp(26px,8.6vw,64px)/1 'Jost',sans-serif;letter-spacing:.06em;text-transform:uppercase;color:var(--yellow);-webkit-text-stroke:max(2px,.045em) var(--blue);paint-order:stroke fill;filter:drop-shadow(0 3px 14px rgba(0,0,0,.4))}
+.title h1 span{color:var(--blue);-webkit-text-stroke:max(3px,.075em) var(--yellow)}
+.title .card:not(.panel) .tag{margin:0 0 14px;color:#fff;font-size:16px;font-weight:400;letter-spacing:.02em;line-height:1.45;text-shadow:0 1px 12px rgba(0,0,0,.55)}
+/* buttons: round, quiet, one yellow call to action */
+.title .btns{width:min(260px,100%);margin:0 auto;display:flex;flex-direction:column;gap:16px}
+.title button{position:relative;overflow:hidden;font:500 16px/1.2 'Jost',sans-serif;letter-spacing:.03em;padding:13px 18px;border-radius:999px;border:1px solid rgba(255,255,255,.55);background:rgba(250,248,243,.92);color:var(--ink);cursor:pointer;box-shadow:0 4px 16px rgba(5,15,35,.2);
+  transition:transform .2s cubic-bezier(.2,.8,.2,1),box-shadow .2s ease,letter-spacing .2s ease,background-color .2s ease}
+.title button.primary{background:var(--yellow);border-color:var(--yellow);font-weight:600}
+.title button::after{content:"";position:absolute;inset:0;background:linear-gradient(105deg,transparent 30%,rgba(255,255,255,.55) 50%,transparent 70%);transform:translateX(-130%);pointer-events:none}
+.title button:hover,.title button:focus-visible{transform:translateY(-2px) scale(1.03);letter-spacing:.07em;box-shadow:0 12px 28px rgba(5,15,35,.3);background-color:#fff}
+.title button.primary:hover,.title button.primary:focus-visible{background-color:#ffd83a}
+.title button:hover::after,.title button:focus-visible::after{transform:translateX(130%);transition:transform .7s ease}
+.title button:active{transform:translateY(0) scale(.99)}
+.title button:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+@media (prefers-reduced-motion:reduce){.title button,.title button::after{transition:none!important}.title button:hover,.title button:focus-visible{transform:none;letter-spacing:.03em}.title button:hover::after{transform:translateX(-130%)}}
+/* panels (choice, form, options, slides): a Swedish-blue gradient with a thin flag-coloured edge, paper-white fields, one yellow action */
+.title{--panel-top:#1767b5;--panel-mid:#2c7bc3;--panel-bot:#4a8fcd}
+.title .card.panel{position:relative;overflow-y:auto;overscroll-behavior:contain;max-height:calc(100vh - 90px);max-height:calc(100dvh - 96px);background:linear-gradient(180deg,var(--panel-top) 0%,var(--panel-mid) 55%,var(--panel-bot) 100%);color:#fff;padding:30px 26px 22px;border-radius:20px;border:0;box-shadow:0 24px 64px rgba(4,12,28,.42);text-align:left;gap:14px;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.55) transparent}
+.title .card.panel>*{flex-shrink:0}
+.title .card.panel::before{content:"";position:absolute;left:0;right:0;top:0;height:5px;background:linear-gradient(90deg,var(--yellow) 0 32%,#fff 32% 36%,var(--yellow) 36% 100%);opacity:.95}
+.title .card.panel h2{margin:0;font:600 24px/1.15 'Jost',sans-serif;letter-spacing:.01em;text-transform:none;text-align:left;color:#fff}
+.title .card.panel .tag{margin:0;color:rgba(255,255,255,.88);font-size:14.5px;line-height:1.5;text-shadow:none}
+.title .card.panel .btns{width:100%}
+.title .card.panel button{box-shadow:none;border:1px solid rgba(255,255,255,.55);background:rgba(255,255,255,.12);color:#fff}
+.title .card.panel button.primary{background:var(--yellow);border-color:var(--yellow);color:var(--ink)}
+.title .card.panel button:hover,.title .card.panel button:focus-visible{box-shadow:0 8px 20px rgba(4,12,28,.22);background-color:rgba(255,255,255,.26);border-color:#fff}
+.title .card.panel button.primary:hover,.title .card.panel button.primary:focus-visible{background-color:#ffd83a;border-color:#ffd83a}
+.title .card.panel button::after{background:linear-gradient(105deg,transparent 30%,rgba(255,255,255,.4) 50%,transparent 70%)}
+.title .card.panel button:focus-visible{outline:2px solid #fff;outline-offset:2px}
+.title .steps{margin:-8px 0 0;font-size:12.5px;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.82);text-align:left}
+.title .frow{display:flex;flex-direction:column;gap:6px;text-align:left}.title .frow.two{flex-direction:row;gap:12px}.title .frow.two>div{flex:1;display:flex;flex-direction:column;gap:6px;min-width:0}
+.title label{font-size:12px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:rgba(255,255,255,.9)}
+.title label em{font-style:normal;text-transform:none;letter-spacing:0;color:rgba(255,255,255,.7);font-weight:400}
+.title input,.title select,.title textarea{font:400 16px 'Jost',sans-serif;padding:11px 13px;border-radius:10px;border:1px solid transparent;background:#fff;color:var(--ink);min-width:0;width:100%}
+.title textarea{resize:vertical;min-height:72px;line-height:1.4}
+.title input::placeholder,.title textarea::placeholder{color:#8794a6}
+.title input:focus-visible,.title select:focus-visible,.title textarea:focus-visible{outline:0;border-color:var(--yellow);box-shadow:0 0 0 3px rgba(254,204,2,.45)}
+.title select option{color:var(--ink)}
+.title .nfnote{font-size:14px;color:var(--ink);background:#fff4c2;border-radius:10px;padding:9px 12px;text-align:left}
+.title .nferr{margin:0;color:#ffe3de;font-size:14px;font-weight:500;min-height:1.2em;text-align:left}
+.title .frow small,.title .card.panel small{margin:2px 0 0;color:rgba(255,255,255,.85);text-align:left;font-size:12.5px;line-height:1.5;text-shadow:none}
+.chips{display:flex;flex-wrap:wrap;gap:7px}
+.title .chips button{padding:7px 13px;font-size:14px;border-radius:999px;box-shadow:none;letter-spacing:.01em}
+.title .card.panel .chips button[aria-pressed=true]{background:var(--yellow);border-color:var(--yellow);color:var(--ink);font-weight:500}
+.title .chips button[aria-pressed=true]::after{display:none}
+.title .langadd{display:flex;gap:8px}.title .langadd select{flex:1}.title .langadd select#nfLangLv{flex:0 0 112px}
+.title .card.panel .langadd button{flex:0 0 auto;padding:10px 16px;border-radius:10px;background:#fff;border-color:#fff;color:var(--ink);font-weight:500}
+.title .card.panel .langadd button:hover{background-color:var(--yellow);border-color:var(--yellow)}
+.title .setrow{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 0;border-top:1px solid rgba(255,255,255,.25);text-align:left}.title .setrow b{display:block;font-size:15.5px;font-weight:600}
+.title .setrow small{display:block}
+.title .seg{display:flex;gap:5px}.title .seg button{padding:8px 13px;font-size:13.5px;border-radius:999px;box-shadow:none;letter-spacing:.01em}
+.title .card.panel .seg button.on{background:var(--yellow);border-color:var(--yellow);color:var(--ink);font-weight:500}
+.title .slides{min-height:140px;display:flex;flex-direction:column;gap:8px;text-align:left}.title .slides h3{margin:0;font:600 21px 'Jost',sans-serif;color:#fff}.title .slides p{margin:0;color:rgba(255,255,255,.94);font-size:16px;line-height:1.55}
+.title .dots{display:flex;gap:7px;justify-content:center;margin:4px 0}.title .dots i{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.4)}.title .dots i.on{background:var(--yellow)}
+/* account screen */
+.title .tabs{width:100%}.title .tabs button{flex:1}
+.title .provs{display:flex;flex-direction:column;gap:8px}
+.title .card.panel .prov{display:flex;align-items:center;gap:12px;justify-content:flex-start;padding:10px 14px;border-radius:12px;background:#fff;border-color:#fff;color:var(--ink);text-align:left}
+.title .prov i{flex:0 0 26px;height:26px;border-radius:50%;display:grid;place-items:center;font:600 14px/1 'Jost',sans-serif;font-style:normal}
+.title .prov span{flex:1}.title .soon{font-style:normal;font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;background:#fff4c2;color:#6b5800;border-radius:999px;padding:3px 8px}
+.title .or{display:flex;align-items:center;gap:10px;color:rgba(255,255,255,.85);font-size:13px;letter-spacing:.08em;text-transform:uppercase}.title .or::before,.title .or::after{content:"";flex:1;height:1px;background:rgba(255,255,255,.35)}
+.title .chk{display:flex;gap:10px;align-items:flex-start;text-transform:none;letter-spacing:0;font-size:14.5px;font-weight:400;color:#fff}.title .chk input{width:20px;height:20px;flex:0 0 20px;margin:1px 0 0;accent-color:var(--yellow)}
+.title .acnote{margin:0;color:#fff;background:rgba(255,255,255,.16);border-radius:10px;padding:0;font-size:14px;line-height:1.5}.title .acnote:not(:empty){padding:10px 12px}
+/* the form's buttons stay in view at the bottom while the fields scroll */
+.title .actions{position:sticky;bottom:-22px;margin:2px -26px -22px;padding:14px 26px 22px;display:flex;flex-direction:column;gap:10px;background:linear-gradient(180deg,rgba(74,143,205,0),var(--panel-bot) 26%)}
+/* store badges on the main menu: the stores' own artwork, side by side, unchanged */
+.title .stores{display:flex;flex-direction:column;align-items:center;gap:10px;margin-top:36px}
+.title .stsoon{margin:0;font-size:11.5px;letter-spacing:.14em;text-transform:uppercase;color:#fff;text-shadow:0 1px 8px rgba(0,0,0,.7)}.title .stsoon:empty{display:none}
+.title .storerow{display:flex;flex-direction:row;align-items:center;justify-content:center;gap:30px;flex-wrap:nowrap}
+.title .store{display:flex;align-items:center;justify-content:center;height:44px;text-decoration:none;border-radius:8px}
+.title .store img{display:block;user-select:none;-webkit-user-drag:none}
+.title .store img.st-ios{height:44px;width:auto}
+.title .store img.st-play{height:68px;width:auto;margin:-12px -10px}/* Google's file has clear space around the badge; the badge itself is 44 px tall like Apple's */
+.title a.store:hover,.title a.store:focus-visible{outline:2px solid #fff;outline-offset:3px}
+.title .store.pending{cursor:default}
+/* menu list, details, danger, accessibility modes */
+.title .menulist{display:flex;flex-direction:column;border-top:1px solid rgba(255,255,255,.25)}
+.title .card.panel .mrow{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;padding:13px 4px;border:0;border-bottom:1px solid rgba(255,255,255,.25);border-radius:0;background:transparent;color:#fff;text-align:left;font-size:16px;letter-spacing:.01em;box-shadow:none}
+.title .card.panel .mrow span{color:inherit;font:inherit;letter-spacing:inherit;text-transform:none;opacity:1;display:inline}
+.title .card.panel .mrow i{font-style:normal;font-size:22px;line-height:1;opacity:.8;transition:transform .2s ease}
+.title .card.panel .mrow:hover,.title .card.panel .mrow:focus-visible{background-color:rgba(255,255,255,.12);transform:none;letter-spacing:.01em;box-shadow:none}
+.title .card.panel .mrow:hover i,.title .card.panel .mrow:focus-visible i{transform:translateX(4px)}
+.title .card.panel .mrow::after{display:none}
+.title .abtn{display:block;text-align:center;text-decoration:none;font:500 16px/1.2 'Jost',sans-serif;padding:13px 18px;border-radius:999px;border:1px solid rgba(255,255,255,.55);background:rgba(255,255,255,.12);color:#fff}
+.title .abtn:hover,.title .abtn:focus-visible{background:rgba(255,255,255,.26);border-color:#fff;outline:0}
+.title .card.panel .danger{border-color:#ffb4a8;color:#ffe3de;background:rgba(179,38,30,.35)}
+.title .card.panel .danger:hover:not(:disabled),.title .card.panel .danger:focus-visible:not(:disabled){background-color:#b3261e;border-color:#ffb4a8}
+.title .card.panel .danger:disabled{opacity:.5;cursor:not-allowed}
+.title details{border-top:1px solid rgba(255,255,255,.25);padding:2px 0}.title details:last-of-type{border-bottom:1px solid rgba(255,255,255,.25)}
+.title summary{cursor:pointer;padding:12px 4px;font-weight:600;font-size:15.5px;list-style:none;display:flex;justify-content:space-between;gap:10px}
+.title summary::-webkit-details-marker{display:none}.title summary::after{content:"+";font-size:20px;line-height:1;opacity:.8}.title details[open] summary::after{content:"–"}
+.title summary:focus-visible{outline:2px solid #fff;outline-offset:2px;border-radius:6px}
+.title details p{margin:0 4px 12px;color:rgba(255,255,255,.92);font-size:15px;line-height:1.55}
+.title .setrow ul{margin:6px 0 0;padding-left:18px;font-size:14.5px;line-height:1.5;color:rgba(255,255,255,.92);font-weight:400}.title .setrow ul li{margin:2px 0}
+.title .tag b{font-weight:600}
+/* zoom of menus and dialogs (Accessibility, text size) */
+.title .stack,.title .ttop{zoom:var(--tz,1)}.modal{zoom:var(--tz,1)}
+/* high contrast */
+body.hc .title .card.panel{background:#06214a;box-shadow:0 0 0 2px #fff}
+body.hc .title .card.panel::before{opacity:1}
+body.hc .title input,body.hc .title select,body.hc .title textarea{border:2px solid #000;color:#000}
+body.hc .title button,body.hc .title .abtn{border:2px solid #fff}
+body.hc .title .tag,body.hc .title small,body.hc .title label,body.hc .title label em,body.hc .title .steps,body.hc .title .ticks,body.hc .title details p,body.hc .title .setrow ul{color:#fff}
+body.hc .title .card.panel .tog{border:2px solid #fff;background:#000}body.hc .title .card.panel .tog[aria-checked=true]{background:var(--yellow);border-color:#fff}
+body.hc .modal,body.hc .board,body.hc .dock,body.hc #drawer{background:#000!important;color:#fff!important;border:1px solid #fff!important}
+/* reduced motion switched on by the player (the device setting is honoured as well) */
+body.rm .title *,body.rm .title *::before,body.rm .title *::after,body.rm .modal *,body.rm .loading *{animation:none!important;transition:none!important;scroll-behavior:auto!important}
+body.rm .title button:hover,body.rm .title button:focus-visible{transform:none!important;letter-spacing:.03em!important}
+/* edit about me */
+.modal .chk2{display:inline-flex;gap:6px;align-items:center;margin:3px 10px 3px 0;font-size:14px}.modal .tagrm{cursor:pointer}
+.loading #loadtip{display:block;margin-top:10px;opacity:.85}
+/* resume card and saved status */
+.title .resume{display:flex;flex-direction:column;gap:2px;background:rgba(255,255,255,.16);border-radius:12px;padding:12px 14px}.title .resume b{font-size:18px;font-weight:600}.title .resume span{font-size:14px;color:rgba(255,255,255,.88)}
+.title small.saved:not(:empty){display:inline-block;align-self:flex-start;background:rgba(254,204,2,.18);color:#fff;border-radius:999px;padding:5px 12px;font-size:13px}
+.title .card.panel small a{color:#fff;text-decoration:underline}
+/* slider (graphics) */
+.title .setrow.col{flex-direction:column;align-items:stretch;gap:10px}
+.title .slider{display:flex;flex-direction:column;gap:6px;padding:0 4px}
+.title .slider input[type=range]{--p:50%;-webkit-appearance:none;appearance:none;width:100%;height:28px;padding:0;margin:0;background:transparent;border:0;cursor:pointer}
+.title .slider input[type=range]::-webkit-slider-runnable-track{height:6px;border-radius:999px;background:linear-gradient(90deg,var(--yellow) var(--p),rgba(255,255,255,.32) var(--p))}
+.title .slider input[type=range]::-moz-range-track{height:6px;border-radius:999px;background:rgba(255,255,255,.32)}
+.title .slider input[type=range]::-moz-range-progress{height:6px;border-radius:999px;background:var(--yellow)}
+.title .slider input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:24px;height:24px;margin-top:-9px;border-radius:50%;background:#fff;border:0;box-shadow:0 1px 6px rgba(4,12,28,.4);transition:transform .15s ease}
+.title .slider input[type=range]::-moz-range-thumb{width:24px;height:24px;border-radius:50%;background:#fff;border:0;box-shadow:0 1px 6px rgba(4,12,28,.4)}
+.title .slider input[type=range]:hover::-webkit-slider-thumb{transform:scale(1.1)}
+.title .slider input[type=range]:focus-visible{outline:0}
+.title .slider input[type=range]:focus-visible::-webkit-slider-thumb{box-shadow:0 0 0 4px rgba(254,204,2,.55),0 1px 6px rgba(4,12,28,.4)}
+.title .slider input[type=range]:focus-visible::-moz-range-thumb{box-shadow:0 0 0 4px rgba(254,204,2,.55),0 1px 6px rgba(4,12,28,.4)}
+.title .ticks{display:flex;justify-content:space-between;font-size:13px;letter-spacing:.04em;color:rgba(255,255,255,.75)}
+.title .ticks span{cursor:pointer;padding:2px 4px}.title .ticks span.on{color:#fff;font-weight:600}
+@media (prefers-reduced-motion:reduce){.title .slider input[type=range]::-webkit-slider-thumb{transition:none}}
+/* toggle switches (on and off settings) */
+.title .card.panel .tog{position:relative;flex:0 0 auto;width:52px;height:30px;padding:0;border-radius:999px;border:1px solid rgba(255,255,255,.6);background:rgba(255,255,255,.18);box-shadow:none;overflow:hidden;cursor:pointer;transition:background-color .2s ease,border-color .2s ease}
+.title .card.panel .tog::after{display:none}
+.title .card.panel .tog::before{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;box-shadow:0 1px 4px rgba(4,12,28,.35);transition:transform .2s cubic-bezier(.2,.8,.2,1)}
+.title .card.panel .tog[aria-checked=true]{background:var(--yellow);border-color:var(--yellow)}
+.title .card.panel .tog[aria-checked=true]::before{transform:translateX(22px)}
+.title .card.panel .tog:hover,.title .card.panel .tog:focus-visible{transform:none;letter-spacing:normal;box-shadow:0 0 0 3px rgba(255,255,255,.28);background-color:rgba(255,255,255,.3)}
+.title .card.panel .tog[aria-checked=true]:hover,.title .card.panel .tog[aria-checked=true]:focus-visible{background-color:#ffd83a}
+@media (prefers-reduced-motion:reduce){.title .card.panel .tog,.title .card.panel .tog::before{transition:none}}
+/* corners */
+.title .tosm,.title .thel{position:fixed;bottom:max(10px,env(safe-area-inset-bottom,0px));z-index:1;font-size:12px;line-height:1.4;color:#fff;text-shadow:0 1px 8px rgba(0,0,0,.7)}
+.title .tosm{left:max(14px,env(safe-area-inset-left,0px))}.title .thel{right:max(14px,env(safe-area-inset-right,0px))}.title .tosm a{color:inherit}
+body.titleopen .stage,body.titleopen .dock,body.titleopen #drawer,body.titleopen .joy,body.titleopen .runbtn{pointer-events:none}
+.title small{color:#e9eef6;font-size:12px;margin-top:6px;text-shadow:0 1px 8px rgba(0,0,0,.6);line-height:1.5}.title small a{color:inherit}
+.slides{min-height:150px;display:flex;flex-direction:column;gap:8px;text-align:left}.slides h3{margin:0;font-size:19px}.slides p{margin:0;color:#e1e8f2;font-size:15px;line-height:1.5}
+.dots{display:flex;gap:6px;justify-content:center;margin:6px 0}.dots i{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.3)}.dots i.on{background:#fbc02d}
+.setrow{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:11px 0;border-top:1px solid rgba(255,255,255,.14);text-align:left}.setrow b{display:block;font-size:15px}.setrow small{margin:2px 0 0;display:block;color:#cfd8e6}
+.seg{display:flex;gap:4px}.seg button{padding:8px 12px;font-size:13.5px;border-radius:999px;box-shadow:none}.seg button.on{background:#fbc02d;color:#1b1b1b;border-color:#fbc02d}
+.title h2{margin:0;font:700 28px var(--display);letter-spacing:.06em;text-transform:uppercase}
+body.nohints #hint,body.nohints .hint{display:none!important}
+.loading{--bg:url(assets/title/stadshuset-1920.jpg);position:fixed;inset:0;z-index:19;display:grid;place-items:center;padding:20px;font-family:'Jost','Futura','Century Gothic',system-ui,sans-serif;
+  background:linear-gradient(180deg,rgba(4,12,28,.35),rgba(4,12,28,.12) 40%,rgba(4,12,28,.62)),var(--bg) 58% 62%/cover no-repeat,#0c2c62;color:#fff;transition:opacity .5s}/* above the dock and panels, below nothing: the game is never seen while it loads */
+@media (max-width:700px){.loading{--bg:url(assets/title/stadshuset-1280.jpg)}}
+@media (min-width:1700px),(min-width:701px) and (min-resolution:2dppx){.loading{--bg:url(assets/title/stadshuset-3840.jpg)}}
+.loading .box{display:grid;gap:12px;justify-items:center;text-align:center;padding:20px;max-width:min(520px,100%)}
+.loading b{font:600 clamp(26px,8.6vw,64px)/1 'Jost',sans-serif;letter-spacing:.06em;text-transform:uppercase;color:#fecc02;-webkit-text-stroke:max(2px,.045em) #006aa7;paint-order:stroke fill;filter:drop-shadow(0 3px 14px rgba(0,0,0,.4))}
+.loading b span{color:#006aa7;-webkit-text-stroke:max(3px,.075em) #fecc02}
+.loading .bar{width:min(260px,70vw);height:6px;border-radius:3px;background:rgba(255,255,255,.3);overflow:hidden}
+.loading .bar i{display:block;height:100%;width:0;background:#fecc02;transition:width .3s}
+.loading small{opacity:.95;font-size:13.5px;max-width:34ch;text-shadow:0 1px 8px rgba(0,0,0,.65)}
 .nogl{position:absolute;inset:0;display:grid;place-items:center;color:#fff;padding:20px;text-align:center}
 
 /* ---- dock + panel ---- */
@@ -350,7 +542,7 @@ h2.hero{font-size:34px;background:linear-gradient(90deg,var(--sweblue),#3a86ff 4
   .inhud,.drivehud{left:8px;right:8px;transform:none;max-width:none;justify-content:space-between;padding:6px 6px 6px 12px;font-size:12px}.inhud b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}.inhud button{padding:7px 10px;font-size:12px}
   .cshud{left:8px;right:8px;transform:none;width:auto;max-width:none;justify-content:flex-start;gap:5px;padding:6px 8px;font-size:11.5px}.cshud b{flex:1 1 100%;font-size:12.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .cshud button{padding:6px 8px;font-size:10.5px;letter-spacing:.04em}.cshud .chip{padding:2px 6px}
-  #csLine{top:auto;bottom:calc(290px + env(safe-area-inset-bottom,0px));left:8px;right:8px;transform:none;width:auto;max-width:none;font-size:12px;border-radius:12px}
+  #csLine{top:auto;bottom:calc(290px + env(safe-area-inset-bottom,0px));left:8px;right:62px;transform:none;width:auto;max-width:none;font-size:12px;border-radius:12px}/* ends left of the map buttons (42 px + 16 px edge + 4 px gap): with the Quit button their column reaches the strip's height */
   #csPrompt:not(:empty)~#csLine{bottom:calc(350px + env(safe-area-inset-bottom,0px))}/* above an open prompt */
   .csprompt{left:8px;right:8px;transform:none;width:auto;bottom:calc(196px + env(safe-area-inset-bottom,0px))}
   .inact{bottom:calc(196px + env(safe-area-inset-bottom,0px));max-width:calc(100% - 32px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -402,6 +594,29 @@ h2.hero{font-size:34px;background:linear-gradient(90deg,var(--sweblue),#3a86ff 4
 .dep.fl{border:0;width:100%;text-align:left;cursor:pointer;font:inherit}.dep .dst{font-size:13.5px;line-height:1.25}.dep .dst small{display:block;color:#9fb0bd;font-size:11px}.dep .tm{font:600 14px "IBM Plex Mono",monospace;color:var(--amber);text-align:right}.dep .tm small{display:block}.dep .late{color:#ff8a80;font-size:11px}.dep.can .dst,.dep.can .tm{text-decoration:line-through;opacity:.6}
 .devs p{margin:6px 0 0;font-size:12px;color:var(--warn)}
 .wxdays{width:100%;border-collapse:collapse;font-size:12.5px}.wxdays td{padding:4px 3px;border-top:1px solid var(--line)}.wxdays td:nth-child(2){font-size:16px}.wxdays td:last-child,.wxdays td:nth-child(5){color:var(--muted);text-align:right}
+
+/* a ringing phone: the icon shakes and pulses rings; the Phone button in the dock shakes too */
+.ringico{position:relative;width:64px;height:64px;margin:0 auto 10px;border-radius:50%;background:linear-gradient(135deg,#2bd96b,#119a48);display:grid;place-items:center}
+.ringico svg{width:32px;height:32px;animation:ringShake .9s ease-in-out infinite;transform-origin:50% 50%}
+.ringico::before,.ringico::after{content:"";position:absolute;inset:0;border-radius:50%;border:3px solid #2bd96b;animation:ringPulse 1.6s ease-out infinite}.ringico::after{animation-delay:.8s}
+@keyframes ringShake{0%,50%,100%{transform:rotate(0)}5%{transform:rotate(-16deg)}10%{transform:rotate(16deg)}15%{transform:rotate(-16deg)}20%{transform:rotate(16deg)}25%{transform:rotate(-10deg)}30%{transform:rotate(10deg)}35%{transform:rotate(0)}}
+@keyframes ringPulse{0%{transform:scale(1);opacity:.8}100%{transform:scale(1.9);opacity:0}}
+body.ringing-on .dock [data-tab="phone"] svg,body.ringing-on .dock [data-tab="phone"] .ic{animation:ringShake .9s ease-in-out infinite}
+@media (prefers-reduced-motion:reduce){.ringico svg,body.ringing-on .dock [data-tab="phone"] svg{animation:none}.ringico::before,.ringico::after{animation:none;opacity:.5}}
+
+/* loading: only the first O of the wordmark shows progress (it fills with yellow from the bottom); no bar and no text unless something went wrong */
+.loading .bar,.loading #loadtip,.loading #loadtxt{display:none!important}.loading.err #loadtxt{display:block!important}
+.loading b em.lo{font-style:normal;color:transparent;-webkit-text-stroke:max(2px,.045em) #006aa7;background:linear-gradient(to top,#fecc02 var(--p,0%),rgba(254,204,2,.18) var(--p,0%));-webkit-background-clip:text;background-clip:text;transition:background .3s}
+/* title page: the sign in and language buttons float on the photo with no backgrounds */
+.title .glass{background:none!important;border:0!important;box-shadow:none!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+.title .tl button,.title .tr button{color:#fff!important;text-shadow:0 1px 6px rgba(0,0,0,.75),0 0 2px rgba(0,0,0,.6)}
+.title .tr i{background:rgba(255,255,255,.55)}
+.title .tr button{position:relative;border-radius:6px!important}
+.title .tr button[aria-pressed=true]{background:none!important;color:#fff!important}
+.title .ttop button::after{display:none!important}
+.title .tr button[aria-pressed=true]::before{content:"";position:absolute;left:10px;right:10px;bottom:2px;height:3px;border-radius:3px;background:#fecc02;box-shadow:0 1px 4px rgba(0,0,0,.5)}
+.title .tr button:hover,.title .tr button:focus,.title .tr button:focus-visible,.title .tr button:active{background:none!important;box-shadow:none!important;transform:none!important;letter-spacing:.06em!important;outline:none}
+.title .tr button:focus-visible,.title .tl button:focus-visible{text-decoration:underline;text-underline-offset:5px}
 </style>
 </head>
 <body>
@@ -421,14 +636,13 @@ h2.hero{font-size:34px;background:linear-gradient(90deg,var(--sweblue),#3a86ff 4
   <div class="ridechip" id="ride"></div>
   <div class="places" id="places" aria-label="Your places"></div>
   <div class="hint" id="hint">Joystick or WASD to walk · tap a street to auto-walk · tap a shop to look · drag to turn</div>
-  <div class="ctrls"><button id="zfind" aria-label="Find shops and places">⌕</button><button id="zin" aria-label="Zoom in">+</button><button id="zout" aria-label="Zoom out">−</button><button id="zme" aria-label="Center on you" style="font-size:16px">◎</button></div>
+  <div class="ctrls"><button id="quitBtn" aria-label="Quit to the title page">⏻</button><button id="zfind" aria-label="Find shops and places">⌕</button><button id="zin" aria-label="Zoom in">+</button><button id="zout" aria-label="Zoom out">−</button><button id="zme" aria-label="Center on you" style="font-size:16px">◎</button></div>
   <div class="inhud" id="inhud"><b id="inTitle"></b><button id="inLeave">Leave</button></div><button class="inact" id="inAct"></button><div class="csprompt" id="csPrompt" role="dialog" aria-live="polite"></div><div class="cshud" id="csHud"></div><div class="csline" id="csLine" aria-live="polite"></div><div class="cscine" id="csCine"><span></span><button>Skip ▸▸</button></div>
   <div class="drivehud" id="drivehud"><span class="limit" id="lim">50</span><span id="spd">0 km/h</span><span id="coach"></span><button id="park">Park</button></div>
   <div class="joy" id="joy" aria-label="Move joystick"><div class="knob" id="knob"></div></div>
   <button class="runbtn" id="runbtn" aria-pressed="false">Run</button>
   <div class="attrib">© OpenStreetMap contributors</div>
   <div class="credit">Developer: Seun Ajetomobi · © 2026 Helekt · <a href="https://www.helekt.net" target="_blank" rel="noopener">www.helekt.net</a></div>
-  <div class="loading" id="loading"><div class="box"><b>Stockholmsliv</b><div class="bar"><i id="loadbar"></i></div><small id="loadtxt">Downloading 84 000 buildings, 160 000 street segments and 15 000 places from OpenStreetMap…</small></div></div>
 </section>
 <nav class="dock" id="dock" aria-label="Panels">
   <button data-tab="here" aria-label="Here"><svg viewBox="0 0 24 24"><path d="M12 21s7-6.3 7-12a7 7 0 1 0-14 0c0 5.7 7 12 7 12z"/><circle cx="12" cy="9" r="2.5"/></svg><span>Here</span></button>
@@ -457,6 +671,8 @@ h2.hero{font-size:34px;background:linear-gradient(90deg,var(--sweblue),#3a86ff 4
     <div class="pane" data-pane="diary" hidden><div class="sec"><ul class="log" id="log"></ul></div></div>
   </div>
 </aside>
+<div class="loading" id="loading"><div class="box"><b>St<em class="lo" id="loadO">o</em>ckholms<span>liv</span></b><div class="bar"><i id="loadbar"></i></div><small id="loadtip" aria-live="off"></small><small id="loadtxt">Downloading 84 000 buildings, 160 000 street segments and 15 000 places from OpenStreetMap…</small></div></div>
+<div class="title" id="title" hidden><div class="ttop"><div class="glass tl" id="tAcct"></div><div class="glass tr" id="tLang" role="group" aria-label="Language"></div></div><div class="stack" id="titleCard"></div><div class="tosm" id="tOsm"></div><div class="thel">© 2026 Helekt</div></div>
 <div id="modalRoot"></div>
 <div id="saveStatus" role="status" hidden></div>
 
@@ -475,6 +691,7 @@ h2.hero{font-size:34px;background:linear-gradient(90deg,var(--sweblue),#3a86ff 4
 <script src="src/rules/life-start.js"></script>
 <script src="src/rules/namnsdag.js"></script>
 <script src="src/rules/realtime.js"></script>
+<script src="src/data/world.js"></script>
 <script src="src/city-data.js"></script>
 <script src="src/tables.js"></script>
 <script>
@@ -484,7 +701,7 @@ h2.hero{font-size:34px;background:linear-gradient(90deg,var(--sweblue),#3a86ff 4
 // useModule(name, file) returns a module from window.StockholmLife (file: its path under src/, default <name>.js); a module
 // that did not load stops the game here with a message on the loading screen, not a blank page. docs/MODULES.md
 function useModule(name,file=name+'.js'){const m=window.StockholmLife&&window.StockholmLife[name];if(m)return m;
-  const t=document.getElementById('loadtxt');if(t)t.textContent=`The game could not load src/${file}. Reload the page. If this keeps happening, a file is missing from the site.`;
+  const t=document.getElementById('loadtxt');const Lg=document.getElementById('loading');if(Lg)Lg.classList.add('err');if(t)t.textContent=`The game could not load src/${file}. Reload the page. If this keeps happening, a file is missing from the site.`;
   throw new Error(`src/${file} did not load`)}
 const {O_LAT,O_LON,P,PP,WATER_FALLBACK,AREAS,HUB_R,ST,STP,LINES,transitRoute,nearestStation}=useModule('geography');
 const D=AREAS;
@@ -539,6 +756,8 @@ const BG={
   student:{label:'EU student at KTH',sub:'An EU citizen, so you may vote in the kommunval once folkbokförd. Master\'s student with savings and a corridor room. Needs a permit card and to register in Sweden.',s:{money:38000,svenska:8,skill:52,social:20,mood:65,queue:0},home:'korridor',start:'ostermalm',coat:0x3c8a5a,docs:{...NODOCS,permit:0}},
   local:{label:'Born in Stockholm',sub:'All papers in order and six years in the queue, but broke and back with your parents.',s:{money:5000,svenska:100,skill:26,social:38,mood:55,queue:2190},home:'parents',start:'vasastan',coat:0x9c2a23,docs:{...NODOCS,pn:1,id:1,bank:1,bankid:1,queue:1,vc:1}},
 };
+BG.permanent={label:'Permanent resident',sub:'You hold a permanent residence permit, so you may live and work in Sweden. Register at Skatteverket to get your personnummer.',s:{money:22000,svenska:0,skill:48,social:8,mood:62,queue:0},home:'rinkebyRoom',start:'tc',coat:0x2f6fa8,docs:{...NODOCS,permit:1}};
+BG.asylum={label:'Asylum seeker',sub:'You have applied for asylum and wait for Migrationsverket\'s decision. You hold an LMA card, not a residence permit, so you have no personnummer yet. Simplified: the real process is longer.',s:{money:1200,svenska:0,skill:44,social:6,mood:42,queue:0},home:'rinkebyRoom',start:'tc',coat:0x6d597a,docs:{...NODOCS,permit:'asylum'}};
 BG.over={label:'Starting over',sub:'Born in Stockholm, papers in order, but a divorce and old debts left you with no home, 1 500 kr and a payment remark. Socialtjänsten, shelters and friends are your way back.',s:{money:1500,svenska:100,skill:30,social:30,mood:40,queue:400},home:'none',start:'tc',coat:0x6d597a,docs:{...BG.local.docs}};
 const need=(...ks)=>()=>{for(const k of ks){
   if(k==='permit'&&S.docs.permit!==1)return 'Needs your residence permit card (Migrationsverket)';
@@ -600,7 +819,7 @@ const ACTS=[
   {id:'gym',where:'ostermalm',l:'Workout at a gym',h:1.5,cost:129,e:{mood:6,energy:-15}},
   {id:'sfi',where:'kungsholmen',grp:'SFI school',l:'SFI Swedish class',s:'Free for everyone who is folkbokförd',h:3,e:{svenska:6,social:2,energy:-10},hours:'sfi',need:need('pn'),primary:1},
   {id:'vclist',where:'kungsholmen',svc:'vc',grp:'Vårdcentral',l:'List yourself at the vårdcentral',s:'Your own health centre',h:0.5,hours:'vc',need:need('pn'),cond:()=>!S.docs.vc,fn:()=>{S.docs.vc=1;log('Listed at '+svcPlace('vc').name+'.','plus')}},
-  {id:'doctor',where:'kungsholmen',svc:'vc',grp:'Vårdcentral',l:'See a doctor',s:'Patient fee 200 kr',h:1.5,cost:200,hours:'vc',need:need('sick'),fn:()=>{if(!S.docs.vc){log('Without being listed you waited 3 hours as a drop-in.','minus');S.hour+=1.5}S.sick=Math.max(S.day,S.sick-1);apply({mood:3});log('The doctor says rest. You\'ll be better sooner.')}},
+  {id:'doctor',where:'kungsholmen',svc:'vc',grp:'Vårdcentral',l:'See a doctor',s:'Patient fee 200 kr',h:1.5,cost:200,hours:'vc',need:need('sick'),fn:()=>{if(!S.docs.vc){log('Without being listed you waited 3 hours as a drop-in.','minus');if(!REALTIME)S.hour+=1.5}S.sick=Math.max(S.day,S.sick-1);apply({mood:3});log('The doctor says rest. You\'ll be better sooner.')}},
   {id:'swim',where:'kungsholmen',l:'Swim at Rålis',s:'Jun–Aug',h:1.5,e:{mood:9,energy:-5},out:1,months:[5,6,7]},
   {id:'stadshus',where:'kungsholmen',l:'Walk to Stadshuset along Norr Mälarstrand',h:1,e:{mood:4},out:1},
   {id:'library',where:'vasastan',svc:'lib',l:'Study at the city library',s:'Temporary premises while Asplund\'s rotunda is renovated',h:3,e:{skill:5,energy:-10},hours:'lib',primary:1},
@@ -959,7 +1178,8 @@ function nextSteps(){const out=[];if(!S||busy)return out;const add=(l,s,fn,btn,u
   if(S.bills&&S.bills.some(b=>b.stage>=1))add('Overdue bills','Pay before they go to inkasso and Kronofogden',()=>openBills(),'Pay',80);
   if(S.civ&&S.civ.move&&S.civ.move.permit&&S.civ.move.permit.ok&&S.day===S.civ.move.permit.day)add('Your demonstration is today','At '+S.civ.move.permit.place,()=>openTravel(DEMO_SPOTS[S.civ.move.permit.spot][3]),'Go',88);
   if(S.civ&&electionOpen()&&S.civ.voted!==S.civ.next&&canVote().ok)add(isElectionDay()?'Election day: vote':'Early voting is open','Kommunval '+fmtElection(),()=>castVote(),'Vote',75);
-  if(d.permit===0)add('Get your residence permit card','Photo and fingerprints at Migrationsverket, Sundbyberg',()=>openTravel('sundbyberg'),'Go',60);
+  if(d.permit==='asylum')add('Your asylum case','Wait for Migrationsverket\'s decision and keep your LMA card with you',()=>openTravel('sundbyberg'),'Go',60);
+  else if(d.permit===0)add('Get your residence permit card','Photo and fingerprints at Migrationsverket, Sundbyberg',()=>openTravel('sundbyberg'),'Go',60);
   else if(d.permit==='wait')add('Your permit card is on its way',`Arrives about day ${d.permitDay}. Meanwhile: explore, or look at jobs`,()=>openJobs(),'Jobs',20);
   else if(d.pn===0)add('Register at Skatteverket','Folkbokföring gives you a personnummer (Sundbyberg or Kista)',()=>openTravel('sundbyberg'),'Go',60);
   else if(d.pn==='wait')add('Waiting for your personnummer',`About day ${d.pnDay}. Try the city: museums, fika, Djurgården`,()=>setTab('phone'),'Ideas',15);
@@ -1011,10 +1231,18 @@ function renderCivic(){if(!S||!S.civ)return;const c=S.civ,sh=pollShares(),v=canV
 let S=null,busy=false;
 const $=id=>document.getElementById(id);
 const {clamp,kr,hhmm,fmtDur}=useModule('format','util/format.js');
-const today=()=>dateOf(S.day);
+const today=()=>REALTIME&&S&&S.t0?realDate():dateOf(S.day);
 const SUN=useModule('sun','rules/sun.js');// the sun and daylight rules; the date is passed in, so the game keeps today() and nothing else changes
-const STIME=useModule('stockholm-time','rules/stockholm-time.js');// real Stockholm time (docs/REALTIME_SPEC.md R1); not used by the game yet
-const RTIME=useModule('realtime','rules/realtime.js');// the real-time switch and derived clock (src/rules/realtime.js); not used by the game yet
+const STIME=useModule('stockholm-time','rules/stockholm-time.js');
+// The time is Stockholm's whatever the device says: the offset between the device clock and our own server's Date header is applied to every STIME.nowMs()
+// the server's Date header from a small GET (the 705-byte manifest), not a HEAD of the page: Chromium 145 under test interception reports a HEAD as aborted
+async function syncServerTime(){try{const t0=Date.now(),r=await fetch('manifest.webmanifest?t='+t0,{cache:'no-store'}),t1=Date.now(),d=Date.parse(r.headers.get('Date')||'');if(Number.isFinite(d)){STIME.setOffset(d+(t1-t0)/2-t1);return true}}catch(e){}return false}
+const TIMESYNC=syncServerTime();setInterval(syncServerTime,10*60e3);// real Stockholm time (docs/REALTIME_SPEC.md R1); not used by the game yet
+const WORLD=useModule('world','data/world.js');// every country and its largest towns (GeoNames, CC BY 4.0), for the new-life form
+const RTIME=useModule('realtime','rules/realtime.js');// the real-time switch and derived clock (src/rules/realtime.js)
+const REALTIME=RTIME.enabled(location.search,(()=>{try{return localStorage}catch(e){return null}})(),true);// real Stockholm time is the default (docs/REALTIME_SPEC.md); ?realtime=0 is the old game clock
+function syncClock(){if(!REALTIME||!S||!S.t0)return false;const c=RTIME.deriveClock(S.t0,STIME.nowMs()),ch=c.day!==S.day;S.day=c.day;S.hour=c.hour;return ch}
+const realDate=()=>{const p=STIME.partsAt(S.t0);return new Date(p.year,p.month-1,p.day+S.day-1)};
 const NAMNSDAG=useModule('namnsdag','rules/namnsdag.js');// Swedish name days (src/rules/namnsdag.js), shown as the tooltip of the date
 const LIFESTART=useModule('life-start','rules/life-start.js');// real start of a life for the save (src/rules/life-start.js); not used by the game yet
 const HOLIDAYS=useModule('holidays','rules/holidays.js');// Swedish public holidays from the statute (src/rules/holidays.js); not used by the game yet
@@ -1051,15 +1279,15 @@ function dressAdvice(){const n=LIVEWX.now;if(!n)return null;const hrs=LIVEWX.hou
   if(!snowy&&lo<1)it.push('Shoes with grip, pavements may be icy');
   if(n.code<=1&&n.day&&n.t>10)it.push('Sunglasses, and sunscreen if you stay out');
   return {lo:Math.round(lo),items:it}}
-function wearTip(force){const a=dressAdvice(),n=LIVEWX.now;if(!a||!S||(!force&&S.flags.wearDay===S.day))return;S.flags.wearDay=S.day;
+function wearTip(force){if(!SET.tips)return;const a=dressAdvice(),n=LIVEWX.now;if(!a||!S||(!force&&S.flags.wearDay===S.day))return;S.flags.wearDay=S.day;
   notify('weather',`${Math.round(n.t)}° ${wmo(n.code)[0].toLowerCase()} in Stockholm`,'Wear: '+a.items.slice(0,2).join(' · '),()=>openWeather())}
 function rollWeather(){if(liveFresh()){applyLiveWeather();return}const m=today().getMonth(),r=Math.random();
   S.weather=winter()?(r<0.35?'snow':r<0.65?'cloud':'clear'):[9,10].includes(m)?(r<0.35?'rain':r<0.65?'cloud':'clear'):(r<0.2?'rain':r<0.45?'cloud':'clear');
   S.temp=Math.round(TEMP[m]+(Math.random()-0.5)*6+(S.weather==='clear'&&m>=4&&m<=8?2:0));if(S.weather==='snow'&&S.temp>1)S.temp=0}
 let lastFreeRender=0;
-window.__slDrive=(dist,x,z)=>{if(!S)return;S.pos={x,z};updateLoc();const min=dist*50/450;S.hour+=min/60;needsTick(min/60);S.flags.fuel=(S.flags.fuel||0)+dist*0.05*1.9;if(S.flags.fuel>=5){const f=Math.floor(S.flags.fuel);S.money-=f;S.flags.fuel-=f}$('time').textContent=hhmm(S.hour);if(S.hour>=24){W&&W.stopDrive();sleep(true)}const now=performance.now();if(now-lastFreeRender>2500){lastFreeRender=now;save();render()}};
+window.__slDrive=(dist,x,z)=>{if(!S)return;S.pos={x,z};updateLoc();const min=dist*50/450;if(!REALTIME)S.hour+=min/60;needsTick(min/60);S.flags.fuel=(S.flags.fuel||0)+dist*0.05*1.9;if(S.flags.fuel>=5){const f=Math.floor(S.flags.fuel);S.money-=f;S.flags.fuel-=f}$('time').textContent=hhmm(S.hour);if(S.hour>=24){W&&W.stopDrive();sleep(true)}const now=performance.now();if(now-lastFreeRender>2500){lastFreeRender=now;save();render()}};
 window.__slCommit=(dist,run,x,z)=>{if(!S||busy)return;S.pos={x,z};const prev=S.loc;updateLoc();
-  if(dist>0){const min=(dist-run)*50/80+run*50/160;S.hour+=min/60;needsTick(min/60);S.flags.walkE=(S.flags.walkE||0)+(dist-run)*50/80/60*5+run*50/160/60*12;
+  if(dist>0){const min=(dist-run)*50/80+run*50/160;if(!REALTIME)S.hour+=min/60;needsTick(min/60);S.flags.walkE=(S.flags.walkE||0)+(dist-run)*50/80/60*5+run*50/160/60*12;
     while(S.flags.walkE>=1){S.energy=clamp(S.energy-1,0,100);S.flags.walkE-=1}
     if(isLight(S.hour)){S.flags.sunMin=(S.flags.sunMin||0)+min;if(S.flags.sunMin>=10&&!S.sunToday){S.sunToday=true;log('You caught some daylight on your walk.','plus')}}
     $('time').textContent=hhmm(S.hour);
@@ -1162,7 +1390,7 @@ function saveBad(key,raw){if(saveKeep(key,raw)){SV.mode='pending';saveMsg(SAVE_M
 function saveUnblock(){const b=SV.bad;if(b.slots){slotsInit(true);if(SL.id===null||SL.stuck)return false;SV.bad=null;SV.mode='active';SV.failing=true;return true}
   if(b.unread){slotsInit(true);if(SL.id===null||SL.stuck)return false;let cur;try{cur=localStorage.getItem(activeKey())}catch(e){return false}if(cur!==null){saveOther();return false}SV.expected=null}else if(!saveKeep(b.key,b.raw))return false;
   SV.bad=null;SV.mode='active';SV.failing=true;return true}// saveOk() then replaces the warning, even if no save has failed yet
-function save(){if(!S||!S.flags||!S.flags.started||SV.mode==='pending'||SV.mode==='ended'||SV.mode==='superseded')return;
+function save(){if(SV.noSave)return;if(!S||!S.flags||!S.flags.started||SV.mode==='pending'||SV.mode==='ended'||SV.mode==='superseded')return;
   // the state is half-way through a journey, an arrest or a driving lesson: the next save after it writes the result
   if(busy||(W&&W.inLesson&&W.inLesson())){if(SV.failing)saveRetry();return}
   if(SV.mode==='blocked'&&!saveUnblock()){if(SV.mode==='blocked'){SV.failing=true;saveRetry()}return}
@@ -1271,6 +1499,11 @@ function slotRestart(id,typed){let e=slotBusy()||slotGate();if(e)return e;const 
   SV.mode='superseded';clearTimeout(SV.timer);SV.timer=0;// the index now names this slot, so this tab must stop writing
   try{localStorage.removeItem(slotKey(id));if(id===1)localStorage.removeItem(SAVE_OLD);if(localStorage.getItem(slotKey(id))!==null||(id===1&&localStorage.getItem(SAVE_OLD)!==null))return 'This slot could not be cleared. Reload the page; your life is still there.'}catch(x){return 'This slot could not be cleared. Reload the page; your life is still there.'}
   if(b.k)savePrune(slotKey(id)+'-before-replace-',SLOT_KEEP);location.reload();return null}
+// a new life from the title page over the life being played (the form then replaces it in this slot): that life is saved
+// and read back, then a verified before-replace copy is kept, as Start over does. Returns why not, or ''.
+function lifeReplaceCopy(){if(!S||!S.flags||!S.flags.started)return '';let e=slotBusy()||slotGate();if(e)return e;e=slotFlush();if(e)return e;
+  const b=slotBackup(SL.id,'before-replace');if(!b.ok)return 'Storage is full, so a copy of this life could not be made first. Nothing was changed.';
+  if(b.k)savePrune(slotKey(SL.id)+'-before-replace-',SLOT_KEEP);return ''}
 // put a kept copy back: it must be a readable life, the slot's current content is copied first (before-restore), and the copy chosen is never changed
 function slotRestore(id,bk){let e=slotGate();if(e)return e;const bs=slotBackups(id).find(x=>x.k===bk);if(!bs||!bs.ok)return 'This copy cannot be restored.';
   const act=id===SL.id;if(act){e=slotBusy();if(e)return e}
@@ -1331,9 +1564,9 @@ function openSaveFile(fromIntro,note){const back=()=>{closeModal();if(fromIntro)
       let r;try{r=await importCheck(await file.text())}catch(x){r={err:'This file could not be read.'}}if(r.err){msg(r.err);return}const g=r.game,id=tgt,inf=slotInfo(id),occ=inf.st!=='empty';
       slotConfirm({title:'Carry on this life?',body:`<b>${esc2(g.name)}</b> · day ${g.day} · ${kr(g.money)}<br>${occ?`This replaces what is in ${esc2(inf.title)}. A copy of it is kept first.`:'This life will be put in the empty slot.'}`,word:occ?inf.title:'',btn:'Carry on this life',back:()=>again(),
         go:()=>importApply(g,id),done:()=>{if(id===SL.id)location.reload();else again('The life was imported.')}})}})}
-function toast(t){const el=document.createElement('div');el.className='toast';el.textContent=t;document.body.appendChild(el);setTimeout(()=>el.remove(),2400)}
+function toast(t){if(titleOpen())return;const el=document.createElement('div');el.className='toast';el.textContent=t;document.body.appendChild(el);setTimeout(()=>el.remove(),2400)}
 function apply(e){for(const k in e){if(k==='money')S.money+=e[k];else S[k]=clamp(S[k]+e[k],0,k==='energy'&&S.sick>S.day?60:100)}}
-function spendTime(h){needsTick(h);S.hour+=h;if(S.hour>=24){log('You stayed out past midnight and nodded off on the night bus.','minus');sleep(true)}}
+function spendTime(h){needsTick(h);if(REALTIME){syncClock();return}S.hour+=h;if(S.hour>=24){log('You stayed out past midnight and nodded off on the night bus.','minus');sleep(true)}}
 
 function whereOk(a){if(DESK&&a.grp===DESK)return true;if(a.where==='any')return true;if(a.where==='anyhub')return !!S.loc;if(a.where==='home')return atHome();if(Array.isArray(a.where))return a.where.includes(S.loc);return a.where===S.loc}
 function actSvc(a){return a.svcFn?a.svcFn():a.svc}
@@ -1460,7 +1693,7 @@ function trainTrips(){const dep=TRIPS.map((t,i)=>{const hh=6+((i*5+S.day*3)%15);
     <div class="sec" style="padding:0"><h3>Who runs the trains in Stockholm</h3><ul class="news">${OPERATORS.map(o=>`<li><span class="dot" style="background:${o.col}"></span><b>${o.op}</b> · ${o.run} · ${o.lines}</li>`).join('')}</ul></div>
     <div class="row2"><button class="btn ghost" id="no">Close</button></div>`,m=>{m.querySelector('#no').onclick=closeModal;m.querySelectorAll('.choice').forEach(b=>b.onclick=()=>{const t=dep[+b.dataset.i];closeModal();takeTrip(t)})})}
 function takeTrip(t){if(S.money<t.c*2){toast('Not enough money');return}S.money-=t.c*2;apply(t.e);S.seen.culture=S.day;log(`${t.op} to ${t.to}: ${t.t.toLowerCase()} (${kr(t.c*2)} return).`,'plus');
-  if(!t.nights){spendTime(t.h);after();return}for(let i=0;i<t.nights;i++)sleep(false,'trip');S.hour=Math.max(S.hour,17);log(`Back at Stockholms centralstation after ${t.nights} night${t.nights>1?'s':''} in ${t.to}.`,'plus');after()}
+  if(!t.nights){spendTime(t.h);after();return}for(let i=0;i<t.nights;i++)sleep(false,'trip');if(!REALTIME)S.hour=Math.max(S.hour,17);log(`Back at Stockholms centralstation after ${t.nights} night${t.nights>1?'s':''} in ${t.to}.`,'plus');after()}
 
 /* ---------- accidents, ambulance and hospital ----------
    Region Stockholm patient fees (1177.se, 2026): ambulance 0 kr, akutmottagning 400 kr, hospital stay 130 kr/day.
@@ -1807,10 +2040,10 @@ function callPerson(c){const late=S.hour>=23||S.hour<7,p=c.p;const answers=!late
       const bb=m.querySelector('#b');if(bb)bb.onclick=()=>{closeModal();const h=friendHome(p);openTravel(null,{x:h.x,z:h.z,name:p.n+"'s place",blurb:addrLine(h),arrive:()=>friendVisit(p)})}})},
     answers?null:()=>{toast(late?`${c.n} doesn't pick up: it's the middle of the night`:`${c.n} doesn't answer. Try again later.`)})}
 // someone rings you now and then (family, friends, your manager, or a telemarketer)
-function incomingCall(){if(!S||busy||document.querySelector('.modal')||document.querySelector('.callscr,.ringing')||S.hour>=23||S.hour<8)return;const L=contactsForCall();
+function incomingCall(){if(titleOpen()||!S||busy||document.querySelector('.modal')||document.querySelector('.callscr,.ringing')||S.hour>=23||S.hour<8)return;const L=contactsForCall();
   const r=Math.random();const c=r<0.12?{id:'tm',n:'Okänt nummer',what:'Unknown number'}:L.length?L[Math.floor(Math.random()*L.length)]:null;if(!c)return;
-  const el=document.createElement('div');el.className='ringing';el.innerHTML=`<div><small>Incoming call</small><b>${esc2(c.n)}</b><span>${esc2(c.what)}</span><div class="row2"><button class="ok">Answer</button><button class="no">Decline</button></div></div>`;document.body.appendChild(el);
-  const kill=()=>el.remove();const t=setTimeout(()=>{kill();if(c.id!=='tm'){toast(`Missed call from ${c.n}`);if(c.p)c.p.fr=Math.max(0,c.p.fr-1)}},15000);
+  const el=document.createElement('div');el.className='ringing';document.body.classList.add('ringing-on');el.innerHTML=`<div><div class="ringico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg></div><small>Incoming call</small><b>${esc2(c.n)}</b><span>${esc2(c.what)}</span><div class="row2"><button class="ok">Answer</button><button class="no">Decline</button></div></div>`;document.body.appendChild(el);
+  const kill=()=>{el.remove();document.body.classList.remove('ringing-on')};const t=setTimeout(()=>{kill();if(c.id!=='tm'){toast(`Missed call from ${c.n}`);if(c.p)c.p.fr=Math.max(0,c.p.fr-1)}},15000);
   el.querySelector('.no').onclick=()=>{clearTimeout(t);kill();if(c.p)c.p.fr=Math.max(0,c.p.fr-1)};
   el.querySelector('.ok').onclick=()=>{clearTimeout(t);kill();
     if(c.id==='tm'){modal(`<h2>Okänt nummer</h2><p>"Hej, jag ringer från ett elbolag med ett fantastiskt erbjudande…" A telemarketer. In Sweden you can sign up to NIX to stop these calls.</p><div class="row2"><button class="btn ghost" id="no">Hang up</button></div>`,m=>m.querySelector('#no').onclick=closeModal);return}
@@ -1893,7 +2126,7 @@ const APPX={weather:['Weather','sun','#f0a020'],chat:['Chatt','chat','#1faa59'],
   people:['Contacts','people','#2a8a52'],dating:['Dating','heart','#d6336c'],jobs:['Jobs','brief','#0b5fa5'],courses:['Courses','cap','#6c3fb5'],housing:['Housing','house','#a84b32'],health:['1177','health','#0b7a75'],
   weather:['Weather','sun','#f0a020'],find:['Find','search','#3b4a57'],vote:['Election','ballot','#1f3f7a'],move:['Movement','fist','#c8342c'],rights:['Rights','scale','#566573'],wait:['Wait 1 h','clock','#23824f']};
 let notifBox=null;
-function notify(app,title,body,open){try{_notify(app,title,body,open)}catch(e){}}
+function notify(app,title,body,open){if(titleOpen())return;try{_notify(app,title,body,open)}catch(e){}}
 function _notify(app,title,body,open){if(!document.body)return;if(!notifBox){notifBox=document.createElement('div');notifBox.className='notifs';document.body.appendChild(notifBox)}
   const a=APPX[app]||APPX.mail;const el=document.createElement('button');el.className='notif';el.innerHTML=`<span class="nic" style="background:${a[2]}">${glyphSVG(a[1])}</span><span class="nt"><b>${esc2(a[0])} · ${esc2(title)}</b><small>${esc2(body)}</small></span><em>now</em>`;
   el.onclick=()=>{el.remove();if(open)open()};notifBox.prepend(el);while(notifBox.children.length>3)notifBox.lastChild.remove();setTimeout(()=>el.classList.add('out'),6000);setTimeout(()=>el.remove(),6500);badges()}
@@ -2042,12 +2275,18 @@ const TRAITS_ME=[['outgoing','Outgoing',{social:10,charisma:8}],['shy','Shy',{ch
   ['creative','Creative',{fun:5,charisma:3}],['practical','Practical',{skill:3}],['funny','Funny',{charisma:6}],['kind','Kind',{social:5}],['romantic','Romantic',{charisma:2}],['sporty','Sporty',{fitness:12}]];
 const HOBBIES=['Football','Gym','Running','Music','Dancing','Cooking','Gaming','Reading','Hiking','Art','Photography','Tech','Fashion','Faith community','Volunteering','Movies'];
 const MARITAL=[['single','Single'],['relationship','In a relationship'],['married','Married'],['divorced','Divorced'],['widowed','Widowed']];
-const EDU=[['basic','Compulsory school',0],['upper','Upper secondary (gymnasium)',4],['uni','University degree',10],['phd','PhD',16]];
-function intro(){const F={kind:'stockholm',over:false,city:SWE_CITIES[0][0],nat:'Nigeria',from:'Nigeria',route:0,purpose:'work',name:'Alex',age:27,gender:'m',marital:'single',kids:0,edu:'upper',prof:'',eng:'good',traits:['kind'],hobbies:['Music'],bio:'',look:'',skin:'',height:'avg',build:'avg',hair:'auto',headw:'none',headCol:'0x1d2733',beard:'none',glasses:'no',pref:'any',asp:''};
+const EDU=[['none','No formal education',0],['basic','Compulsory school',0],['upper','Upper secondary (gymnasium)',4],['uni','University degree',10],['phd','PhD',16]];
+const introDefaults=()=>({kind:'stockholm',over:false,city:SWE_CITIES[0][0],nat:'Nigeria',from:'Nigeria',route:0,purpose:'work',name:'Alex',age:27,gender:'m',marital:'single',kids:0,edu:'upper',prof:'',eng:'good',traits:['kind'],hobbies:['Music'],bio:'',look:'',skin:'',height:'avg',build:'avg',hair:'auto',headw:'none',headCol:'0x1d2733',beard:'none',glasses:'no',pref:'any',asp:''});
+function lifeFromForm(F){const natG=(COUNTRIES.find(c=>c[0]===F.nat)||[])[2];
+        const bg=F.kind==='stockholm'?(F.over?'over':'local'):F.kind==='sweden'?'domestic':natG==='se'?'domestic':F.status==='student'||F.purpose==='study'?'student':F.status==='asylum'?'asylum':F.status==='permanent'?'permanent':'newcomer';
+        const look=F.look||(F.gender==='f'?(F.age>=60?'OldClassy_Female':'Casual_Female'):F.gender==='m'?'Casual_Male':(Math.random()<0.5?'Casual_Female':'Casual_Male'));newGame(F.name.trim()||'Alex',bg,look,F.pref,F.asp||Object.keys(ASPIRATIONS)[0],F.skin,{...F,routeObj:F.kind==='abroad'?routesFrom(F.from)[F.route]:null})}
+function intro(auto){const F=introDefaults();
+  const finish=()=>lifeFromForm(F);
+  if(auto){F.kind='abroad';finish();return}// real time: no intro, the game starts at once with the default newcomer (who you are can be changed in Me)
   const draw=()=>{const nat=COUNTRIES.find(c=>c[0]===F.nat)||COUNTRIES[1];const rts=routesFrom(F.from);if(F.route>=rts.length)F.route=0;const rt=rts[F.route];
     const papers=F.kind!=='abroad'?'':nat[2]==='se'?'You are Swedish: no permit needed. Re-register your address at Skatteverket.':nat[2]==='nordic'?'Nordic citizens can live and work in Sweden freely. You only register at Skatteverket.':nat[2]==='eu'?'EU/EEA citizens have a right of residence: no permit card. Register at Skatteverket once you have work or studies.':F.purpose==='study'?'You have a residence permit for studies. First stop: Migrationsverket for your permit card.':'Your work permit was approved from abroad. First stop: Migrationsverket for your permit card.';
     const border=F.kind!=='abroad'||!rt?'':rt.sch?`Your last flight leaves from ${rt.last}, inside the Schengen area. ${nat[2]==='noneu'&&rt.last!==(COUNTRIES.find(c=>c[0]===F.from)||[])[5]?`You pass passport control in ${rt.last} when you enter Schengen, `:''}so there is <b>no passport control at Arlanda</b>.`:`Your last flight leaves from ${rt.last}, outside the Schengen area: <b>you go through Swedish passport control at Arlanda</b>.`;
-    modal(`<h2 class="hero">Stockholmsliv</h2><p>Real Stockholm, built from OpenStreetMap. Get your papers, find a flat, make friends and build a life.</p>
+    modal(`<h2 class="hero">Stockholmsliv</h2>
     <h3 class="step">1 · Where are you from?</h3><div class="origins">
       <button class="orig o1 ${F.kind==='stockholm'?'sel':''}" data-o="stockholm">${glyphSVG('house','og')}<b>Born in Stockholm</b><small>You start at home.</small></button>
       <button class="orig o2 ${F.kind==='sweden'?'sel':''}" data-o="sweden">${glyphSVG('train','og')}<b>From elsewhere in Sweden</b><small>Arrive at T-Centralen.</small></button>
@@ -2091,11 +2330,10 @@ function intro(){const F={kind:'stockholm',over:false,city:SWE_CITIES[0][0],nat:
       m.querySelectorAll('select[data-f]').forEach(el=>el.onchange=()=>{sync();if(el.dataset.f==='nat'){F.from=COUNTRIES.find(c=>c[0]===F.nat&&c[5])?F.nat:F.from;F.route=0}if(el.dataset.f==='from')F.route=0;if(el.dataset.f==='gender')F.look='';if(['nat','from','route','purpose','city','over','gender'].includes(el.dataset.f))draw()});
       m.querySelectorAll('.pill[data-t]').forEach(b=>b.onclick=()=>{const k=b.dataset.t;if(F.traits.includes(k))F.traits=F.traits.filter(x=>x!==k);else if(F.traits.length<3)F.traits.push(k);else{toast('Pick up to 3');return}b.classList.toggle('on',F.traits.includes(k))});
       m.querySelectorAll('.pill[data-h]').forEach(b=>b.onclick=()=>{const k=b.dataset.h;F.hobbies=F.hobbies.includes(k)?F.hobbies.filter(x=>x!==k):[...F.hobbies,k];b.classList.toggle('on',F.hobbies.includes(k))});
-      m.querySelector('#go').onclick=()=>{sync();closeModal();const natG=(COUNTRIES.find(c=>c[0]===F.nat)||[])[2];
-        const bg=F.kind==='stockholm'?(F.over?'over':'local'):F.kind==='sweden'?'domestic':natG==='se'?'domestic':(F.purpose==='study'?'student':'newcomer');
-        const look=F.look||(F.gender==='f'?(F.age>=60?'OldClassy_Female':'Casual_Female'):F.gender==='m'?'Casual_Male':(Math.random()<0.5?'Casual_Female':'Casual_Male'));newGame(F.name.trim()||'Alex',bg,look,F.pref,F.asp||Object.keys(ASPIRATIONS)[0],F.skin,{...F,routeObj:F.kind==='abroad'?routesFrom(F.from)[F.route]:null})}})};
+      m.querySelector('#go').onclick=()=>{sync();closeModal();finish()}})};
   draw()}
-function applyMe(o){const me={age:o.age,gender:o.gender,nat:o.kind==='abroad'?o.nat:'Sweden',marital:o.marital,kids:o.kids,edu:o.edu,prof:o.prof,eng:o.eng,traits:o.traits,hobbies:o.hobbies,bio:o.bio};S.me=me;
+function applyMe(o){const me={age:o.age,gender:o.gender,genderLabel:o.genderLabel||'',nat:o.kind==='abroad'?o.nat:'Sweden',bornSweden:o.kind!=='abroad',homeTown:o.homeTown||'',skills:o.skills||[],languages:o.languages||[],marital:o.marital,kids:o.kids,edu:o.edu,prof:o.prof,eng:o.eng,traits:o.traits,hobbies:o.hobbies,bio:o.bio};S.me=me;
+  S.skill=clamp(S.skill+2*(me.skills||[]).length,0,100);if(o.svLevel&&S.svenska<100)S.svenska=Math.max(S.svenska,({none:0,basic:15,good:40,some:40,fluent:80})[o.svLevel]||0);S.skill=clamp(S.skill+Math.min(3,(me.languages||[]).filter(x=>x.lv==='fluent').length),0,100);
   const e=EDU.find(x=>x[0]===o.edu);if(e)S.skill=clamp(S.skill+e[2],0,100);if(/develop|program|engineer|it\b|data/i.test(o.prof||''))S.skill=clamp(S.skill+8,0,100);
   for(const t of o.traits||[]){const T=TRAITS_ME.find(x=>x[0]===t);if(T)for(const k in T[2])S[k]=clamp((S[k]||0)+T[2][k],0,100)}
   if(o.eng==='fluent')S.skill=clamp(S.skill+3,0,100);
@@ -2105,7 +2343,7 @@ function applyMe(o){const me={age:o.age,gender:o.gender,nat:o.kind==='abroad'?o.
     log(abroad?`${p.n}, your ${o.marital==='married'?'spouse':'partner'}, is still in ${where}. Later you can apply for them to join you (anhöriginvandring at Migrationsverket).`:`You live with ${p.n}, your ${o.marital==='married'?'spouse':'partner'}.`,'plus');setTimeout(()=>pushChat(p.id,false,abroad?'Text me when you land ❤️':'Ses ikväll? ❤️','love'),3000)}
   if(o.kids>0){if(abroad){S.flags.kidsAbroad=o.kids;log(`Your ${o.kids>1?o.kids+' children are':'child is'} with family in ${where} for now.`)}else for(let i=0;i<o.kids;i++)S.kids.push({n:pickA([...NAMES_F,...NAMES_M]),born:S.day-365*(3+i*2)})}
   if(o.marital==='divorced')apply({mood:-3});if(o.marital==='widowed')apply({mood:-6})}
-function applyOrigin(o){try{if(W&&W.inside&&W.inside())W.exitInterior(true)}catch(e){}if(!o)return;inboxInit(S);S.origin={kind:o.kind,city:o.city,nat:o.nat,from:o.from,purpose:o.purpose};
+function applyOrigin(o){try{if(W&&W.inside&&W.inside())W.exitInterior(true)}catch(e){}if(!o)return;inboxInit(S);S.origin={kind:o.kind,city:o.city,nat:o.nat,from:o.from,purpose:o.purpose,status:o.status||''};
   if(o.kind==='sweden'||(o.kind==='abroad'&&o.nat==='Sweden'&&false)){const c=SWE_CITIES.find(x=>x[0]===o.city)||SWE_CITIES[0];S.from=c[0];S.flags.moveR=1;S.fam={n:'Mamma',where:c[0]};
     const st=W&&W.stationPos?W.stationPos('central'):null;if(st){S.pos={x:st.x,z:st.z};W.placeAvatar(st.x,st.z,true);updateLoc()}
     log(`${c[1]} from ${c[0]} (${c[3]}), about ${fmtDur(c[2])}. You step off at Stockholms centralstation. T-Centralen is right below you.`,'plus');
@@ -2218,13 +2456,31 @@ function airportSpot(what){if(!S.flags.arlanda)return;
           setTimeout(()=>{pushChat('fam',false,'Did you land safely? Message us when you can ❤️','call');
             if(S.docs.permit===0)sendMail('Migrationsverket','Book your visit: residence permit card','Welcome to Sweden. To get your residence permit card (UT-kort) you need to visit a Migrationsverket service centre for photo and fingerprints. The nearest is in Sundbyberg.',null);
             else sendMail('Skatteverket','Moving to Sweden: folkbokföring','If you plan to live in Sweden for a year or more, apply for registration (folkbokföring) at a Skatteverket service office. Bring your passport and proof of work or studies.',null);
-            todoAdd(S.docs.permit===0?'Migrationsverket: permit card':'Skatteverket: register (folkbokföring)');if(!S.flags.sim)todoAdd('Buy a SIM card');todoAdd('Eat something')},1500);save();render();after()})})})}}
+            todoAdd(S.docs.permit==='asylum'?'Migrationsverket: your asylum case':S.docs.permit===0?'Migrationsverket: permit card':'Skatteverket: register (folkbokföring)');if(!S.flags.sim)todoAdd('Buy a SIM card');todoAdd('Eat something')},1500);save();render();after()})})})}}
 
 function renderAbout(){const el=document.getElementById('aboutSec');if(!el||!S)return;const me=S.me;if(!me){el.innerHTML='';return}const nat=COUNTRIES.find(c=>c[0]===me.nat);const p=partner()||S.people.find(q=>q.st==='married');
-  el.innerHTML=`<h3>About ${esc2(S.name)}</h3><div class="aboutme"><div>${nat?nat[1]+' ':''}${esc2(me.nat)} · ${me.age} years · ${({m:'man',f:'woman',x:'non-binary'})[me.gender]||''}${me.prof?' · '+esc2(me.prof):''}</div>
-    <div>${(MARITAL.find(x=>x[0]===me.marital)||['',''])[1]}${p?` (${esc2(p.n)}${p.away?', in '+esc2(p.away):''})`:''}${me.kids?` · ${me.kids} child${me.kids>1?'ren':''}`:''} · ${(EDU.find(x=>x[0]===me.edu)||['',''])[1]} · English: ${me.eng}</div>
+  el.innerHTML=`<h3>About ${esc2(S.name)}</h3><div class="aboutme"><div>${nat?nat[1]+' ':''}${esc2(me.nat)} · ${esc2(me.age)} years · ${esc2(me.genderLabel||({m:'man',f:'woman',x:'non-binary'})[me.gender]||'')}${me.prof?' · '+esc2(me.prof):''}${me.homeTown?' · from '+esc2(me.homeTown):''}</div>
+    <div>${(MARITAL.find(x=>x[0]===me.marital)||['',''])[1]}${p?` (${esc2(p.n)}${p.away?', in '+esc2(p.away):''})`:''}${me.kids?` · ${esc2(me.kids)} child${me.kids>1?'ren':''}`:''} · ${(EDU.find(x=>x[0]===me.edu)||['',''])[1]} · ${(me.languages&&me.languages.length)?'Languages: '+me.languages.map(x=>esc2(x.l)+' ('+esc2(x.lv)+')').join(', '):'English: '+esc2(me.eng)}</div>
     ${S.route?`<div>Arrived: ${esc2(S.route)}</div>`:S.from?`<div>From ${esc2(S.from)}</div>`:''}
-    <div class="tags">${(me.traits||[]).map(t=>`<i class="t">${(TRAITS_ME.find(x=>x[0]===t)||['',t])[1]}</i>`).join('')}${(me.hobbies||[]).map(h=>`<i>${esc2(h)}</i>`).join('')}</div>${me.bio?`<div class="note">"${esc2(me.bio)}"</div>`:''}</div>`}
+    <div class="tags">${(me.traits||[]).map(t=>`<i class="t">${(TRAITS_ME.find(x=>x[0]===t)||['',esc2(t)])[1]}</i>`).join('')}${(me.skills||[]).map(h=>`<i class="t">${esc2(h)}</i>`).join('')}${(me.hobbies||[]).map(h=>`<i>${esc2(h)}</i>`).join('')}</div>${me.bio?`<div class="note">"${esc2(me.bio)}"</div>`:''}<button class="btn ghost" id="editMe" type="button">Edit about me</button></div>`;
+  const eb=document.getElementById('editMe');if(eb)eb.onclick=editMeModal}
+function editMeModal(){const me=S.me||(S.me={}),langs=(me.languages||[]).map(x=>({l:x.l,lv:x.lv})),hob=new Set(me.hobbies||[]);
+  const lvOpts=['basic','good','fluent'].map(v=>`<option value="${v}">${v[0].toUpperCase()+v.slice(1)}</option>`).join('');
+  const nameOpts=[...new Set(LANG_CODES.map(c=>langName(c,'en')))].sort().map(n=>`<option>${esc2(n)}</option>`).join('');
+  modal(`<h2>Edit about me</h2><label class="f">Name<input id="emName" maxlength="24" value="${esc2(S.name)}"></label>
+    <label class="f">Profession or field<input id="emProf" maxlength="40" value="${esc2(me.prof||'')}"></label>
+    <label class="f">About you<textarea id="emBio" maxlength="300" rows="3">${esc2(me.bio||'')}</textarea></label>
+    <div class="f"><b>Languages</b><div id="emLangs"></div><div class="row2"><select id="emLang">${nameOpts}</select><select id="emLv">${lvOpts}</select><button class="btn ghost" type="button" id="emAdd">Add</button></div></div>
+    <div class="f"><b>Interests</b><div id="emHob">${HOBBIES.map(h=>`<label class="chk2"><input type="checkbox" data-h="${esc2(h)}"${hob.has(h)?' checked':''}> ${esc2(h)}</label>`).join(' ')}</div></div>
+    <p id="emErr" role="alert"></p><div class="row2"><button class="btn" type="button" id="emSave">Save</button><button class="btn ghost" type="button" id="emCancel">Cancel</button></div>`,m=>{
+    const q=x=>m.querySelector(x),draw=()=>{q('#emLangs').innerHTML=langs.length?langs.map((x,i)=>`<button type="button" class="btn ghost" data-i="${i}">${esc2(x.l)} (${x.lv}) ×</button>`).join(' '):'<small>None yet</small>';
+      q('#emLangs').querySelectorAll('button').forEach(b=>b.onclick=()=>{langs.splice(+b.dataset.i,1);draw()})};draw();
+    q('#emAdd').onclick=()=>{const l=q('#emLang').value;if(l&&!langs.some(x=>x.l===l))langs.push({l,lv:q('#emLv').value});draw()};
+    q('#emCancel').onclick=closeModal;
+    q('#emSave').onclick=()=>{const n=q('#emName').value.trim();if(!n){q('#emErr').textContent='Please enter a name.';return}
+      S.name=n;me.prof=q('#emProf').value.trim();me.bio=q('#emBio').value.trim();me.languages=langs;me.hobbies=[...m.querySelectorAll('#emHob input:checked')].map(x=>x.dataset.h);
+      const sv=langs.find(x=>x.l==='Swedish');if(sv)S.svenska=Math.max(S.svenska,({basic:15,good:40,fluent:80})[sv.lv]||0);
+      closeModal();save();render();log('You updated your details.')}})}
 lifeMailHooks();
 function poiActions(p){const n=(p.name||'').toLowerCase(),t=p.type,out=[];
   const friend={social:8,mood:5,energy:-6};
@@ -2301,15 +2557,16 @@ function showPoi(p){
 
 /* ---------- day cycle ---------- */
 function sleep(passedOut,mode){if(S.home==='none'&&!mode)mode='out';
+  const roll=!REALTIME||S.flags.rolled!==S.day;// with real time the daily bookkeeping runs once per calendar day, however often you sleep
   const wasHome=atHome(),dark=daylight()<8,wasSick=S.sick>S.day;
   if(dark&&!S.sunToday&&S.vitD<S.day){const p=S.coat?3:5;apply({mood:-p});log(`Another day without seeing the sun. −${p} mood.`,'minus')}
   if(S.sunToday&&dark)log('You caught some of today\'s short daylight. It helped.','plus');
-  apply({social:-2});if(S.energy<15)apply({mood:-3});if(S.job)S.jobDays++;
-  if(wasSick&&S.job&&S.job!=='foodora'){const j=JOBS[S.job];if(!S.flags.karens){S.flags.karens=1;log('Karensavdrag: the first sick day is unpaid.','minus')}
+  apply({social:-2});if(S.energy<15)apply({mood:-3});if(roll&&S.job)S.jobDays++;
+  if(roll&&wasSick&&S.job&&S.job!=='foodora'){const j=JOBS[S.job];if(!S.flags.karens){S.flags.karens=1;log('Karensavdrag: the first sick day is unpaid.','minus')}
     else if(S.docs.fk){S.pay+=Math.round(j.rate*8*0.8);log(`Sjukpenning from Försäkringskassan: ${kr(Math.round(j.rate*8*0.8))} added to lön.`,'plus')}
     else log('No sjukpenning: you never registered with Försäkringskassan.','minus')}
   if(S.weather==='rain'&&!S.coat&&!(S.bag&&S.bag.paraply)){apply({mood:-1})}
-  S.day++;if(S.docs.queue)S.queue+=QUEUE_SPEED*(policy('housing')?1.3:1);processBills();crimeDaily();S.sunToday=false;S.applied={};S.flags.sunMin=0;rollWeather();try{invTick()}catch(e){}setTimeout(()=>wearTip(),1500);
+  if(!REALTIME)S.day++;if(roll){if(S.docs.queue)S.queue+=QUEUE_SPEED*(policy('housing')?1.3:1);processBills();crimeDaily();S.sunToday=false;S.applied={};S.flags.sunMin=0;rollWeather();try{invTick()}catch(e){}setTimeout(()=>wearTip(),1500)}
   if(!(S.sick>S.day))S.flags.karens=0;
   S.hunger=clamp(S.hunger-18,0,100);S.hygiene=clamp(S.hygiene-8,0,100);
   if(mode==='hospital'){S.energy=clamp(S.energy+40,0,100);S.hour=9;apply({hunger:30,hygiene:20})}
@@ -2326,13 +2583,14 @@ function sleep(passedOut,mode){if(S.home==='none'&&!mode)mode='out';
   if(S.docs.pn==='wait'&&S.day>=S.docs.pnDay){S.docs.pn=1;log('Brev från Skatteverket: your personnummer has arrived. SFI, bank and vårdcentral are now possible.','plus');apply({mood:6})}
   if(S.docs.id==='wait'&&S.day>=S.docs.idDay){S.docs.id='ready';log('SMS: your ID card is ready to collect at the Skatteverket office.','plus')}
   const dt=today();
-  if(dt.getDate()===25){if(S.pay>0){if(S.docs.bank){const net=Math.round(S.pay*(1-TAX));log(`Lönedag! ${kr(S.pay)} gross, ${kr(net)} after Stockholm's ~30% tax.`,'plus');S.money+=net;S.pay=0;apply({mood:5});garnish(net);csnRepay(net)}else log('Lönedag, but your lön can\'t be paid: you have no bank account.','minus')}
+  if(roll&&dt.getDate()===25){if(S.pay>0){if(S.docs.bank){const net=Math.round(S.pay*(1-TAX));log(`Lönedag! ${kr(S.pay)} gross, ${kr(net)} after Stockholm's ~30% tax.`,'plus');S.money+=net;S.pay=0;apply({mood:5});garnish(net);csnRepay(net)}else log('Lönedag, but your lön can\'t be paid: you have no bank account.','minus')}
   // CSN studiemedel: paid on the 25th to a resident student with an active bank account, whether or not there is any lön
   if(S.course&&S.flags.csn&&csnResident()){if(S.docs.bank){S.money+=CSN4W;S.csnLoan=(S.csnLoan||0)+Math.round(CSN4W*0.7);log(`CSN studiemedel paid: +${kr(CSN4W)} (most of it is a loan you pay back later).`,'plus')}else log('CSN studiemedel could not be paid: you have no bank account.','minus')}}
-  if(dt.getDate()===1){if(S.car&&S.car.kind==='own'){S.money-=1100;log('Car insurance and vehicle tax: −1 100 kr.','minus')}const r=Math.round(HOMES[S.home].rent*(S.flags.sambo?0.5:1));if(r>0)if(S.money>=r){S.money-=r;log(`Rent paid for ${MONTHS[dt.getMonth()]}: −${kr(r)}.`,'minus')}
+  if(roll&&dt.getDate()===1){if(S.car&&S.car.kind==='own'){S.money-=1100;log('Car insurance and vehicle tax: −1 100 kr.','minus')}const r=Math.round(HOMES[S.home].rent*(S.flags.sambo?0.5:1));if(r>0)if(S.money>=r){S.money-=r;log(`Rent paid for ${MONTHS[dt.getMonth()]}: −${kr(r)}.`,'minus')}
     else{addBill('rent for '+MONTHS[dt.getMonth()],r);apply({mood:-6});log(`Not enough money for rent (${kr(r)}). The landlord sent an invoice: pay within 10 days or it goes to inkasso.`,'minus')}}
-  if(dt.getMonth()===0&&dt.getDate()===2&&S.docs.queue){S.money-=QUEUE_FEE;log(`Bostadsförmedlingen yearly queue fee: −${kr(QUEUE_FEE)}.`)}
-  lifeDaily(dt);
+  if(roll&&dt.getMonth()===0&&dt.getDate()===2&&S.docs.queue){S.money-=QUEUE_FEE;log(`Bostadsförmedlingen yearly queue fee: −${kr(QUEUE_FEE)}.`)}
+  if(roll)lifeDaily(dt);
+  if(REALTIME){S.flags.rolled=S.day;syncClock()}
   log(`${WD[dt.getDay()]} ${dt.getDate()} ${MONTHS[dt.getMonth()]}. Sunrise ${hhmm(sunrise())}, sunset ${hhmm(sunset())}.`);
   W&&W.snapTime();save();
   if(!(S.sick>S.day)&&S.energy<55&&Math.random()<0.12){S.sick=S.day+2;apply({mood:-5});return showEvent({t:'Förkyld',b:'Sore throat, runny nose. Classic Stockholm autumn. You should stay home for a couple of days.',c:[{l:'Okay',fx:()=>S.job&&S.job!=='foodora'?'You called in sick to work.':'Tea and blankets.'}]})}
@@ -2353,7 +2611,7 @@ const EVENTS=[
   {w:2,t:'Middagsbjudning',b:'A colleague invites a few people over for dinner on Saturday.',c:[{l:'Go',fx:()=>{const w=S.flags.wine;S.flags.wine=0;apply({social:w?10:5,mood:5});return w?'You brought wine from Systembolaget. Perfect guest.':'You came empty-handed. Swedes noticed, quietly.'}},{l:'Stay home',fx:()=>'Another quiet night.'}]},
   {w:3,t:'A note in the stairwell',b:'"Till den som inte städar efter sig i tvättstugan…" Someone is unhappy about the laundry room. It might be about you.',c:[{l:'Book your slot properly',fx:()=>{apply({svenska:1,mood:-1});return 'You learned the word tvättstuga the hard way.'}},{l:'Write an equally passive note back',fx:()=>{apply({mood:3,social:-2});return 'Very Swedish of you.'}}]},
   {w:2,t:'On the platform floor',b:'A 200-kronor note is lying by the gates at Slussen.',c:[{l:'Keep it',fx:()=>{S.money+=200;return '+200 kr. Nobody saw.'}},{l:'Hand it to SL staff',fx:()=>{apply({mood:4});return 'The guard nods. You feel lagom righteous.'}}]},
-  {w:2,t:'Signalfel',b:'Signal failure on the green line. Everyone stares at their phones in silence.',c:[{l:'Wait it out',fx:()=>{S.hour+=1;apply({mood:-2});return 'An hour gone. Classic.'}}]},
+  {w:2,t:'Signalfel',b:'Signal failure on the green line. Everyone stares at their phones in silence.',c:[{l:'Wait it out',fx:()=>{if(!REALTIME)S.hour+=1;apply({mood:-2});return 'An hour gone. Classic.'}}]},
   {w:1,months:[9,10,11,0,1,2],t:'Norrsken tonight?',b:'The aurora forecast says you might see northern lights from the city tonight.',c:[{l:'Stay up and look',fx:()=>{apply({mood:10,energy:-15});W&&W.aurora();return 'A faint green ribbon over Saltsjön. Worth it.'}},{l:'Sleep',fx:()=>'You saw it on Instagram the next day.'}]},
   {w:1,cond:()=>HOMES[S.home].type==='andrahand',t:'Your sublet is ending',b:'The first-hand tenant is moving back. You have to find another sublet and pay a month\'s deposit.',c:[{l:'Take a room on Södermalm',fx:()=>moveTo('soderRoom',true)},{l:'Take a room in Sundbyberg',fx:()=>moveTo('sbgRoom',true)}]},
   {w:2,t:'Grey drizzle',b:'Horizontal rain off the water all day. Det finns inget dåligt väder, bara dåliga kläder.',c:[{l:'Okay',fx:()=>{S.weather='rain';apply({mood:S.coat?0:-3});return S.coat?'Your thrifted coat earns its keep.':'You need better clothes.'}}]},
@@ -2376,7 +2634,7 @@ function pickEvent(){
   const m=dt.getMonth(),pool=EVENTS.filter(e=>(!e.months||e.months.includes(m))&&(!e.cond||e.cond()));
   let r=Math.random()*pool.reduce((a,e)=>a+e.w,0);for(const e of pool){r-=e.w;if(r<=0)return e}return null;
 }
-function showEvent(ev){modal(`<h2>${ev.t}</h2><p>${ev.b}</p><div class="choices">${ev.c.map((c,i)=>`<button class="choice" data-i="${i}"><b>${c.l}</b></button>`).join('')}</div>`,m=>{
+function showEvent(ev){if(titleOpen())return;modal(`<h2>${ev.t}</h2><p>${ev.b}</p><div class="choices">${ev.c.map((c,i)=>`<button class="choice" data-i="${i}"><b>${c.l}</b></button>`).join('')}</div>`,m=>{
   m.querySelectorAll('.choice').forEach(b=>b.onclick=()=>{const res=ev.c[+b.dataset.i].fx();closeModal();if(res)log(ev.t+': '+res);after()})})}
 
 /* ---------- jobs & housing ---------- */
@@ -2425,7 +2683,7 @@ function openHousing(){
 /* ---------- papers & goals ---------- */
 function papers(){const d=S.docs,st=(s,l)=>({s,l});const skv='Skatteverket servicekontor, Kista or Sundbyberg';
   const list=[];
-  if(S.bg!=='local')list.push({n:'Residence permit card',...(d.permit===1?st('done','Done'):d.permit==='wait'?st('wait','Post d'+d.permitDay):st('todo','To do')),w:'Migrationsverket, Sturegatan, Sundbyberg · Mon–Fri 09–15'});
+  if(S.bg!=='local')list.push({n:'Residence permit card',...(d.permit===1?st('done','Done'):d.permit==='wait'?st('wait','Post d'+d.permitDay):d.permit==='asylum'?st('wait','Asylum case'):st('todo','To do')),w:'Migrationsverket, Sturegatan, Sundbyberg · Mon–Fri 09–15'});
   list.push(
     {n:'Personnummer',...(d.pn===1?st('done','Done'):d.pn==='wait'?st('wait','Post d'+d.pnDay):d.permit===1?st('todo','To do'):st('lock','Locked')),w:skv+' · needs permit card'},
     {n:'ID card',...(d.id===1?st('done','Done'):d.id==='ready'?st('todo','Collect'):d.id==='wait'?st('wait','Ready d'+d.idDay):d.pn===1?st('todo','To do'):st('lock','Locked')),w:skv+' · 400 kr'},
@@ -2494,7 +2752,7 @@ function buildWorld(){
   const stage=$('stage');
   // retry without antialiasing: some GPUs/drivers refuse the heavier context
   let renderer;try{renderer=new THREE.WebGLRenderer({antialias:true,logarithmicDepthBuffer:true})}catch(e){try{renderer=new THREE.WebGLRenderer({antialias:false,logarithmicDepthBuffer:true,powerPreference:'low-power'})}catch(e2){return null}}
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,{low:1,auto:2,high:3}[SET.quality]||2));
   renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.0;
   stage.prepend(renderer.domElement);
   const scene=new THREE.Scene();scene.fog=new THREE.Fog(0xbfe3ff,30,90);
@@ -4582,6 +4840,7 @@ const POSTERS_CITY=[['#f2b705','#1b1b1b','KANELBULLE','Färskt varje morgon','Ba
     doors:()=>{for(let i=0;i<5;i++)tone(1250,i*0.26,0.14,0.06,'square')},ding:()=>{tone(1046,0,0.8,0.09);tone(1318,0.2,0.9,0.08)},clack:()=>{tone(70,0,0.12,0.12,'triangle');tone(62,0.09,0.12,0.1,'triangle')}};
   function say(t){if(!AUD.on||!window.speechSynthesis)return;try{const u=new SpeechSynthesisUtterance(t),v=speechSynthesis.getVoices().find(v=>/^sv/i.test(v.lang));if(v){u.voice=v;u.lang=v.lang}else u.lang='sv-SE';u.rate=0.95;speechSynthesis.cancel();speechSynthesis.speak(u)}catch(e){}}
   function audToggle(){AUD.on=!AUD.on;try{localStorage.setItem('sl-cs-sound',AUD.on?'1':'0')}catch(e){}if(AUD.on)audInit();else{['crowd','rumble','wind'].forEach(n=>audSet(n,0));try{speechSynthesis.cancel()}catch(e){}}csHudSync(true)}
+  window.addEventListener('stockholmsliv-sound',e=>{const on=!!e.detail;if(AUD.on===on)return;AUD.on=on;if(on)audInit();else{['crowd','rumble','wind'].forEach(n=>audSet(n,0));try{speechSynthesis.cancel()}catch(x){}}});
   function fadeDo(fn,hold){fadeEl.classList.add('on');setTimeout(()=>{try{fn()}catch(e){console.error(e)}setTimeout(()=>fadeEl.classList.remove('on'),hold||140)},380)}
 
   // ---------- building helpers (geometry merged per material, canvas signs) ----------
@@ -4946,7 +5205,7 @@ const POSTERS_CITY=[['#f2b705','#1b1b1b','KANELBULLE','Färskt varje morgon','Ba
   function csExitNow(d){const B=CS.B;B.sc.remove(av);scene.add(av);av.scale.setScalar(CS.avS);ring.visible=true;if(CS.sit)csStand(true);csControls(false);const yaw=yawS2W(av.rotation.y);CS.mode=null;CS.auto=null;csDoorsWorld();
     placeAvatar(d.w.x,d.w.z,true);av.rotation.y=yaw;PRM.dis.add('w'+d.id);promptSet(null);csHudMode(null);csGuideOff();['crowd','rumble','wind'].forEach(n=>audSet(n,0));csFlush(true);if(CS.late){CS.late=0;spendTime(0.05)}save();render()}
   function csExit(d){fadeDo(()=>{csExitNow(d);log(`Left Stockholm Central by the ${d.name.toLowerCase()}.`)})}
-  function csFlush(force){if(CS.pend<=0)return;let h=CS.pend/60;CS.pend=0;if(S.hour+h>=23.98){h=Math.max(0,23.98-S.hour);CS.late=1}if(h>0){needsTick(h);S.hour+=h}if(force||Math.random()<1)render()}
+  function csFlush(force){if(CS.pend<=0)return;let h=CS.pend/60;CS.pend=0;if(!REALTIME&&S.hour+h>=23.98){h=Math.max(0,23.98-S.hour);CS.late=1}if(h>0){needsTick(h);if(!REALTIME)S.hour+=h}if(force||Math.random()<1)render()}
   function csRide(path,sp,toName){if(CS.sit)csStand();const p0=av.position.clone();CS.auto={type:'path',pts:[p0,...path],i:1,sp,toName};audSet('crowd',0.03)}
   function csGateIn(G){if(!csTicket()){sfx.no();G.flash=1.2;G.rd.material.color.setHex(0xd8263a);csTicketMachine('the SL gates');return}csGatePass(G,1)}
   function csGatePass(G,dir){if(CS.sit)csStand();if(dir>0){sfx.ok();G.rd.material.color.setHex(0x2fbf62);G.flash=1.5;const t=csTicket();log(`Tapped your ${t?t.n.replace(/^SL /,'SL '):'ticket'} at the SL gates.`)}CS.auto={type:'gate',G,dir,ph:'open',xA:dir>0?37.95:41.7,xB:dir>0?41.7:37.95}}
@@ -5491,17 +5750,400 @@ const POSTERS_CITY=[['#f2b705','#1b1b1b','KANELBULLE','Färskt varje morgon','Ba
 }
 
 /* =================== START =================== */
-$('restart').onclick=()=>modal(`<h2>Start over?</h2><p>Your current life in Stockholm will be lost.</p><div class="row2"><button class="btn" id="yes">Start a new life</button><button class="btn ghost" id="no">Keep playing</button></div>`,m=>{m.querySelector('#yes').onclick=()=>{closeModal();intro()};m.querySelector('#no').onclick=closeModal});
+$('restart').onclick=()=>modal(`<h2>Start over?</h2><p>Your current life in Stockholm will be replaced by a new one. A copy is kept first and can be restored from Saves.</p><div class="row2"><button class="btn" id="yes">Start a new life</button><button class="btn ghost" id="no">Keep playing</button></div><p class="note" id="rsErr"></p>`,m=>{m.querySelector('#yes').onclick=()=>{const e=lifeReplaceCopy();if(e){m.querySelector('#rsErr').textContent=e;return}closeModal();intro()};m.querySelector('#no').onclick=closeModal});// as on the title page: a verified copy first, or nothing changes
 
+function loadO(pct){const o=document.getElementById('loadO');if(o)o.style.setProperty('--p',Math.round(pct)+'%')}
 async function loadCity(){
   const parts=[['b','buildings'],['r','streets'],['m','parks, water and places']];const out={};let n=0;
-  for(const [k,label] of parts){$('loadtxt').textContent=`Loading ${label}…`;out[k]=await gunzipFetch(`data/${k}.json`);n++;$('loadbar').style.width=(n/parts.length*100)+'%'}
+  for(const [k,label] of parts){$('loadtxt').textContent=`Loading ${label}…`;out[k]=await gunzipFetch(`data/${k}.json`);n++;$('loadbar').style.width=(n/parts.length*100)+'%';loadO(n/parts.length*100)}
   for(const k of ['x','t','o','e']){try{$('loadtxt').textContent=k==='t'?'Loading bus, tram, train and ferry lines…':k==='o'?'Loading one-way streets and lanes…':k==='e'?'Loading station entrances…':'Loading traffic lights…';out[k]=await gunzipFetch(`data/${k}.json`)}catch(e){}}
   return out}
 function matchServices(){if(!CITY)return;const pois=CITY.m.pois.map((p,i)=>({i,cat:p[0],catName:CITY.m.cats[p[0]],type:p[1],name:p[2],x:p[3]/100,z:p[4]/100,hours:p[5]||'',addr:p[6]||''}));
   for(const k in SVC){const s=SVC[k];let best=null,bd=1e9;for(const p of pois){if(!s.find(p))continue;const d=Math.hypot(p.x-s.near[0],p.z-s.near[1]);if(d<bd){bd=d;best=p}}
     if(best&&bd<25){s.poi=best;s.oh=parseHours(best.hours)}}}
-async function start(data){uiInit();
+
+/* ---------- title page, introduction, options and settings ---------- */
+const SETKEY='stockholmsliv-settings',SEENKEY='stockholmsliv-intro-seen',LANGKEY='stockholmsliv-lang';
+const SET=(()=>{const d={quality:'auto',live:true,hints:true,tips:true,tz:1,hc:false,rm:false};try{const v=JSON.parse(localStorage.getItem(SETKEY)||'{}');return{quality:['low','auto','high'].includes(v.quality)?v.quality:d.quality,live:v.live!==false,hints:v.hints!==false,tips:v.tips!==false,tz:[0,1,2,3].includes(v.tz)?v.tz:1,hc:v.hc===true,rm:v.rm===true}}catch(e){return d}})();
+const setSave=()=>{try{localStorage.setItem(SETKEY,JSON.stringify(SET))}catch(e){}};
+const applyHints=()=>document.body.classList.toggle('nohints',!SET.hints);applyHints();
+const titleOpen=()=>{const t=document.getElementById('title');return !!t&&!t.hidden};// while the title page is open nothing else in the game answers
+['keydown','keyup','keypress'].forEach(ev=>window.addEventListener(ev,e=>{if(titleOpen()){if(ev==='keydown')titleKey(e);e.stopPropagation()}},true));
+const TITLE_ON=(()=>{try{return localStorage.getItem('stockholmsliv-title')!=='0'}catch(e){return true}})();
+let LANG=(()=>{try{const v=localStorage.getItem(LANGKEY);if(v==='sv'||v==='en')return v}catch(e){}return /^sv/i.test(navigator.language||'')?'sv':'en'})();
+const TXT={
+ en:{qTitle:'Quit to the title page?',qAsk:'Do you want to save your game first?',qSave:'Save and quit',qNo:'Quit without saving',qCancel:'Keep playing',tag:'Live a life in Stockholm. Real map, real time, real weather.',start:'Start',cont:'Continue',newlife:'New life',options:'Options',how:'How to Play',settings:'Settings',saves:'Saves',
+  next:'Next',skip:'Skip',back:'Back',
+  aboutBtn:'About and credits',abMap:'Map and places',abContrib:'contributors',abPlaces:'Countries and home towns',abWeather:'Weather',abTransit:'Public transport',abMoney:'Exchange rates',abVia:'via',abFlights:'Flights',abRoutes:'routes from',abType:'Lettering',abEngine:'3D engine',
+  accBtn:'Accessibility',axTitle:'Accessibility',axText:'Text size',axTextD:'Makes the menus and dialogs larger or smaller.',tzSmall:'Small',tzNormal:'Normal',tzLarge:'Large',tzXL:'Extra large',axContrast:'High contrast',axContrastD:'Stronger borders and plain backgrounds.',axMotion:'Reduce motion',axMotionD:'Turns off sliding and fading effects.',axNote:'These apply to menus and dialogs. The 3D city follows your graphics setting.',
+  pvBtn:'Privacy and my data',pvTitle:'Privacy and my data',pvStored:'Your lives, settings and language are stored on this device, in your browser. There is no account, and nothing is sent to us.',pvContacts:'While you play, the page asks other services for what it shows: the weather (Open-Meteo), SL timetables, flights, exchange rates, fonts (Google Fonts) and the map data from this site.',pvNoTrack:'No advertising, no tracking cookies and no analytics.',pvDownload:'Download my data',pvDownloaded:'Saved to your downloads',pvDelete:'Delete my data',
+  pvDelFail:'Some data could not be removed. Clear this site\'s data in your browser settings.',pvDelTitle:'Delete everything?',pvDelBody:'This removes all your saved lives, backups and settings from this device. It cannot be undone. Download your data first if you want to keep it.',pvDelType:'To confirm, type',pvDelWord:'DELETE',pvDelGo:'Delete my data now',pvKeep:'Keep my data',
+  hlBtn:'Help and support',hlTitle:'Help and support',hlReportD:'Found a bug? Report it on GitHub (a free account is needed). Your technical details are added. They contain no name and no saved life.',hlReport:'Report a problem',hlCopy:'Copy my details',hlCopied:'Copied',hlCopyFail:'Could not copy. Select the text on the report page instead.',
+  faq:[['Is my life saved?','Yes, in this browser, in five slots. Clearing your browser data, or using another device, loses it. Use Saved games to make a backup.'],['Is the time real?','Yes. The game follows Stockholm time, daylight saving included, whatever your device clock says.'],['Where does the weather come from?','Live from Open-Meteo for Stockholm. Without internet the game makes up the weather.'],['How do I move around?','Use the joystick or WASD to walk, tap a street to auto-walk, and tap a shop to look inside.'],['Why is the game in English?','The menus are in Swedish and English. Translating the whole game is being done step by step.'],['Something looks wrong.','Reload the page first. If it stays, use Report a problem below.']],
+  nwBtn:'What\'s new',nwTitle:'What\'s new',instBtn:'Install the app',instHow:'iPhone or iPad: tap Share, then Add to Home Screen. Android: open the browser menu and choose Install app.',
+  stSoon:'Coming soon',stGet:'Get it on',
+  sound:'Sound',soundD:'Station sounds and announcements at Stockholm Central.',reloadNow:'Apply now (reloads the page)',resetSet:'Reset to defaults',done:'Done',slot:'Slot',
+  acSignIn:'Sign in',acLogin:'Log in',acCreate:'Create account',acWith:'Continue with',acSoonBadge:'Soon',acOr:'or',acName:'Display name',acEmail:'E-mail',acAge:'I am at least 13 years old',acTerms:'I accept the privacy policy and terms',
+  acLink:'Send me a log-in link',acCreateBtn:'Create account',acGuest:'Continue as guest',acNote:'Accounts are not switched on yet. Nothing was sent or stored. You can play as a guest: your life saves in this browser.',
+  errEmail:'Enter a valid e-mail address.',errAcName:'Fill in a display name.',errTicks:'Please tick both boxes to continue.',acCloud:'Sign in to keep your lives safe in the cloud (coming soon).',
+  choose:'What would you like to do?',contLife:'Continue your life',savedGames:'Saved games',newLifeGo:'Start a new life',
+  loadTitle:'Saved games',empty:'Empty',ended:'Ended',unreadable:'Cannot be read',load:'Load',current:'Current',dayN:'Day',noSaves:'No saved lives yet.',manage:'Manage saves (backup, import)',
+  formTitle:'Your details',fName:'Name',fAge:'Age',fGender:'Gender',male:'Male',female:'Female',other:'Other',fNat:'Nationality',bornYes:'Born in Sweden: yes',bornNo:'Born in Sweden: no (you were born abroad)',fTown:'Home town',fStatus:'Immigration status',
+  st_temporary:'Temporary resident',st_asylum:'Asylum seeker',st_permanent:'Permanent resident',st_student:'Student permit',st_eu:'EU/EEA citizen (right of residence)',
+  sn_temporary:'You hold a temporary residence permit, for example for work. First step: your permit card at Migrationsverket.',
+  sn_asylum:'You have applied for asylum and wait for Migrationsverket\'s decision. You hold an LMA card, not a residence permit. The game simplifies the real process.',
+  sn_permanent:'You hold a permanent residence permit and may live and work in Sweden. First step: register at Skatteverket for a personnummer.',
+  sn_student:'You have a permit to study in Sweden. First step: your permit card at Migrationsverket.',
+  sn_eu:'EU/EEA citizens do not need a residence permit. First step: register at Skatteverket.',
+  fGo:'Start my life',errName:'Please enter a name.',errAge:'Please select your age.',
+  step:'Step',phName:'Fill in your name',phAge:'Select your age',phGender:'Select your gender identity',fGenderText:'Your gender identity, in your own words',fTownAbroad:'Home town (in your country)',townOther:'Other (write it in)',townWrite:'Your home town',
+  fEdu:'Education',fProf:'Profession or field',phProf:'For example nurse, developer, cook',fSkills:'Skills',upTo:'up to',fLangs:'Languages',langHint:'add every language you speak',fLevel:'Level',add:'Add',removeLang:'Tap to remove',fTraits:'About you: personality',fHobbies:'Interests',fMarital:'Relationship',fKids:'Children',fBio:'About you, in your own words',phBio:'A few lines about who you are and what you hope for in Stockholm',
+  tooMany:'You have chosen the most you can. Tap one to remove it first.',errGender:'Please select your gender identity.',errTown:'Please write your home town.',
+
+
+  newTitle:'New life?',newBody:'Your current life in Stockholm will be replaced by a new one. A copy is kept first and can be restored from Saves.',newYes:'Start a new life',newNo:'Keep playing',
+  optTitle:'Options',hints:'Control hints',hintsD:'The line of tips at the bottom of the screen.',tips:'Weather tips',tipsD:'A short message about what to wear when the weather changes.',on:'On',off:'Off',
+  setTitle:'Settings',gfx:'Graphics',gfxD:'Low saves battery; High is sharper on a good screen. Applies after a reload.',low:'Low',auto:'Auto',high:'High',live:'Live data',liveD:'Weather, flights and departures from the internet. Off keeps the game offline-friendly.',
+  intro:'Introduction',introD:'See the how-to-play slides again on the next new life.',replay:'Replay',saved:'✓ Saved. Graphics and live data apply after a reload.',savedNow:'✓ Saved',replayed:'The introduction will show on your next new life.',
+  about:'Time follows Stockholm. The map is © OpenStreetMap contributors. Weather from Open-Meteo.',langNote:'The title page, introduction and menus are in your language. The game itself is in English for now.',
+  slides:[['A real city','Stockholmsliv is built on OpenStreetMap: real streets, stations and shops. The clock follows Stockholm time, and the weather and SL departures are live when you are online.'],
+   ['Get your life started','Energy, mood, food, hygiene, fun and social fall as time passes. Money, papers and a home come first. The Next up card shows what to do next.'],
+   ['Move and act','Walk with the joystick or WASD, tap a street to auto-walk, tap a shop to look inside. Your phone has chats, mail, maps, SL and banking.'],
+   ['Your life is saved here','Saves stay in this browser. Use Saves on the title page to keep several lives, export a backup or restore one.']],
+  map1:'Map ©',map2:' contributors'},
+ sv:{qTitle:'Avsluta till startsidan?',qAsk:'Vill du spara spelet först?',qSave:'Spara och avsluta',qNo:'Avsluta utan att spara',qCancel:'Fortsätt spela',tag:'Lev ditt liv i Stockholm. Riktig karta, riktig tid, riktigt väder.',start:'Starta',cont:'Fortsätt',newlife:'Nytt liv',options:'Alternativ',how:'Så spelar du',settings:'Inställningar',saves:'Sparade liv',
+  next:'Nästa',skip:'Hoppa över',back:'Tillbaka',
+  aboutBtn:'Om och tack',abMap:'Karta och platser',abContrib:'-bidragsgivare',abPlaces:'Länder och hemorter',abWeather:'Väder',abTransit:'Kollektivtrafik',abMoney:'Växelkurser',abVia:'via',abFlights:'Flyg',abRoutes:'rutter från',abType:'Typsnitt',abEngine:'3D-motor',
+  accBtn:'Tillgänglighet',axTitle:'Tillgänglighet',axText:'Textstorlek',axTextD:'Gör menyer och dialogrutor större eller mindre.',tzSmall:'Liten',tzNormal:'Normal',tzLarge:'Stor',tzXL:'Extra stor',axContrast:'Hög kontrast',axContrastD:'Tydligare kanter och enkla bakgrunder.',axMotion:'Minska rörelse',axMotionD:'Stänger av glidande och tonande effekter.',axNote:'Gäller menyer och dialogrutor. 3D-staden följer din grafikinställning.',
+  pvBtn:'Integritet och mina data',pvTitle:'Integritet och mina data',pvStored:'Dina liv, inställningar och ditt språk sparas på den här enheten, i din webbläsare. Det finns inget konto, och ingenting skickas till oss.',pvContacts:'När du spelar hämtar sidan det den visar från andra tjänster: vädret (Open-Meteo), SL:s tidtabeller, flyg, växelkurser, typsnitt (Google Fonts) och kartdata från den här webbplatsen.',pvNoTrack:'Ingen reklam, inga spårningskakor och ingen analys.',pvDownload:'Ladda ner mina data',pvDownloaded:'Sparat bland dina nedladdningar',pvDelete:'Radera mina data',
+  pvDelFail:'Vissa data gick inte att ta bort. Rensa webbplatsens data i webbläsarens inställningar.',pvDelTitle:'Radera allt?',pvDelBody:'Det här tar bort alla dina sparade liv, säkerhetskopior och inställningar från den här enheten. Det går inte att ångra. Ladda ner dina data först om du vill behålla dem.',pvDelType:'Skriv för att bekräfta',pvDelWord:'RADERA',pvDelGo:'Radera mina data nu',pvKeep:'Behåll mina data',
+  hlBtn:'Hjälp och support',hlTitle:'Hjälp och support',hlReportD:'Hittat ett fel? Rapportera det på GitHub (ett gratis konto behövs). Dina tekniska uppgifter läggs till. De innehåller inget namn och inget sparat liv.',hlReport:'Rapportera ett problem',hlCopy:'Kopiera mina uppgifter',hlCopied:'Kopierat',hlCopyFail:'Det gick inte att kopiera. Markera texten på rapportsidan i stället.',
+  faq:[['Sparas mitt liv?','Ja, i den här webbläsaren, på fem platser. Om du rensar webbläsarens data, eller byter enhet, försvinner det. Gör en säkerhetskopia under Sparade spel.'],['Är tiden verklig?','Ja. Spelet följer Stockholmstid, med sommartid, oavsett vad enhetens klocka visar.'],['Varifrån kommer vädret?','Live från Open-Meteo för Stockholm. Utan internet hittar spelet på vädret.'],['Hur rör jag mig?','Använd joysticken eller WASD för att gå, tryck på en gata för att gå dit, och tryck på en butik för att titta in.'],['Varför är spelet på engelska?','Menyerna finns på svenska och engelska. Att översätta hela spelet görs steg för steg.'],['Något ser fel ut.','Ladda om sidan först. Om det består, använd Rapportera ett problem nedan.']],
+  nwBtn:'Nytt',nwTitle:'Nytt',instBtn:'Installera appen',instHow:'iPhone eller iPad: tryck på Dela och sedan Lägg till på hemskärmen. Android: öppna webbläsarens meny och välj Installera app.',
+  stSoon:'Kommer snart',stGet:'Hämta på',
+  sound:'Ljud',soundD:'Ljud och utrop på Stockholms central.',reloadNow:'Verkställ nu (laddar om sidan)',resetSet:'Återställ standard',done:'Klar',slot:'Plats',
+  acSignIn:'Logga in',acLogin:'Logga in',acCreate:'Skapa konto',acWith:'Fortsätt med',acSoonBadge:'Snart',acOr:'eller',acName:'Visningsnamn',acEmail:'E-post',acAge:'Jag är minst 13 år',acTerms:'Jag godkänner integritetspolicyn och villkoren',
+  acLink:'Skicka en inloggningslänk',acCreateBtn:'Skapa konto',acGuest:'Fortsätt som gäst',acNote:'Konton är inte aktiverade ännu. Ingenting skickades eller sparades. Du kan spela som gäst: ditt liv sparas i den här webbläsaren.',
+  errEmail:'Ange en giltig e-postadress.',errAcName:'Fyll i ett visningsnamn.',errTicks:'Kryssa i båda rutorna för att fortsätta.',acCloud:'Logga in för att spara dina liv säkert i molnet (kommer snart).',
+  choose:'Vad vill du göra?',contLife:'Fortsätt ditt liv',savedGames:'Sparade spel',newLifeGo:'Starta ett nytt liv',
+  loadTitle:'Sparade spel',empty:'Tom',ended:'Avslutat',unreadable:'Kan inte läsas',load:'Ladda',current:'Aktuellt',dayN:'Dag',noSaves:'Inga sparade liv ännu.',manage:'Hantera sparade liv (säkerhetskopia, import)',
+  formTitle:'Dina uppgifter',fName:'Namn',fAge:'Ålder',fGender:'Kön',male:'Man',female:'Kvinna',other:'Annat',fNat:'Nationalitet',bornYes:'Född i Sverige: ja',bornNo:'Född i Sverige: nej (du är född utomlands)',fTown:'Hemort',fStatus:'Migrationsstatus',
+  st_temporary:'Tillfälligt uppehållstillstånd',st_asylum:'Asylsökande',st_permanent:'Permanent uppehållstillstånd',st_student:'Studentuppehållstillstånd',st_eu:'EU/EES-medborgare (uppehållsrätt)',
+  sn_temporary:'Du har ett tillfälligt uppehållstillstånd, till exempel för arbete. Första steget: ditt uppehållstillståndskort hos Migrationsverket.',
+  sn_asylum:'Du har ansökt om asyl och väntar på Migrationsverkets beslut. Du har ett LMA-kort, inte ett uppehållstillstånd. Spelet förenklar den verkliga processen.',
+  sn_permanent:'Du har ett permanent uppehållstillstånd och får bo och arbeta i Sverige. Första steget: folkbokför dig hos Skatteverket för att få ett personnummer.',
+  sn_student:'Du har tillstånd att studera i Sverige. Första steget: ditt uppehållstillståndskort hos Migrationsverket.',
+  sn_eu:'EU/EES-medborgare behöver inget uppehållstillstånd. Första steget: folkbokför dig hos Skatteverket.',
+  fGo:'Starta mitt liv',errName:'Skriv ett namn.',errAge:'Välj din ålder.',
+  step:'Steg',phName:'Fyll i ditt namn',phAge:'Välj din ålder',phGender:'Välj din könsidentitet',fGenderText:'Din könsidentitet, med egna ord',fTownAbroad:'Hemort (i ditt land)',townOther:'Annan (skriv in)',townWrite:'Din hemort',
+  fEdu:'Utbildning',fProf:'Yrke eller område',phProf:'Till exempel sjuksköterska, utvecklare, kock',fSkills:'Färdigheter',upTo:'högst',fLangs:'Språk',langHint:'lägg till alla språk du talar',fLevel:'Nivå',add:'Lägg till',removeLang:'Tryck för att ta bort',fTraits:'Om dig: personlighet',fHobbies:'Intressen',fMarital:'Relation',fKids:'Barn',fBio:'Om dig, med egna ord',phBio:'Några rader om vem du är och vad du hoppas på i Stockholm',
+  tooMany:'Du har valt så många du kan. Tryck på en för att ta bort den först.',errGender:'Välj din könsidentitet.',errTown:'Skriv din hemort.',
+
+
+  newTitle:'Nytt liv?',newBody:'Ditt nuvarande liv i Stockholm ersätts av ett nytt. En kopia sparas först och kan återställas under Sparade liv.',newYes:'Starta ett nytt liv',newNo:'Fortsätt spela',
+  optTitle:'Alternativ',hints:'Kontrolltips',hintsD:'Tipsraden längst ned på skärmen.',tips:'Vädertips',tipsD:'Ett kort meddelande om vad du ska ha på dig när vädret ändras.',on:'På',off:'Av',
+  setTitle:'Inställningar',gfx:'Grafik',gfxD:'Låg sparar batteri; Hög är skarpare på en bra skärm. Gäller efter omladdning.',low:'Låg',auto:'Auto',high:'Hög',live:'Live-data',liveD:'Väder, flyg och avgångar från internet. Av gör spelet mer offlinevänligt.',
+  intro:'Introduktion',introD:'Se bilderna om hur man spelar igen vid nästa nya liv.',replay:'Visa igen',saved:'✓ Sparat. Grafik och live-data gäller efter en omladdning.',savedNow:'✓ Sparat',replayed:'Introduktionen visas vid ditt nästa nya liv.',
+  about:'Tiden följer Stockholm. Kartan är © OpenStreetMap-bidragsgivare. Väder från Open-Meteo.',langNote:'Startsidan, introduktionen och menyerna är på ditt språk. Själva spelet är på engelska tills vidare.',
+  slides:[['En riktig stad','Stockholmsliv bygger på OpenStreetMap: riktiga gator, stationer och butiker. Klockan följer Stockholmstid, och vädret och SL-avgångarna är live när du är online.'],
+   ['Kom igång med livet','Energi, humör, mat, hygien, nöje och socialt sjunker med tiden. Pengar, papper och en bostad kommer först. Kortet Nästa steg visar vad du ska göra.'],
+   ['Rör dig och agera','Gå med joysticken eller WASD, tryck på en gata för att gå dit, tryck på en butik för att titta in. I telefonen finns chatt, post, kartor, SL och bank.'],
+   ['Ditt liv sparas här','Sparade liv finns kvar i den här webbläsaren. Under Sparade liv kan du ha flera liv, exportera en säkerhetskopia eller återställa en.']],
+  map1:'Karta ©',map2:'-bidragsgivare'}};
+const tt=k=>(TXT[LANG]&&TXT[LANG][k])||TXT.en[k]||k;
+const FLAG_SV='<svg viewBox="0 0 22 15" aria-hidden="true"><rect width="22" height="15" fill="#006aa7"/><rect x="6" width="3.2" height="15" fill="#fecc02"/><rect y="5.9" width="22" height="3.2" fill="#fecc02"/></svg>';
+const FLAG_EN='<svg viewBox="0 0 22 15" aria-hidden="true"><rect width="22" height="15" fill="#012169"/><path d="M0 0 22 15M22 0 0 15" stroke="#fff" stroke-width="3"/><path d="M0 0 22 15M22 0 0 15" stroke="#c8102e" stroke-width="1.2"/><path d="M11 0v15M0 7.5h22" stroke="#fff" stroke-width="5"/><path d="M11 0v15M0 7.5h22" stroke="#c8102e" stroke-width="3"/></svg>';
+const TIPS={en:['Shops and offices keep real Stockholm opening hours.','Tap a street to auto-walk, or use WASD.','Your phone has chats, mail, maps, SL and banking.','Not sure what to do? The Next up card shows the next step.','The time is Stockholm\'s, whatever your device clock says.'],
+  sv:['Butiker och kontor har riktiga öppettider i Stockholm.','Tryck på en gata för att gå dit, eller använd WASD.','I telefonen finns chatt, post, kartor, SL och bank.','Osäker på vad du ska göra? Kortet Nästa steg visar vad som kommer.','Tiden är Stockholms, oavsett vad enhetens klocka visar.']};
+const seenIntro=()=>{try{return localStorage.getItem(SEENKEY)==='1'}catch(e){return false}};
+const markIntro=()=>{try{localStorage.setItem(SEENKEY,'1')}catch(e){}};
+const TITLE={cur:null,timer:0,screen:''};
+function titleModal(open){const t=$('title');t.hidden=true;open();const mo=$('modalRoot');const w=setInterval(()=>{if(!mo.innerHTML){clearInterval(w);t.hidden=false}},400)}
+function titleChrome(){const l=$('tLang');l.innerHTML=`<button data-l="sv" aria-pressed="${LANG==='sv'}" aria-label="Svenska">${FLAG_SV} SV</button><i></i><button data-l="en" aria-pressed="${LANG==='en'}" aria-label="English">${FLAG_EN} EN</button>`;
+  l.querySelectorAll('button').forEach(b=>b.onclick=()=>{LANG=b.dataset.l;try{localStorage.setItem(LANGKEY,LANG)}catch(e){}if(TITLE.cur)TITLE.cur()});
+  const ac=$('tAcct');ac.innerHTML=`<button type="button" id="tAcctBtn" aria-label="${tt('acSignIn')}"><svg viewBox="0 0 22 22" width="18" height="18" aria-hidden="true"><circle cx="11" cy="7.5" r="3.6" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M3.8 19c.9-3.7 3.7-5.4 7.2-5.4s6.3 1.7 7.2 5.4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><span class="alabel">${tt('acSignIn')}</span></button>`;
+  ac.querySelector('button').onclick=()=>{if(TITLE.screen==='account')return;const prev=TITLE.cur;titleGo(()=>accountScreen('login',()=>titleGo(prev)))};
+  $('tOsm').innerHTML=`${tt('map1')} <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>${tt('map2')}`}
+function titleGo(fn){TITLE.cur=fn;TITLE.screen='';fn()}
+function titleHide(){const t=$('title');if(!t)return;t.classList.add('out');setTimeout(()=>{if(t.classList.contains('out')){t.hidden=true;t.classList.remove('out');$('titleCard').innerHTML='';document.body.classList.remove('titleopen')}},450)}
+function titleShow(html,bind,bare){const t=$('title'),c=$('titleCard');c.innerHTML=`<div class="card${bare?'':' panel'}">${html}</div>`;t.hidden=false;t.classList.remove('out');document.body.classList.add('titleopen');titleChrome();bind&&bind(c);const f=c.querySelector('button.primary')||c.querySelector('button');f&&f.focus({preventScroll:true})}
+function showTitle(fresh){titleGo(()=>titleMain(fresh))}
+const STORE={ios:'',android:''};// put the App Store and Google Play addresses here when the apps are published; until then the badges say "coming soon" and are not links
+// The stores' own badges, unchanged (assets/stores/README.md). Until an app is live its badge is a plain image under "Coming soon"; with an address it is the link.
+const storeHtml=()=>{const L=LANG==='sv'?'sv':'en',B=[['ios','App Store','Download on the App Store','assets/stores/app-store-'+L+'.svg','st-ios'],['android','Google Play','Get it on Google Play','assets/stores/google-play-'+L+'.png','st-play']];
+  const img=(alt,src,cls)=>`<img class="${cls}" src="${src}" alt="${alt}" draggable="false">`;
+  return `<p class="stsoon">${STORE.ios||STORE.android?'':tt('stSoon')}</p><div class="storerow">${B.map(([k,n,alt,src,cls])=>STORE[k]?`<a class="store" href="${STORE[k]}" target="_blank" rel="noopener" aria-label="${alt}">${img(alt,src,cls)}</a>`:`<span class="store pending" role="group" aria-label="${n}: ${tt('stSoon')}">${img(alt,src,cls)}</span>`).join('')}</div>`};
+function titleMain(fresh){
+  const started=!!(S&&S.flags&&S.flags.started)&&!fresh;
+  titleShow(`<h1>Stockholms<span>liv</span></h1>
+    <div class="btns"><button class="primary" id="tPlay">${tt('start')}</button>
+    <button id="tOpt">${tt('options')}</button><button id="tHow">${tt('how')}</button></div>
+    <div class="stores">${storeHtml()}</div>`,t=>{
+    t.querySelector('#tPlay').onclick=()=>titleGo(()=>startChoice(fresh));
+    t.querySelector('#tOpt').onclick=()=>titleGo(()=>optionsScreen(()=>titleGo(()=>titleMain(fresh))));
+    t.querySelector('#tHow').onclick=()=>titleGo(()=>introSlides(()=>titleGo(()=>titleMain(fresh)),true));
+    },true)}
+
+function lifeSlot(){const rows=SLOT_IDS.map(slotInfo);return rows.find(r=>r.active&&r.st==='life')||rows.find(r=>r.st==='life')||null}
+function startChoice(fresh){const here=!!(S&&S.flags&&S.flags.started)&&!fresh,other=here?null:lifeSlot(),canCont=here||!!other,back=()=>titleGo(()=>titleMain(fresh));
+  const who=here?{n:S.name,d:S.day,m:S.money}:other?{n:other.title||other.name||'',d:other.day,m:other.money}:null;
+  titleShow(`<h2>${tt('choose')}</h2>${who?`<div class="resume"><b>${esc2(who.n)}</b><span>${tt('dayN')} ${who.d} · ${kr(who.m)}</span></div>`:''}<div class="btns">${canCont?`<button class="primary" id="cCont">${tt('contLife')}</button>`:''}
+    <button ${canCont?'':'class="primary" '}id="cNew">${tt('newLifeGo')}</button><button id="cBack">${tt('back')}</button></div><small id="cNote"></small>`,t=>{
+    const c=t.querySelector('#cCont');if(c)c.onclick=()=>{if(here){titleHide();return}const e=slotSwitch(other.id);if(e)t.querySelector('#cNote').textContent=e};
+    const form=()=>titleGo(()=>newLifeForm(()=>titleGo(()=>startChoice(fresh))));
+    t.querySelector('#cNew').onclick=()=>{if(here)titleGo(()=>titleNewLife(form,titleHide));else form()};// a life is being played: ask first
+    t.querySelector('#cBack').onclick=back})}
+function loadScreen(back){
+  const all=SLOT_IDS.map(slotInfo),rows=all.filter(r=>r.st!=='empty'),any=rows.length>0;
+  const label=r=>r.st==='life'?`${tt('dayN')} ${r.day} · ${kr(r.money)}`:r.st==='ended'?tt('ended'):r.st==='unreadable'?tt('unreadable'):tt('empty');
+  titleShow(`<h2>${tt('loadTitle')}</h2>${any?'':`<p class="tag">${tt('noSaves')}</p>`}
+    ${rows.map(r=>`<div class="setrow"><div><b>${tt('slot')} ${r.id}${r.st==='life'&&r.title?' · '+esc2(r.title):''}</b><small>${label(r)}${r.active&&r.st==='life'?' · '+tt('current'):''}</small></div>${r.st==='life'?(r.active?`<div class="seg"><button class="lcur" data-id="${r.id}">${tt('cont')}</button></div>`:`<div class="seg"><button class="lload" data-id="${r.id}">${tt('load')}</button></div>`):''}</div>`).join('')}
+    <small>${tt('acCloud')}</small><small id="lNote" role="status"></small><button id="lManage">${tt('manage')}</button><button class="primary" id="lBack">${tt('back')}</button>`,t=>{
+    t.querySelectorAll('.lload').forEach(b=>b.onclick=()=>{const e=slotSwitch(+b.dataset.id);if(e)t.querySelector('#lNote').textContent=e});
+    t.querySelectorAll('.lcur').forEach(b=>b.onclick=()=>titleHide());
+    t.querySelector('#lManage').onclick=()=>titleModal(()=>openSaveFile(false));
+    t.querySelector('#lBack').onclick=back})}
+
+const AC={tab:'login',email:'',name:''};
+function accountScreen(tab,back){
+  AC.tab=tab||AC.tab;const create=AC.tab==='create',esc=x=>String(x).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+  const PROV=[['google','Google','G','#fff','#ea4335'],['facebook','Facebook','f','#fff','#1877f2'],['apple','Apple','A','#fff','#111'],['microsoft','Microsoft','M','#fff','#2f2f2f']];
+  titleShow(`<h2>${create?tt('acCreate'):tt('acLogin')}</h2>
+    <div class="seg tabs" role="tablist"><button type="button" role="tab" id="acTabLogin" class="${create?'':'on'}" aria-selected="${!create}">${tt('acLogin')}</button><button type="button" role="tab" id="acTabCreate" class="${create?'on':''}" aria-selected="${create}">${tt('acCreate')}</button></div>
+    <div class="provs">${PROV.map(([k,n,g,fg,bg])=>`<button type="button" class="prov" data-p="${k}"><i style="background:${bg};color:${fg}" aria-hidden="true">${g}</i><span>${tt('acWith')} ${n}</span><em class="soon">${tt('acSoonBadge')}</em></button>`).join('')}</div>
+    <div class="or"><span>${tt('acOr')}</span></div>
+    ${create?`<div class="frow"><label for="acName">${tt('acName')}</label><input id="acName" maxlength="30" autocomplete="nickname" value="${esc(AC.name)}"></div>`:''}
+    <div class="frow"><label for="acEmail">${tt('acEmail')}</label><input id="acEmail" type="email" inputmode="email" autocomplete="email" placeholder="name@example.com" value="${esc(AC.email)}"></div>
+    ${create?`<label class="chk"><input type="checkbox" id="acAge"><span>${tt('acAge')}</span></label><label class="chk"><input type="checkbox" id="acTerms"><span>${tt('acTerms')}</span></label>`:''}
+    <p class="nferr" id="acErr" role="alert"></p><p class="acnote" id="acNote" role="status"></p>
+    <div class="actions"><button class="primary" type="button" id="acGo">${create?tt('acCreateBtn'):tt('acLink')}</button><button type="button" id="acGuest">${tt('acGuest')}</button></div>`,t=>{
+    TITLE.screen='account';const $q=q=>t.querySelector(q);
+    const keep=()=>{const e=$q('#acEmail');AC.email=e?e.value:'';const n=$q('#acName');if(n)AC.name=n.value};
+    $q('#acTabLogin').onclick=()=>{keep();titleGo(()=>accountScreen('login',back))};$q('#acTabCreate').onclick=()=>{keep();titleGo(()=>accountScreen('create',back))};
+    const soon=()=>{$q('#acErr').textContent='';$q('#acNote').textContent=tt('acNote')};
+    t.querySelectorAll('.prov').forEach(b=>b.onclick=()=>{keep();soon()});
+    $q('#acGo').onclick=()=>{keep();const err=$q('#acErr');err.textContent='';$q('#acNote').textContent='';
+      if(create&&!AC.name.trim()){err.textContent=tt('errAcName');return}
+      if(!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(AC.email.trim())){err.textContent=tt('errEmail');return}
+      if(create&&!($q('#acAge').checked&&$q('#acTerms').checked)){err.textContent=tt('errTicks');return}
+      soon()};
+    $q('#acGuest').onclick=back})}
+const NL={name:'',age:'',gender:'',genderText:'',iso:'SE',town:'Stockholm',townText:'',status:'temporary',edu:'upper',prof:'',skills:[],langs:[],traits:[],hobbies:[],bio:'',marital:'single',kids:0};
+const GENDERS=[['woman','Woman','f'],['man','Man','m'],['nonbinary','Non-binary','x'],['transwoman','Trans woman','f'],['transman','Trans man','m'],['genderqueer','Genderqueer','x'],['genderfluid','Genderfluid','x'],['agender','Agender','x'],['bigender','Bigender','x'],['demigender','Demigender','x'],['twospirit','Two-Spirit','x'],['intersex','Intersex','x'],['questioning','Questioning','x'],['other','Other (write your own)','x'],['nosay','Prefer not to say','x']];
+const SKILLS=['Cooking','Driving licence','Customer service','Care work','IT and programming','Teaching','Construction','Cleaning','Sales','Languages','Music','Sports coaching'];
+const SVX={'No formal education':'Ingen formell utbildning','Woman':'Kvinna','Man':'Man','Non-binary':'Icke-binär','Trans woman':'Transkvinna','Trans man':'Transman','Genderqueer':'Genderqueer','Genderfluid':'Genderfluid','Agender':'Agender','Bigender':'Bigender','Demigender':'Demigender','Two-Spirit':'Two-Spirit','Intersex':'Intersex','Questioning':'Ifrågasättande','Other (write your own)':'Annat (skriv själv)','Prefer not to say':'Vill inte ange',
+ 'Cooking':'Matlagning','Driving licence':'Körkort','Customer service':'Kundservice','Care work':'Vård och omsorg','IT and programming':'IT och programmering','Teaching':'Undervisning','Construction':'Bygg','Cleaning':'Städning','Sales':'Försäljning','Languages':'Språk','Music':'Musik','Sports coaching':'Idrottstränare',
+ 'Outgoing':'Utåtriktad','Shy':'Blyg','Organised':'Organiserad','Spontaneous':'Spontan','Ambitious':'Ambitiös','Laid-back':'Avslappnad','Creative':'Kreativ','Practical':'Praktisk','Funny':'Rolig','Kind':'Snäll','Romantic':'Romantisk','Sporty':'Sportig',
+ 'Football':'Fotboll','Gym':'Gym','Running':'Löpning','Dancing':'Dans','Gaming':'Spel','Reading':'Läsning','Hiking':'Vandring','Art':'Konst','Photography':'Fotografi','Tech':'Teknik','Fashion':'Mode','Faith community':'Trosgemenskap','Volunteering':'Volontärarbete','Movies':'Film',
+ 'Compulsory school':'Grundskola','Upper secondary (gymnasium)':'Gymnasium','University degree':'Universitetsexamen','PhD':'Doktorsexamen','Single':'Singel','In a relationship':'I en relation','Married':'Gift','Divorced':'Skild','Widowed':'Änka/änkling',
+ 'Basic':'Grundläggande','Good':'God','Fluent':'Flytande','None':'Ingen','Some':'Viss'};
+const LANG_CODES='en sv no da fi is de fr es pt it nl pl ru uk cs sk hu ro bg el tr ar fa ur hi bn pa ta te ml kn mr gu ne si th vi id ms fil zh ja ko my km lo mn ka hy az kk uz ps ku am ti so sw ha yo ig zu xh af he sq sr hr bs sl mk lt lv et mt ga cy ca eu gl lb la'.split(' ');
+const langName=(c,l)=>{try{return new Intl.DisplayNames([l||LANG],{type:'language'}).of(c)}catch(e){return c}};
+const LVLS=[['basic','Basic'],['good','Good'],['fluent','Fluent']];
+const lab=en=>LANG==='sv'?(SVX[en]||en):en;
+const natNameOf=iso=>{try{return new Intl.DisplayNames([LANG],{type:'region'}).of(iso)}catch(e){}return(WORLD.countries.find(c=>c[0]===iso)||[,iso])[1]};
+const isoFlag=iso=>[...iso].map(ch=>String.fromCodePoint(0x1F1E6+ch.charCodeAt(0)-65)).join('');
+function worldCountry(iso){const w=WORLD.countries.find(c=>c[0]===iso);if(!w)return 'Sweden';const flag=isoFlag(iso),ex=COUNTRIES.find(c=>c[1]===flag);if(ex)return ex[0];
+  COUNTRIES.push([w[1],flag,w[3],w[4],0,w[2],w[3]==='noneu'?0:1]);return w[1]}
+function newLifeForm(back,step){
+  step=step||1;const w=WORLD.countries.find(c=>c[0]===NL.iso)||WORLD.countries.find(c=>c[0]==='SE'),isSwe=NL.iso==='SE',grp=w[3];
+  const statusOpts=()=>grp==='noneu'?['temporary','asylum','permanent','student']:['eu','student'];
+  if(!statusOpts().includes(NL.status))NL.status=statusOpts()[0];
+  const townList=isSwe?['Stockholm',...SWE_CITIES.map(c=>c[0])]:(WORLD.towns[NL.iso]||[w[2]]);
+  if(!townList.includes(NL.town)&&NL.town!=='__other')NL.town=townList[0];
+  const esc=x=>String(x).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+  const opt=(v,l,cur)=>`<option value="${esc(v)}"${String(v)===String(cur)?' selected':''}>${esc(l)}</option>`;
+  const chips=(key,list,max)=>`<div class="chips" data-k="${key}" data-max="${max}">${list.map(([v,l])=>`<button type="button" data-v="${esc(v)}" aria-pressed="${NL[key].includes(v)}">${esc(l)}</button>`).join('')}</div>`;
+  const natList=WORLD.countries.map(c=>[c[0],natNameOf(c[0])]).sort((a,b)=>a[0]==='SE'?-1:b[0]==='SE'?1:a[1].localeCompare(b[1],LANG));
+  const ages=[];for(let a=16;a<=90;a++)ages.push(a);
+  const heading=`<h2>${tt('formTitle')}</h2><div class="steps">${tt('step')} ${step} / 2</div>`;
+  const page1=`<div class="frow"><label for="nfName">${tt('fName')}</label><input id="nfName" maxlength="24" autocomplete="off" placeholder="${esc(tt('phName'))}" value="${esc(NL.name)}"></div>
+    <div class="frow two"><div><label for="nfAge">${tt('fAge')}</label><select id="nfAge"><option value="" disabled${NL.age===''?' selected':''}>${tt('phAge')}</option>${ages.map(a=>opt(a,a,NL.age)).join('')}</select></div>
+      <div><label for="nfGender">${tt('fGender')}</label><select id="nfGender"><option value="" disabled${NL.gender===''?' selected':''}>${tt('phGender')}</option>${GENDERS.map(g=>opt(g[0],lab(g[1]),NL.gender)).join('')}</select></div></div>
+    <div class="frow" id="nfGenderTextRow"><label for="nfGenderText">${tt('fGenderText')}</label><input id="nfGenderText" maxlength="30" autocomplete="off" value="${esc(NL.genderText)}"></div>
+    <div class="frow"><label for="nfNat">${tt('fNat')}</label><select id="nfNat">${natList.map(([c,n])=>opt(c,isoFlag(c)+' '+n,NL.iso)).join('')}</select></div>
+    <div class="nfnote" id="nfBorn"></div>
+    <div class="frow" id="nfTownRow"><label for="nfTown">${tt(isSwe?'fTown':'fTownAbroad')}</label><select id="nfTown">${townList.map(c=>opt(c,c,NL.town)).join('')}${isSwe?'':opt('__other',tt('townOther'),NL.town)}</select></div>
+    <div class="frow" id="nfTownTextRow"><label for="nfTownText">${tt('townWrite')}</label><input id="nfTownText" maxlength="40" autocomplete="off" value="${esc(NL.townText)}"></div>
+    <div class="frow" id="nfStatusRow"><label for="nfStatus">${tt('fStatus')}</label><select id="nfStatus"></select><small id="nfStatusNote"></small></div>`;
+  const page2=`<div class="frow"><label for="nfEdu">${tt('fEdu')}</label><select id="nfEdu">${EDU.map(e=>opt(e[0],lab(e[1]),NL.edu)).join('')}</select></div>
+    <div class="frow"><label for="nfProf">${tt('fProf')}</label><input id="nfProf" maxlength="40" autocomplete="off" placeholder="${esc(tt('phProf'))}" value="${esc(NL.prof)}"></div>
+    <div class="frow"><label>${tt('fSkills')} <em>${tt('upTo')} 4</em></label>${chips('skills',SKILLS.map(x=>[x,lab(x)]),4)}</div>
+    <div class="frow"><label for="nfLang">${tt('fLangs')} <em>${tt('langHint')}</em></label>
+      <div class="langadd"><select id="nfLang">${LANG_CODES.filter(c=>!NL.langs.some(x=>x.c===c)).map(c=>[c,langName(c)]).sort((a,b)=>a[1].localeCompare(b[1],LANG)).map(([c,n])=>opt(c,n,'')).join('')}</select>
+        <select id="nfLangLv" aria-label="${esc(tt('fLevel'))}">${LVLS.map(([v,l])=>opt(v,lab(l),'good')).join('')}</select><button type="button" id="nfLangAdd">${tt('add')}</button></div>
+      <div class="chips" id="nfLangList">${NL.langs.map(x=>`<button type="button" data-c="${x.c}" aria-pressed="true" title="${esc(tt('removeLang'))}">${esc(langName(x.c))} · ${esc(lab(LVLS.find(l=>l[0]===x.lv)[1]))} ×</button>`).join('')}</div></div>
+    <div class="frow"><label>${tt('fTraits')} <em>${tt('upTo')} 3</em></label>${chips('traits',TRAITS_ME.map(t=>[t[0],lab(t[1])]),3)}</div>
+    <div class="frow"><label>${tt('fHobbies')} <em>${tt('upTo')} 4</em></label>${chips('hobbies',HOBBIES.map(h=>[h,lab(h)]),4)}</div>
+    <div class="frow two"><div><label for="nfMar">${tt('fMarital')}</label><select id="nfMar">${MARITAL.map(m=>opt(m[0],lab(m[1]),NL.marital)).join('')}</select></div>
+      <div><label for="nfKids">${tt('fKids')}</label><select id="nfKids">${[0,1,2,3,4,5,6].map(k=>opt(k,k,NL.kids)).join('')}</select></div></div>
+    <div class="frow"><label for="nfBio">${tt('fBio')}</label><textarea id="nfBio" maxlength="300" rows="3" placeholder="${esc(tt('phBio'))}">${esc(NL.bio)}</textarea></div>`;
+  titleShow(`${heading}${step===1?page1:page2}<p class="nferr" id="nfErr" role="alert"></p>
+    <div class="actions"><button class="primary" id="nfGo">${step===1?tt('next'):tt('fGo')}</button><button id="nfBack">${tt('back')}</button></div>`,t=>{
+    const $q=q=>t.querySelector(q),val=q=>{const e=$q(q);return e?e.value:null};
+    const read=()=>{if(step===1){NL.name=val('#nfName');NL.age=val('#nfAge')||'';NL.gender=val('#nfGender')||'';NL.genderText=val('#nfGenderText');NL.town=val('#nfTown')||NL.town;NL.townText=val('#nfTownText');if(!isSwe)NL.status=val('#nfStatus')||NL.status}
+      else{NL.edu=val('#nfEdu');NL.prof=val('#nfProf');NL.marital=val('#nfMar');NL.kids=+val('#nfKids');NL.bio=val('#nfBio')}};
+    t.querySelectorAll('input,select,textarea').forEach(e=>e.addEventListener('input',()=>{read();sync()}));
+    t.querySelectorAll('.chips').forEach(c=>c.querySelectorAll('button').forEach(b=>b.onclick=()=>{const k=c.dataset.k,max=+c.dataset.max,v=b.dataset.v,i=NL[k].indexOf(v);
+      if(i>=0)NL[k].splice(i,1);else if(NL[k].length<max)NL[k].push(v);else{$q('#nfErr').textContent=tt('tooMany');return}
+      $q('#nfErr').textContent='';c.querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',String(NL[k].includes(x.dataset.v))))}));
+    const sync=()=>{if(step===1){$q('#nfBorn').textContent=isSwe?tt('bornYes'):tt('bornNo');
+        $q('#nfGenderTextRow').hidden=NL.gender!=='other';$q('#nfStatusRow').hidden=isSwe;$q('#nfTownTextRow').hidden=NL.town!=='__other';
+        if(!isSwe){const o=statusOpts(),se=$q('#nfStatus');if(!se.options.length)se.innerHTML=o.map(v=>opt(v,tt('st_'+v),NL.status)).join('');$q('#nfStatusNote').textContent=tt('sn_'+NL.status)}}
+      };
+    if(step===1)$q('#nfNat').onchange=()=>{read();NL.iso=$q('#nfNat').value;NL.town='';NL.townText='';newLifeForm(back,1)};
+    if(step===2){if(isSwe&&!NL.langs.length)NL.langs.push({c:'sv',lv:'fluent'});
+      const add=$q('#nfLangAdd');add.onclick=()=>{read();const c=$q('#nfLang').value,lv=$q('#nfLangLv').value;if(c&&!NL.langs.some(x=>x.c===c))NL.langs.push({c,lv});newLifeForm(back,2)};
+      $q('#nfLangList').querySelectorAll('button').forEach(b=>b.onclick=()=>{read();NL.langs=NL.langs.filter(x=>x.c!==b.dataset.c);newLifeForm(back,2)})}
+    sync();
+    $q('#nfBack').onclick=()=>{read();if(step===2)newLifeForm(back,1);else back()};
+    $q('#nfGo').onclick=()=>{read();const err=$q('#nfErr');
+      if(step===1){if(!NL.name.trim()){err.textContent=tt('errName');return}if(!NL.age){err.textContent=tt('errAge');return}if(!NL.gender){err.textContent=tt('errGender');return}
+        if(NL.town==='__other'&&!NL.townText.trim()){err.textContent=tt('errTown');return}newLifeForm(back,2);return}
+      const g=GENDERS.find(x=>x[0]===NL.gender)||GENDERS[14],F=introDefaults();
+      F.name=NL.name.trim();F.age=+NL.age;F.gender=g[2];F.genderLabel=NL.gender==='other'&&NL.genderText.trim()?NL.genderText.trim():g[1];
+      const LVN={basic:15,good:40,fluent:80},svl=NL.langs.find(x=>x.c==='sv'),enl=NL.langs.find(x=>x.c==='en');
+      F.languages=NL.langs.map(x=>({l:langName(x.c,'en'),lv:x.lv}));F.eng=enl?enl.lv:'basic';F.svLevel=isSwe?'fluent':svl?svl.lv:'none';
+      F.edu=NL.edu;F.prof=NL.prof.trim();F.skills=NL.skills.map(x=>x);F.traits=NL.traits.map(x=>x);F.hobbies=NL.hobbies.map(x=>x);F.bio=NL.bio.trim();F.marital=NL.marital;F.kids=NL.kids;
+      const town=NL.town==='__other'?NL.townText.trim():NL.town;F.homeTown=town;
+      if(isSwe){F.nat='Sweden';F.from='Sweden';if(NL.town==='Stockholm'){F.kind='stockholm';F.over=false}else{F.kind='sweden';F.city=NL.town}}
+      else{const nm=worldCountry(NL.iso);F.kind='abroad';F.nat=nm;F.from=nm;F.route=0;F.status=NL.status==='eu'?'':NL.status;F.purpose=NL.status==='student'?'study':'work'}
+      const copy=lifeReplaceCopy();if(copy){err.textContent=copy;return}// the life being played is kept as a copy first, or nothing changes
+      const go=()=>{titleHide();lifeFromForm(F)};if(!seenIntro())titleGo(()=>introSlides(go));else go()}})}
+
+/* ---------- more menus: accessibility, privacy and my data, help, what's new, install ---------- */
+const STORE_PREFIXES=['stockholm-life','stockholmsliv-','sl-'];
+const storeKeys=()=>{const out=[];try{for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&STORE_PREFIXES.some(p=>k.startsWith(p)))out.push(k)}}catch(e){}return out};
+const TZ_SCALE=[0.9,1,1.15,1.3],TZ_NAMES=['tzSmall','tzNormal','tzLarge','tzXL'];
+function applyA11y(){const r=document.documentElement;r.style.setProperty('--tz',String(TZ_SCALE[SET.tz]||1));document.body.classList.toggle('hc',!!SET.hc);document.body.classList.toggle('rm',!!SET.rm)}
+const menuRow=(id,label)=>`<button type="button" class="mrow" id="${id}"><span>${label}</span><i aria-hidden="true">›</i></button>`;
+let INSTALL=null;window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();INSTALL=e});
+function accessScreen(back){
+  titleShow(`<h2>${tt('axTitle')}</h2>
+    <div class="setrow col"><div><b>${tt('axText')}</b><small>${tt('axTextD')}</small></div>
+      <div class="slider"><input type="range" id="axTz" min="0" max="3" step="1" value="${SET.tz}" aria-label="${tt('axText')}" aria-valuetext="${tt(TZ_NAMES[SET.tz])}">
+        <div class="ticks" aria-hidden="true">${TZ_NAMES.map((k,i)=>`<span data-i="${i}">${tt(k)}</span>`).join('')}</div></div></div>
+    <div class="setrow"><div><b>${tt('axContrast')}</b><small>${tt('axContrastD')}</small></div>${togHtml('hc',tt('axContrast'))}</div>
+    <div class="setrow"><div><b>${tt('axMotion')}</b><small>${tt('axMotionD')}</small></div>${togHtml('rm',tt('axMotion'))}</div>
+    <small>${tt('axNote')}</small><small id="axNote" role="status" class="saved"></small>
+    <div class="actions"><button class="primary" id="axBack">${tt('done')}</button></div>`,t=>{
+    const sq=t.querySelector('#axTz'),paint=()=>{const i=+sq.value;sq.style.setProperty('--p',(i*100/3)+'%');sq.setAttribute('aria-valuetext',tt(TZ_NAMES[i]));t.querySelectorAll('.ticks span').forEach(x=>x.classList.toggle('on',+x.dataset.i===i))};
+    paint();sq.addEventListener('input',()=>{SET.tz=+sq.value;setSave();applyA11y();paint();t.querySelector('#axNote').textContent=tt('savedNow')});
+    t.querySelectorAll('.ticks span').forEach(x=>x.onclick=()=>{sq.value=x.dataset.i;sq.dispatchEvent(new Event('input'))});
+    segBind(t,()=>{applyA11y();t.querySelector('#axNote').textContent=tt('savedNow')});
+    t.querySelector('#axBack').onclick=back})}
+function dataDownload(){const keys={};for(const k of storeKeys()){try{keys[k]=localStorage.getItem(k)}catch(e){}}
+  const blob=new Blob([JSON.stringify({app:'stockholmsliv',exported:new Date().toISOString(),keys},null,1)],{type:'application/json'}),a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);a.download='stockholmsliv-data-'+new Date().toISOString().slice(0,10)+'.json';document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1500);return Object.keys(keys).length}
+function privacyScreen(back){
+  titleShow(`<h2>${tt('pvTitle')}</h2><p class="tag">${tt('pvStored')}</p><p class="tag">${tt('pvContacts')}</p><p class="tag">${tt('pvNoTrack')}</p>
+    <small id="pvNote" role="status" class="saved"></small>
+    <button type="button" id="pvDownload">${tt('pvDownload')}</button><button type="button" id="pvDelete" class="danger">${tt('pvDelete')}</button>
+    <div class="actions"><button class="primary" id="pvBack">${tt('back')}</button></div>`,t=>{
+    t.querySelector('#pvDownload').onclick=()=>{const n=dataDownload();t.querySelector('#pvNote').textContent='✓ '+tt('pvDownloaded')+' ('+n+')'};
+    t.querySelector('#pvDelete').onclick=()=>titleGo(()=>privacyDelete(back));
+    t.querySelector('#pvBack').onclick=back})}
+function privacyDelete(back){
+  titleShow(`<h2>${tt('pvDelTitle')}</h2><p class="tag">${tt('pvDelBody')}</p>
+    <div class="frow"><label for="pvConfirm">${tt('pvDelType')} <b>${tt('pvDelWord')}</b></label><input id="pvConfirm" autocomplete="off" autocapitalize="characters" spellcheck="false"></div>
+    <p class="nferr" id="pvErr" role="alert"></p>
+    <button type="button" id="pvDoDelete" class="danger" disabled>${tt('pvDelGo')}</button>
+    <div class="actions"><button class="primary" id="pvCancel">${tt('pvKeep')}</button></div>`,t=>{
+    const inp=t.querySelector('#pvConfirm'),go=t.querySelector('#pvDoDelete');inp.addEventListener('input',()=>{go.disabled=inp.value.trim().toUpperCase()!==tt('pvDelWord')});
+    go.onclick=()=>{if(inp.value.trim().toUpperCase()!==tt('pvDelWord'))return;let left=0;for(const k of storeKeys()){try{localStorage.removeItem(k)}catch(e){}try{if(localStorage.getItem(k)!==null)left++}catch(e){left++}}if(left){t.querySelector('#pvErr').textContent=tt('pvDelFail');return}location.reload()};
+    t.querySelector('#pvCancel').onclick=()=>titleGo(()=>privacyScreen(back))})}
+function diagText(){return ['Stockholmsliv '+APP_VERSION,'Language: '+LANG,'Browser: '+(navigator.userAgent||'').slice(0,120),'Screen: '+innerWidth+'x'+innerHeight+' @'+(devicePixelRatio||1),'Settings: '+JSON.stringify({quality:SET.quality,live:SET.live,tz:SET.tz,hc:SET.hc,rm:SET.rm}),'Real time: '+REALTIME,'Time offset (ms): '+STIME.getOffset()].join('\n')}
+function helpScreen(back){
+  const faq=tt('faq'),body=encodeURIComponent('What happened?\n\n\nWhat did you expect?\n\n\n---\n'+diagText()),href='https://github.com/seunajetomobi/stockholm-life/issues/new?title='+encodeURIComponent('Problem: ')+'&body='+body;
+  titleShow(`<h2>${tt('hlTitle')}</h2>${faq.map(([q,a])=>`<details><summary>${q}</summary><p>${a}</p></details>`).join('')}
+    <small>${tt('hlReportD')}</small><a class="abtn" id="hlReport" href="${href}" target="_blank" rel="noopener">${tt('hlReport')}</a><button type="button" id="hlCopy">${tt('hlCopy')}</button><small id="hlNote" role="status" class="saved"></small>
+    <div class="actions"><button class="primary" id="hlBack">${tt('back')}</button></div>`,t=>{
+    t.querySelector('#hlCopy').onclick=async()=>{let ok=false;try{await navigator.clipboard.writeText(diagText());ok=true}catch(e){}t.querySelector('#hlNote').textContent=ok?'✓ '+tt('hlCopied'):tt('hlCopyFail')};
+    t.querySelector('#hlBack').onclick=back})}
+function newsScreen(back){
+  titleShow(`<h2>${tt('nwTitle')}</h2>${CHANGELOG.map(c=>`<div class="setrow col"><div><b>${c.d}</b><ul>${c[LANG].map(x=>`<li>${x}</li>`).join('')}</ul></div></div>`).join('')}
+    <div class="actions"><button class="primary" id="nwBack">${tt('back')}</button></div>`,t=>{t.querySelector('#nwBack').onclick=back})}
+const APP_VERSION='2026-11-23';
+const CHANGELOG=[{d:'2026-11-23',
+  en:['A new title page, introduction and menus, in Swedish and English.','Start a new life: every country, a home town, education, languages and about you.','Stockholm time whatever your device clock says.','Options: accessibility, privacy and your data, help, and this list.'],
+  sv:['En ny startsida, introduktion och nya menyer, på svenska och engelska.','Starta ett nytt liv: alla länder, en hemort, utbildning, språk och om dig.','Stockholmstid oavsett vad enhetens klocka visar.','Alternativ: tillgänglighet, integritet och dina data, hjälp och den här listan.']}];
+function installTry(note){if(INSTALL){const p=INSTALL;INSTALL=null;p.prompt();return}note.textContent=tt('instHow')}
+function titleKey(e){
+  if(e.key==='Escape'){const b=document.querySelector('#titleCard #cBack,#titleCard #oBack,#titleCard #sBack,#titleCard #lBack,#titleCard #abBack,#titleCard #acGuest,#titleCard #nfBack,#titleCard #axBack,#titleCard #pvBack,#titleCard #pvCancel,#titleCard #hlBack,#titleCard #nwBack');if(b){e.preventDefault();b.click()}return}
+  if(e.key==='Tab'){const root=$('title'),f=[...root.querySelectorAll('button,input,select,textarea,a[href],summary')].filter(x=>!x.disabled&&!x.hidden&&x.offsetParent!==null);if(!f.length)return;
+    const first=f[0],last=f[f.length-1],a=document.activeElement;if(!root.contains(a)){e.preventDefault();first.focus();return}
+    if(e.shiftKey&&a===first){e.preventDefault();last.focus()}else if(!e.shiftKey&&a===last){e.preventDefault();first.focus()}}}
+function aboutScreen(back){
+  const row=(h,b)=>`<div class="setrow col"><div><b>${h}</b><small>${b}</small></div></div>`;
+  titleShow(`<h2>${tt('aboutBtn')}</h2>
+    ${row(tt('abMap'),'© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> '+tt('abContrib')+' (ODbL)')}
+    ${row(tt('abPlaces'),'<a href="https://www.geonames.org" target="_blank" rel="noopener">GeoNames</a>, CC BY 4.0')}
+    ${row(tt('abWeather'),'<a href="https://open-meteo.com" target="_blank" rel="noopener">Open-Meteo</a>')}
+    ${row(tt('abTransit'),'SL, <a href="https://transport.integration.sl.se" target="_blank" rel="noopener">SL Transport API</a>')}
+    ${row(tt('abMoney'),'European Central Bank, '+tt('abVia')+' <a href="https://frankfurter.dev" target="_blank" rel="noopener">frankfurter.dev</a>')}
+    ${row(tt('abFlights'),'ADS-B, '+tt('abRoutes')+' <a href="https://www.adsbdb.com" target="_blank" rel="noopener">adsbdb.com</a>')}
+    ${row(tt('abType'),'Jost, Barlow Condensed, Familjen Grotesk, IBM Plex Mono (SIL Open Font License)')}
+    ${row(tt('abEngine'),'three.js (MIT)')}
+    <small>© 2026 Helekt</small><button class="primary" id="abBack">${tt('back')}</button>`,t=>{t.querySelector('#abBack').onclick=back})}
+// "Start a new life" while a life is being played: yes opens the form, no goes back to that life
+function titleNewLife(yes,no){titleShow(`<h2>${tt('newTitle')}</h2><p class="tag">${tt('newBody')}</p>
+  <div class="btns"><button class="primary" id="tYes">${tt('newYes')}</button><button id="tNo">${tt('newNo')}</button></div>`,t=>{
+  t.querySelector('#tNo').onclick=no;t.querySelector('#tYes').onclick=yes})}
+function introSlides(done,fromTitle){
+  let i=0;const draw=()=>{const L=tt('slides'),last=i===L.length-1,[h,b]=L[i];
+    titleShow(`<div class="slides"><h3>${h}</h3><p>${b}</p></div><div class="dots">${L.map((_,k)=>`<i class="${k===i?'on':''}"></i>`).join('')}</div>
+      <button class="primary" id="iNext">${last?(fromTitle?tt('back'):tt('start')):tt('next')}</button><button id="iSkip">${fromTitle?tt('back'):tt('skip')}</button>`,t=>{
+      t.querySelector('#iNext').onclick=()=>{if(last){markIntro();done()}else{i++;TITLE.cur=draw;draw()}};
+      t.querySelector('#iSkip').onclick=()=>{markIntro();done()}})};TITLE.cur=draw;draw()}
+const segHtml=(key,opts)=>`<div class="seg" data-k="${key}" role="group">${opts.map(([v,l])=>`<button type="button" data-v="${v}" class="${String(SET[key])===String(v)?'on':''}" aria-pressed="${String(SET[key])===String(v)}">${l}</button>`).join('')}</div>`;
+const togHtml=(key,label)=>`<button type="button" class="tog" role="switch" data-k="${key}" aria-checked="${!!SET[key]}" aria-label="${label}"></button>`;
+function segBind(t,after){
+  t.querySelectorAll('.tog[data-k]').forEach(b=>b.onclick=()=>{const k=b.dataset.k;SET[k]=!SET[k];if(k!=='sound')setSave();b.setAttribute('aria-checked',String(!!SET[k]));after&&after(k)});t.querySelectorAll('.seg[data-k]').forEach(g=>g.querySelectorAll('button').forEach(b=>b.onclick=()=>{const k=g.dataset.k,v=b.dataset.v==='true'?true:b.dataset.v==='false'?false:b.dataset.v;SET[k]=v;if(k!=='sound')setSave();g.querySelectorAll('button').forEach(x=>{x.classList.toggle('on',x===b);x.setAttribute('aria-pressed',String(x===b))});after&&after(k)}))}
+function optionsScreen(back){
+  try{SET.sound=localStorage.getItem('sl-cs-sound')!=='0'}catch(e){SET.sound=true}
+  titleShow(`<h2>${tt('optTitle')}</h2>
+    <div class="setrow"><div><b>${tt('hints')}</b><small>${tt('hintsD')}</small></div>${togHtml('hints',tt('hints'))}</div>
+    <div class="setrow"><div><b>${tt('tips')}</b><small>${tt('tipsD')}</small></div>${togHtml('tips',tt('tips'))}</div>
+    <div class="setrow"><div><b>${tt('sound')}</b><small>${tt('soundD')}</small></div>${togHtml('sound',tt('sound'))}</div>
+    <nav class="menulist" aria-label="${tt('optTitle')}">${menuRow('oAcc',tt('accBtn'))}${menuRow('oSet',tt('settings'))}${menuRow('oSaves',tt('savedGames'))}${menuRow('oAcct',tt('acSignIn'))}${menuRow('oPriv',tt('pvBtn'))}${menuRow('oHelp',tt('hlBtn'))}${menuRow('oNew',tt('nwBtn'))}${menuRow('oAbout',tt('aboutBtn'))}${menuRow('oInst',tt('instBtn'))}</nav>
+    <p class="tag" style="margin:8px 0 0;font-size:13px">${tt('langNote')}</p><small id="oNote" role="status" class="saved"></small>
+    <div class="actions"><button class="primary" id="oBack">${tt('back')}</button></div>`,t=>{
+    segBind(t,k=>{if(k==='hints')applyHints();if(k==='sound'){try{localStorage.setItem('sl-cs-sound',SET.sound?'1':'0')}catch(e){}window.dispatchEvent(new CustomEvent('stockholmsliv-sound',{detail:!!SET.sound}))}t.querySelector('#oNote').textContent=tt('savedNow')});
+    t.querySelector('#oSet').onclick=()=>titleGo(()=>settingsScreen(()=>titleGo(()=>optionsScreen(back))));
+    t.querySelector('#oSaves').onclick=()=>titleGo(()=>loadScreen(()=>titleGo(()=>optionsScreen(back))));
+    const sub=fn=>()=>titleGo(()=>fn(()=>titleGo(()=>optionsScreen(back))));
+    t.querySelector('#oAcc').onclick=sub(accessScreen);t.querySelector('#oPriv').onclick=sub(privacyScreen);t.querySelector('#oHelp').onclick=sub(helpScreen);t.querySelector('#oNew').onclick=sub(newsScreen);
+    t.querySelector('#oInst').onclick=()=>installTry(t.querySelector('#oNote'));
+    t.querySelector('#oAbout').onclick=()=>titleGo(()=>aboutScreen(()=>titleGo(()=>optionsScreen(back))));
+    t.querySelector('#oAcct').onclick=()=>titleGo(()=>accountScreen('login',()=>titleGo(()=>optionsScreen(back))));
+    t.querySelector('#oBack').onclick=back})}
+function settingsScreen(back){
+  titleShow(`<h2>${tt('setTitle')}</h2>
+    <div class="setrow col"><div><b>${tt('gfx')}</b><small>${tt('gfxD')}</small></div>
+      <div class="slider"><input type="range" id="sQ" min="0" max="2" step="1" value="${['low','auto','high'].indexOf(SET.quality)}" aria-label="${tt('gfx')}" aria-valuetext="${tt(SET.quality)}">
+        <div class="ticks" aria-hidden="true"><span data-i="0">${tt('low')}</span><span data-i="1">${tt('auto')}</span><span data-i="2">${tt('high')}</span></div></div></div>
+    <div class="setrow"><div><b>${tt('live')}</b><small>${tt('liveD')}</small></div>${togHtml('live',tt('live'))}</div>
+    <div class="setrow"><div><b>${tt('intro')}</b><small>${tt('introD')}</small></div><div class="seg"><button id="sReplay">${tt('replay')}</button></div></div>
+    <p class="tag" style="margin:8px 0 0;font-size:13px">${tt('about')}</p>
+    <small id="sNote" role="status" class="saved"></small><button type="button" id="sReload" hidden>${tt('reloadNow')}</button><button type="button" id="sReset">${tt('resetSet')}</button>
+    <button class="primary" id="sBack">${tt('done')}</button>`,t=>{
+    segBind(t,()=>{t.querySelector('#sNote').textContent=tt('saved');t.querySelector('#sReload').hidden=false});
+    const sq=t.querySelector('#sQ'),Q=['low','auto','high'],paint=()=>{const i=+sq.value;sq.style.setProperty('--p',(i*50)+'%');sq.setAttribute('aria-valuetext',tt(Q[i]));t.querySelectorAll('.ticks span').forEach(x=>x.classList.toggle('on',+x.dataset.i===i))};
+    paint();sq.addEventListener('input',()=>{SET.quality=Q[+sq.value];setSave();paint();t.querySelector('#sNote').textContent=tt('saved');t.querySelector('#sReload').hidden=false});
+    t.querySelectorAll('.ticks span').forEach(x=>x.onclick=()=>{sq.value=x.dataset.i;sq.dispatchEvent(new Event('input'))});
+    t.querySelector('#sReload').onclick=()=>{try{save()}catch(e){}location.reload()};
+    t.querySelector('#sReset').onclick=()=>{SET.quality='auto';SET.live=true;SET.hints=true;SET.tips=true;setSave();applyHints();settingsScreen(back);const n=document.querySelector('#sNote');if(n){n.textContent=tt('saved');const r=document.querySelector('#sReload');if(r)r.hidden=false}};
+    t.querySelector('#sReplay').onclick=()=>{try{localStorage.removeItem(SEENKEY)}catch(e){}t.querySelector('#sNote').textContent=tt('replayed')};
+    t.querySelector('#sBack').onclick=back})}
+function quitGame(){modal(`<h2>${tt('qTitle')}</h2><p>${tt('qAsk')}</p><div class="row2 quitrow"><button class="btn big" id="qSave">${tt('qSave')}</button><button class="btn" id="qNo">${tt('qNo')}</button><button class="btn ghost" id="qCancel">${tt('qCancel')}</button></div>`,m=>{
+  m.querySelector('#qSave').onclick=()=>{try{save()}catch(e){}location.reload()};
+  m.querySelector('#qNo').onclick=()=>{SV.noSave=true;location.reload()};
+  m.querySelector('#qCancel').onclick=()=>{$('modalRoot').innerHTML=''}})}
+document.addEventListener('click',e=>{if(e.target.closest&&e.target.closest('#quitBtn')&&S)quitGame()});
+async function start(data){uiInit();applyA11y();
+  {const tips=TIPS[LANG]||TIPS.en,el=$('loadtip');let i=0;if(el){el.textContent=tips[0];const tm=setInterval(()=>{if(!document.getElementById('loading')){clearInterval(tm);return}el.textContent=tips[++i%tips.length]},3500)}}
+await Promise.race([TIMESYNC,new Promise(r=>setTimeout(r,3000))]);// a new life must start on the true Stockholm time
+
   const hot=data&&data.S&&data.S.flags&&data.S.flags.started?data.S:null;
   slotsInit();
   if(hot){S=migrate(hot);SV.mode='active';try{SV.expected=localStorage.getItem(activeKey())}catch(e){}}else S=load();
@@ -5510,14 +6152,16 @@ async function start(data){uiInit();
   if(!S){fresh=true;const b=BG.newcomer,a=D[b.start];S={v:6,t0:LIFESTART.lifeStartFor(1,STIME.nowMs()),name:'Alex',bg:'newcomer',day:1,hour:8,money:b.s.money,energy:90,mood:b.s.mood,social:b.s.social,svenska:b.s.svenska,skill:b.s.skill,queue:0,home:b.home,pos:{x:a.x+0.3,z:a.z+0.3},loc:b.start,job:null,jobDays:0,pay:0,slUntil:0,vitD:0,coat:false,sunToday:false,sick:0,applied:{},flags:{},docs:{...b.docs},log:[],won:false,weather:'clear',temp:7};log('Welcome to Stockholm. Pick who you are to begin.')}
   lifeInit(S);updateLoc();render();
   if(!SV.on){SV.on=true;addEventListener('pagehide',()=>save());document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')save()})}
-  try{CITY=await loadCity();matchServices()}catch(e){console.error(e);CITY=null;$('loadtxt').textContent='Could not load the real city data, so you get a simplified Stockholm. ('+e.message+')'}
+  try{CITY=await loadCity();matchServices()}catch(e){console.error(e);CITY=null;$('loading')&&$('loading').classList.add('err');$('loadtxt').textContent='Could not load the real city data, so you get a simplified Stockholm. ('+e.message+')'}
   try{W=buildWorld()}catch(e){console.error(e);W=null}
-  const L=$('loading');setTimeout(()=>{L.style.opacity=0;setTimeout(()=>L.remove(),700)},CITY?200:2500);
+  // the loading screen fades only after the title page is painted under it, so the game is never seen half-built
+  const fadeLoader=()=>{const L=$('loading');if(!L)return;loadO(100);requestAnimationFrame(()=>requestAnimationFrame(()=>setTimeout(()=>{L.style.opacity=0;setTimeout(()=>L.remove(),650)},CITY?120:2500)))};
   if(!CITY){const n=document.createElement('div');n.className='nogl';n.style.cssText='inset:auto;top:160px;left:50%;transform:translateX(-50%);width:min(440px,calc(100% - 32px));background:var(--glass);border-radius:12px;z-index:5;line-height:1.45';n.textContent=location.protocol==='file:'?'The city cannot load when index.html is opened from disk. Run ./start.sh in this folder and open http://localhost:8000 instead.':'Could not load the city data from the data/ folder, so the map is empty. Check that ./start.sh is running in the game folder, then reload.';$('stage').appendChild(n)}
   if(!W){const n=document.createElement('div');n.className='nogl';n.style.cssText='inset:auto;top:160px;left:50%;transform:translateX(-50%);width:min(440px,calc(100% - 32px));background:var(--glass);border-radius:12px;z-index:5;line-height:1.45';n.textContent='Your browser could not start 3D graphics (WebGL), so the city cannot be drawn. The game still works from the panels. Fix: quit the browser completely and reopen it (after a graphics crash Chrome blocks 3D until restart), and check that "Use graphics acceleration" is on in its settings.';$('stage').appendChild(n)}
   else{W.placeAvatar(S.pos.x,S.pos.z,true);if(!S.addr&&S.home!=='none'){assignAddress();save()}W.setHome();W.syncCar();if(!S.wants.length)rollWants();if(S.flags&&S.flags.arlanda&&W.enterAirport)setTimeout(()=>W.enterAirport(),600);else if(resume&&W.restorePlace)setTimeout(()=>W.restorePlace(resume),600)}
-  render();if(fresh)intro();
-  fetchLiveWeather().then(ok=>{if(ok)setTimeout(()=>wearTip(true),fresh?20000:2500)});setInterval(fetchLiveWeather,10*60e3);if(FLIGHT_RELAY){fetchFlights();setInterval(fetchFlights,10000)}setInterval(()=>{if(Math.random()<0.35)incomingCall()},150000);
+  syncClock();render();if(TITLE_ON)showTitle(fresh);else if(fresh)intro(REALTIME);
+  fadeLoader();if(REALTIME)setInterval(()=>{if(!S)return;if(syncClock())render();else $('time').textContent=hhmm(S.hour)},1000);
+  if(SET.live){fetchLiveWeather().then(ok=>{if(ok)setTimeout(()=>wearTip(true),fresh?20000:2500)});setInterval(fetchLiveWeather,10*60e3);if(FLIGHT_RELAY){fetchFlights();setInterval(fetchFlights,10000)}}setInterval(()=>{if(Math.random()<0.35)incomingCall()},150000);
 }
 window.claude?.hot?.snapshot?.(()=>({S}));
 window.claude?.hot?.ready?window.claude.hot.ready(start):start(window.claude?.hot?.data??{});

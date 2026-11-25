@@ -7,6 +7,7 @@ Automated checks for the game, preserved from the 2026-10-31 audit and the two f
 | File | What it checks | Browser | Test hook |
 | --- | --- | --- | --- |
 | `test_syntax.py` | `node --check` on the inline `<script>` of `index.html`, on every module under `src/` (nested folders too; each is loaded by `index.html` and read with the same path) and on `tools/flights-worker.js` (as an ES module); every local script `index.html` loads exists and is published by the Deploy workflow and verified by `tools/live_check.py`; the Python tools compile | No | No |
+| `test_shard.py` | `tests/shard.py`, which splits the test files over the parallel CI browser jobs: every file in exactly one shard for 1 to 8 shards, the same split whatever the order, a file without a time still runs, the balance, and the completeness check each CI job runs before its tests (a file left out, an empty shard, nothing collected) | No | No |
 | `test_geography.py` | `src/geography.js` ([docs/MODULES.md](../docs/MODULES.md)), in Node: its interface, the projection (the same as `tools/osm_stations.py`), districts, stations and lines, known routes, every station pair connected both ways, the nearest station, and a hash of every output pinned to the code before it moved. In the browser: the game uses the module's own objects, and a missing module stops startup with a message | 2 of its 8 tests (the rest run in Node) | 1 test |
 | `test_format.py` | `src/util/format.js` ([docs/MODULES.md](../docs/MODULES.md)), in Node: its interface, `clamp`, `kr` (negative amounts, the real minus sign, rounding halves), `hhmm` (wrapping at 24 h, minutes rounding up to 60), `fmtDur` (the "60 min" and "1 h 60 min" roundings, kept from the original), and a hash of every output on fixed grids pinned to the code before it moved. In the browser: the game uses the module's own functions, and a missing module stops startup with a message naming `src/util/format.js` | 2 of its 8 tests (the rest run in Node) | 1 test |
 | `test_sun.py` | `src/rules/sun.js` ([docs/MODULES.md](../docs/MODULES.md)), in Node: its interface, sunrise, sunset and day length against sunrise-sunset.org (seven dates, checked 2026-11-17, tolerance 10 and 18 minutes), the seasons at Stockholm (no polar day or night at this latitude), the summer-time switch, `isLight` and its limits, the original's behaviour for invalid input, the WMO tables and `WXICON`, a hash of every output pinned to the code before it moved, and the message when `src/util/format.js` is missing. In the browser: the game uses the module's own functions and adds no other name to the page, and a missing module stops startup with a message naming `src/rules/sun.js` | 2 of its 17 tests (the rest run in Node) | 1 test |
@@ -69,6 +70,7 @@ python3 -m pytest tests -m "not hook"   # without the station/train tests
 python3 -m pytest tests/test_m14.py     # one file
 python3 -m pytest tests -k 390          # only the 390 px cases
 python3 -m pytest tests -s              # also print load times and recorded console errors
+python3 -m pytest $(python3 tests/shard.py 2 6)   # shard 2 of 6, as one CI job runs it
 ```
 
 **Local server.** The tests use a server already running on port 8000 (for example `./start.sh`) if it serves this repo's `index.html`, and otherwise start `python3 -m http.server 8000 --bind 127.0.0.1` themselves and stop it afterwards. If port 8000 serves a different `index.html` (another checkout, an edited copy), the run stops with a message rather than testing the wrong code. Another port can be set with `SL_PORT=8123`, but the flights relay only allows port 8000, so live flights will show CORS errors there (they do not fail the tests).
@@ -76,6 +78,8 @@ python3 -m pytest tests -s              # also print load times and recorded con
 **Output.** Screenshots go to `tests/output/` (ignored by git), named after the test and screen width, e.g. `layout-390.png`.
 
 **Speed.** Each browser test loads the whole city (about 12 MB of data) and the software renderer runs at 1–2 fps, so a full run takes a while. Frame rates measured here say nothing about real hardware.
+
+**In CI** the suite runs in six parallel jobs, `browser shard 1 of 6` to `6 of 6`. `tests/shard.py` splits the files by their time in CI (the table in that file; longest first, each to the shard with the least time so far), so each job takes about 20 minutes instead of about 2 hours for the whole suite in one job. Each job first checks that every file pytest collects from `tests/` is in exactly one shard. The required check `tests-browser` is a last job that passes only when all six passed. A new test file needs no change to run; add its CI time to the table in `tests/shard.py` when it takes more than a minute or two, so the shards stay even.
 
 ## The test hook
 

@@ -22,7 +22,7 @@ def node(js, tz=None):
 
 def test_interface():
     got = node("console.log(JSON.stringify(Object.keys(t).sort()))")
-    assert got == ['TZ', 'dayLengthHours', 'dayNumber', 'hourAt', 'lifeDay', 'nowMs', 'partsAt', 'setFakeNow', 'startOfDay', 'weekday']
+    assert got == ['TZ', 'dayLengthHours', 'dayNumber', 'getOffset', 'hourAt', 'lifeDay', 'nowMs', 'partsAt', 'setFakeNow', 'setOffset', 'startOfDay', 'weekday']
 
 
 @pytest.mark.parametrize('utc,expect', [
@@ -85,3 +85,11 @@ def test_in_the_page_it_registers_under_its_own_name_and_node_exports_the_same_o
     assert got == 'function'
     src = MODULE.read_text(encoding='utf-8')
     assert "(root.StockholmLife=root.StockholmLife||{})['stockholm-time']=api" in src
+
+
+def test_offset_corrects_a_wrong_device_clock():
+    """setOffset(ms): nowMs() is the device time plus the learned error; a fake time still wins; bad input is refused."""
+    got = node("""const dev=Date.now();t.setOffset(-3*3600000);const a=t.nowMs()-dev;t.setFakeNow(1234);const f=t.nowMs();t.setFakeNow(null);
+      let err='';try{t.setOffset('x')}catch(e){err=e.name}
+      console.log(JSON.stringify({near:Math.abs(a+3*3600000)<1500,off:t.getOffset(),f,err}))""")
+    assert got == {'near': True, 'off': -10800000, 'f': 1234, 'err': 'RangeError'}, got

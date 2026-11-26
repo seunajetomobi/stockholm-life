@@ -2,7 +2,7 @@
 import re
 import game
 
-READY = "() => { const t = document.getElementById('title'); return t && !t.hidden && /Start/.test(t.innerText) }"
+READY = "() => { const t = document.getElementById('title'); return t && !t.hidden && /Start/i.test(t.innerText) }"
 HTML = (game.ROOT / 'index.html').read_text(encoding='utf-8')
 
 

@@ -159,6 +159,16 @@ button:focus-visible,[tabindex]:focus-visible,input:focus-visible,select:focus-v
 .title button::after{content:"";position:absolute;inset:0;background:linear-gradient(105deg,transparent 30%,rgba(255,255,255,.55) 50%,transparent 70%);transform:translateX(-130%);pointer-events:none}
 .title button:hover,.title button:focus-visible{transform:translateY(-2px) scale(1.03);letter-spacing:.07em;box-shadow:0 12px 28px rgba(5,15,35,.3);background-color:#fff}
 .title button.primary:hover,.title button.primary:focus-visible{background-color:#ffd83a}
+/* the main menu (Start, Options, How to play) in the title's two looks (owner, 2026-11-25): every button like LIV (Swedish
+   blue, a yellow outline, white capitals); the one under the mouse or keyboard focus like STOCKHOLMS (yellow, a blue
+   outline), and Start while no other button is, so only one is yellow at a time. Text: white on blue 5.8:1, ink on yellow 10:1 */
+.title .card:not(.panel) .btns button{font:600 17px/1.2 'Jost',sans-serif;letter-spacing:.1em;text-transform:uppercase;background:var(--blue);border:3px solid var(--yellow);color:#fff;
+  transition:transform .2s cubic-bezier(.2,.8,.2,1),box-shadow .2s ease,letter-spacing .2s ease,background-color .2s ease,border-color .2s ease,color .2s ease}
+.title .card:not(.panel) .btns button.primary{background:var(--yellow);border-color:var(--blue);color:var(--ink)}
+.title .card:not(.panel) .btns button:hover,.title .card:not(.panel) .btns button:focus-visible{background-color:#ffd83a;border-color:var(--blue);color:var(--ink);letter-spacing:.14em}
+.title .card:not(.panel) .btns:has(button:not(.primary):is(:hover,:focus-visible)) button.primary:not(:hover){background-color:var(--blue);border-color:var(--yellow);color:#fff;letter-spacing:.1em}
+@media (prefers-reduced-motion:reduce){.title .card:not(.panel) .btns button:hover,.title .card:not(.panel) .btns button:focus-visible{letter-spacing:.1em}}
+body.rm .title .card:not(.panel) .btns button{letter-spacing:.1em!important}
 .title button:hover::after,.title button:focus-visible::after{transform:translateX(130%);transition:transform .7s ease}
 .title button:active{transform:translateY(0) scale(.99)}
 .title button:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
@@ -236,6 +246,7 @@ button:focus-visible,[tabindex]:focus-visible,input:focus-visible,select:focus-v
 .title .card.panel .danger{border-color:#ffb4a8;color:#ffe3de;background:rgba(179,38,30,.35)}
 .title .card.panel .danger:hover:not(:disabled),.title .card.panel .danger:focus-visible:not(:disabled){background-color:#b3261e;border-color:#ffb4a8}
 .title .card.panel .danger:disabled{opacity:.5;cursor:not-allowed}
+.title .card.panel button:disabled{opacity:.45;cursor:not-allowed;transform:none;box-shadow:none;background-color:rgba(255,255,255,.12);border-color:rgba(255,255,255,.55)}.title .card.panel button:disabled::after{display:none}
 .title details{border-top:1px solid rgba(255,255,255,.25);padding:2px 0}.title details:last-of-type{border-bottom:1px solid rgba(255,255,255,.25)}
 .title summary{cursor:pointer;padding:12px 4px;font-weight:600;font-size:15.5px;list-style:none;display:flex;justify-content:space-between;gap:10px}
 .title summary::-webkit-details-marker{display:none}.title summary::after{content:"+";font-size:20px;line-height:1;opacity:.8}.title details[open] summary::after{content:"–"}
@@ -5973,7 +5984,7 @@ const TXT={
   acSignIn:'Sign in',acLogin:'Log in',acCreate:'Create account',acWith:'Continue with',acSoonBadge:'Soon',acOr:'or',acName:'Display name',acEmail:'E-mail',acAge:'I am at least 13 years old',acTerms:'I accept the privacy policy and terms',
   acLink:'Send me a log-in link',acCreateBtn:'Create account',acGuest:'Continue as guest',acNote:'Accounts are not switched on yet. Nothing was sent or stored. You can play as a guest: your life saves in this browser.',
   errEmail:'Enter a valid e-mail address.',errAcName:'Fill in a display name.',errTicks:'Please tick both boxes to continue.',acCloud:'Sign in to keep your lives safe in the cloud (coming soon).',
-  choose:'What would you like to do?',contLife:'Continue your life',savedGames:'Saved games',newLifeGo:'Start a new life',
+  choose:'What would you like to do?',contLife:'Continue your life',savedGames:'Saved games',newLifeGo:'Start a new life',loadGame:'Load a saved game',noLifeYet:'No life yet: start a new one.',
   loadTitle:'Saved games',empty:'Empty',ended:'Ended',unreadable:'Cannot be read',load:'Load',current:'Current',dayN:'Day',noSaves:'No saved lives yet.',manage:'Manage saves (backup, import)',
   formTitle:'Your details',fName:'Name',fAge:'Age',fGender:'Gender',male:'Male',female:'Female',other:'Other',fNat:'Nationality',bornYes:'Born in Sweden: yes',bornNo:'Born in Sweden: no (you were born abroad)',fTown:'Home town',fStatus:'Immigration status',
   st_temporary:'Temporary resident',st_asylum:'Asylum seeker',st_permanent:'Permanent resident',st_student:'Student permit',st_eu:'EU/EEA citizen (right of residence)',
@@ -6012,7 +6023,7 @@ const TXT={
   acSignIn:'Logga in',acLogin:'Logga in',acCreate:'Skapa konto',acWith:'Fortsätt med',acSoonBadge:'Snart',acOr:'eller',acName:'Visningsnamn',acEmail:'E-post',acAge:'Jag är minst 13 år',acTerms:'Jag godkänner integritetspolicyn och villkoren',
   acLink:'Skicka en inloggningslänk',acCreateBtn:'Skapa konto',acGuest:'Fortsätt som gäst',acNote:'Konton är inte aktiverade ännu. Ingenting skickades eller sparades. Du kan spela som gäst: ditt liv sparas i den här webbläsaren.',
   errEmail:'Ange en giltig e-postadress.',errAcName:'Fyll i ett visningsnamn.',errTicks:'Kryssa i båda rutorna för att fortsätta.',acCloud:'Logga in för att spara dina liv säkert i molnet (kommer snart).',
-  choose:'Vad vill du göra?',contLife:'Fortsätt ditt liv',savedGames:'Sparade spel',newLifeGo:'Starta ett nytt liv',
+  choose:'Vad vill du göra?',contLife:'Fortsätt ditt liv',savedGames:'Sparade spel',newLifeGo:'Starta ett nytt liv',loadGame:'Ladda ett sparat spel',noLifeYet:'Inget liv ännu: starta ett nytt.',
   loadTitle:'Sparade spel',empty:'Tom',ended:'Avslutat',unreadable:'Kan inte läsas',load:'Ladda',current:'Aktuellt',dayN:'Dag',noSaves:'Inga sparade liv ännu.',manage:'Hantera sparade liv (säkerhetskopia, import)',
   formTitle:'Dina uppgifter',fName:'Namn',fAge:'Ålder',fGender:'Kön',male:'Man',female:'Kvinna',other:'Annat',fNat:'Nationalitet',bornYes:'Född i Sverige: ja',bornNo:'Född i Sverige: nej (du är född utomlands)',fTown:'Hemort',fStatus:'Migrationsstatus',
   st_temporary:'Tillfälligt uppehållstillstånd',st_asylum:'Asylsökande',st_permanent:'Permanent uppehållstillstånd',st_student:'Studentuppehållstillstånd',st_eu:'EU/EES-medborgare (uppehållsrätt)',
@@ -6074,9 +6085,11 @@ function titleMain(fresh){
 function lifeSlot(){const rows=SLOT_IDS.map(slotInfo);return rows.find(r=>r.active&&r.st==='life')||rows.find(r=>r.st==='life')||null}
 function startChoice(fresh){const here=!!(S&&S.flags&&S.flags.started)&&!fresh,other=here?null:lifeSlot(),canCont=here||!!other,back=()=>titleGo(()=>titleMain(fresh));
   const who=here?{n:S.name,d:S.day,m:S.money}:other?{n:other.title||other.name||'',d:other.day,m:other.money}:null;
-  titleShow(`<h2>${tt('choose')}</h2>${who?`<div class="resume"><b>${esc2(who.n)}</b><span>${tt('dayN')} ${who.d} · ${kr(who.m)}</span></div>`:''}<div class="btns">${canCont?`<button class="primary" id="cCont">${tt('contLife')}</button>`:''}
-    <button ${canCont?'':'class="primary" '}id="cNew">${tt('newLifeGo')}</button><button id="cBack">${tt('back')}</button></div><small id="cNote"></small>`,t=>{
-    const c=t.querySelector('#cCont');if(c)c.onclick=()=>{if(here){titleHide();return}const e=slotSwitch(other.id);if(e)t.querySelector('#cNote').textContent=e};
+  // Start always offers Continue, Load and a new life (owner, 2026-11-25); Continue waits, greyed, until there is a life
+  titleShow(`<h2>${tt('choose')}</h2>${who?`<div class="resume"><b>${esc2(who.n)}</b><span>${tt('dayN')} ${who.d} · ${kr(who.m)}</span></div>`:''}<div class="btns"><button ${canCont?'class="primary" ':'disabled aria-describedby="cNote" '}id="cCont">${tt('contLife')}</button>
+    <button id="cLoad">${tt('loadGame')}</button><button ${canCont?'':'class="primary" '}id="cNew">${tt('newLifeGo')}</button><button id="cBack">${tt('back')}</button></div><small id="cNote" role="status">${canCont?'':tt('noLifeYet')}</small>`,t=>{
+    const c=t.querySelector('#cCont');if(canCont)c.onclick=()=>{if(here){titleHide();return}const e=slotSwitch(other.id);if(e)t.querySelector('#cNote').textContent=e};
+    t.querySelector('#cLoad').onclick=()=>titleGo(()=>loadScreen(()=>titleGo(()=>startChoice(fresh))));
     const form=()=>titleGo(()=>newLifeForm(()=>titleGo(()=>startChoice(fresh))));
     t.querySelector('#cNew').onclick=()=>{if(here)titleGo(()=>titleNewLife(form,titleHide));else form()};// a life is being played: ask first
     t.querySelector('#cBack').onclick=back})}

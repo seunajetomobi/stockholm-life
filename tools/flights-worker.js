@@ -24,10 +24,15 @@ const CENTER = { lat: 59.47, lon: 17.95, nm: 45 };   // covers Arlanda, Bromma a
 const ALLOW = ['https://seunajetomobi.github.io', 'https://stockholmsliv.app', 'https://www.stockholmsliv.app', 'http://localhost:8000', 'http://127.0.0.1:8000'];
 const UA = { 'User-Agent': 'Mozilla/5.0 (compatible; stockholm-life-flights-relay; +https://github.com/seunajetomobi/stockholm-life)', 'Accept': 'application/json' };
 const LOG = [];   // what each source answered, shown with /flights?debug=1
+// Every upstream call has its own time limit (2026-11-25: one slow source held /flights for 28.8 s until Cloudflare gave up with a 502).
+// A source that runs out of time counts as no answer and the next one is tried.
+const FLIGHT_MS = 4000, SLOW_MS = 6000;   // flight sources; news feeds and Swedavia
+const timedOut = e => e && (e.name === 'TimeoutError' || e.name === 'AbortError');
 async function get(url) {
-  try { const r = await fetch(url, { headers: UA, cf: { cacheTtl: 5 } }); LOG.push(`${url.split('/')[2]} ${r.status}`); return r.ok ? await r.json() : null; }
-  catch (e) { LOG.push(`${url.split('/')[2]} ${e.message}`); return null; }
+  try { const r = await fetch(url, { headers: UA, cf: { cacheTtl: 5 }, signal: AbortSignal.timeout(FLIGHT_MS) }); LOG.push(`${url.split('/')[2]} ${r.status}`); return r.ok ? await r.json() : null; }
+  catch (e) { LOG.push(`${url.split('/')[2]} ${timedOut(e) ? 'timeout' : e.message}`); return null; }
 }
+const lastTimedOut = () => LOG[LOG.length - 1].endsWith(' timeout');   // a host that timed out will not answer its second URL form either
 
 const num = v => (typeof v === 'number' && isFinite(v) ? v : null);
 const trimReadsb = (list, now, src) => ({
@@ -43,12 +48,12 @@ const trimReadsb = (list, now, src) => ({
 
 const SOURCES = [
   async () => {
-    const j = await get(`https://api.adsb.lol/v2/point/${CENTER.lat}/${CENTER.lon}/${CENTER.nm}`) || await get(`https://api.adsb.lol/v2/lat/${CENTER.lat}/lon/${CENTER.lon}/dist/${CENTER.nm}`);
+    const j = await get(`https://api.adsb.lol/v2/point/${CENTER.lat}/${CENTER.lon}/${CENTER.nm}`) || (lastTimedOut() ? null : await get(`https://api.adsb.lol/v2/lat/${CENTER.lat}/lon/${CENTER.lon}/dist/${CENTER.nm}`));
     if (!j) return null;
     return trimReadsb(j.ac, j.now > 1e11 ? j.now : (j.now || Date.now() / 1000) * 1000, 'adsb.lol');
   },
   async () => {
-    const j = await get(`https://opendata.adsb.fi/api/v2/lat/${CENTER.lat}/lon/${CENTER.lon}/dist/${CENTER.nm}`) || await get(`https://opendata.adsb.fi/api/v3/lat/${CENTER.lat}/lon/${CENTER.lon}/dist/${CENTER.nm}`);
+    const j = await get(`https://opendata.adsb.fi/api/v2/lat/${CENTER.lat}/lon/${CENTER.lon}/dist/${CENTER.nm}`) || (lastTimedOut() ? null : await get(`https://opendata.adsb.fi/api/v3/lat/${CENTER.lat}/lon/${CENTER.lon}/dist/${CENTER.nm}`));
     if (!j) return null;
     return trimReadsb(j.aircraft || j.ac, (j.now || Date.now() / 1000) * 1000, 'adsb.fi');
   },
@@ -72,7 +77,7 @@ const tag = (x, t) => { const m = x.match(new RegExp(`<${t}[^>]*>([\\s\\S]*?)</$
 const unent = t => t.replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;|&apos;/g, "'");
 async function news(src) {
   const url = FEEDS[src]; if (!url) return null;
-  const r = await fetch(url, { headers: UA, cf: { cacheTtl: 300 } }); if (!r.ok) return null; const x = await r.text();
+  const r = await fetch(url, { headers: UA, cf: { cacheTtl: 300 }, signal: AbortSignal.timeout(SLOW_MS) }); if (!r.ok) return null; const x = await r.text();
   const items = (x.match(/<item[\s>][\s\S]*?<\/item>/gi) || []).slice(0, 25).map(it => ({ title: unent(tag(it, 'title')), link: unent(tag(it, 'link')),
     date: tag(it, 'pubDate'), desc: unent(tag(it, 'description')).replace(/<[^>]+>/g, '').slice(0, 300) }));
   return { src, items };
@@ -104,9 +109,9 @@ export default {
       const cache = typeof caches !== 'undefined' ? caches.default : null, key = new Request('https://relay.cache/waittime/' + ap + '/' + fid + '/' + date);
       let res = cache && await cache.match(key);
       if (!res) {
-        let r; try { r = await fetch(up, { headers: { 'Ocp-Apim-Subscription-Key': env.SWEDAVIA_KEY, 'Accept': 'application/json', 'Cache-Control': 'no-cache' } }); } catch (e) { return json({ error: 'Swedavia did not answer' }, 502); }
+        let r, body; try { r = await fetch(up, { headers: { 'Ocp-Apim-Subscription-Key': env.SWEDAVIA_KEY, 'Accept': 'application/json', 'Cache-Control': 'no-cache' }, signal: AbortSignal.timeout(SLOW_MS) }); if (r.ok) body = await r.text(); } catch (e) { return json({ error: 'Swedavia did not answer' }, 502); }
         if (!r.ok) return json({ error: 'Swedavia answered ' + r.status }, r.status === 404 ? 404 : 502);
-        res = new Response(await r.text(), { headers: { 'Content-Type': 'application/json', 'Cache-Control': 'public, max-age=60' } });
+        res = new Response(body, { headers: { 'Content-Type': 'application/json', 'Cache-Control': 'public, max-age=60' } });
         if (cache && ctx) ctx.waitUntil(cache.put(key, res.clone()));
       }
       const out = new Response(res.body, res); for (const [k, v] of Object.entries(cors)) out.headers.set(k, v); return out;

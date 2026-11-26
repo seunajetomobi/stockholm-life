@@ -6,5 +6,5 @@ The shared rules, roles, approval boundaries, report format and the code map are
 
 Claude Code only:
 
-- The browser tests use the Chromium build pinned by Playwright and port 8000; stop any `./start.sh` server before running them.
+- The browser tests use the Chromium build pinned by Playwright and need `SL_PORT` set to a free port other than 8000 (the harness refuses otherwise; port 8000 stays for the owner's `./start.sh`).
 - Do not save project facts that the repository already records (status, decisions, the code map) to Claude Code's memory; update the repository files instead.

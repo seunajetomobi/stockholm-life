@@ -1929,8 +1929,12 @@ function flightPhase(a){for(const k in AIRPORTS){const [la,lo,n]=AIRPORTS[k],d=k
     if(a.gnd&&d<5)return {k,txt:'On the ground at '+n,ord:2,d};
     if(d<35&&a.alt<9000){if(a.vr<-200)return {k,txt:`Landing at ${n} · ${Math.round(d)} km out`,ord:0,d};if(a.vr>200)return {k,txt:`Departed ${n} · ${Math.round(d)} km`,ord:1,d}}}
   return {k:'',txt:a.alt>20000?'Overflying at cruise height':'Flying over the Stockholm area',ord:3,d:99}}
-async function routeOf(cs){cs=(cs||'').trim();if(!cs)return null;if(ROUTES.has(cs))return ROUTES.get(cs);
-  try{const r=await fetch('https://api.adsbdb.com/v0/callsign/'+encodeURIComponent(cs));const j=r.ok?await r.json():null;const fr=j&&j.response&&j.response.flightroute;ROUTES.set(cs,fr||null);return fr||null}catch(e){return null}}
+const ROUTE_ASK=new Map();// callsigns being asked about now, so a second call waits for the first instead of a second request
+async function routeOf(cs){cs=(cs||'').trim();if(!cs)return null;if(ROUTES.has(cs))return ROUTES.get(cs);if(ROUTE_ASK.has(cs))return ROUTE_ASK.get(cs);
+  // adsbdb answers 404 for a callsign it does not know: that is "no route", remembered for the session so we ask once (KNOWN_ISSUES L3)
+  // at most 8 s, so a request that never answers cannot hold the callsign (it is not remembered, so a later call asks again)
+  const p=(async()=>{try{const r=await fetch('https://api.adsbdb.com/v0/callsign/'+encodeURIComponent(cs),AbortSignal.timeout?{signal:AbortSignal.timeout(8000)}:undefined);if(r.status===404){ROUTES.set(cs,null);return null}const j=r.ok?await r.json():null;const fr=j&&j.response&&j.response.flightroute;ROUTES.set(cs,fr||null);return fr||null}catch(e){return null}finally{ROUTE_ASK.delete(cs)}})();
+  ROUTE_ASK.set(cs,p);return p}
 function openFlights(){if(!FLIGHT_RELAY){modal(`<div class="phonehead" style="--c:#2f6fd6">${glyphSVG('plane')}<h2>Flights</h2></div><p>Live flights need the small flights relay (a free Cloudflare Worker). It is in <code>tools/flights-worker.js</code>, with the steps to set it up at the top of the file.</p><p class="note">Until then, the planes at Bromma are simulated.</p><div class="row2"><button class="btn ghost" id="no">Close</button></div>`,m=>m.querySelector('#no').onclick=closeModal);return}
   let alive=true,timer=0;
   modal(`<div class="phonehead" style="--c:#2f6fd6">${glyphSVG('plane')}<h2>Flights · live</h2></div><div id="flBody"><p class="note">Loading live flights…</p></div><div class="row2"><button class="btn" id="sec">Arlanda security queues</button><button class="btn ghost" id="no">Close</button></div>`,m=>{
@@ -2776,7 +2780,7 @@ function render(){try{if(S){renderTodo();badges();renderAbout()}}catch(e){}
     b.onclick=()=>doAct(a);box.appendChild(b)});
   $('papers').innerHTML=[...papers(),{s:canDrive()?'ok':'todo',l:canDrive()?'OK':'—',n:'Driving licence',w:licText()},{s:S.addr?'ok':'todo',l:S.addr?'OK':'—',n:'Home address',w:addrText()},...Object.keys(S.certs).map(c=>({s:'ok',l:'✓',n:'Certificate',w:(Object.values(COURSES).find(x=>x.cert===c)||{name:c}).name}))].map(p=>`<li><span class="st ${p.s}">${p.l}</span><b>${p.n}</b><small>${p.w}</small></li>`).join('');
   $('goals').innerHTML=`<li class="${aspirationDone()?'done':''}"><span class="box"></span><span><b>Life goal:</b> ${ASPIRATIONS[S.aspiration].l}</span><span class="p">${S.points} pts</span></li>`+(S.aspiration==='stockholmer'?'':`<li><span></span><span style="font-size:12px">${ASPIRATIONS[S.aspiration].d}</span><span></span></li>`)+goals().map(g=>`<li class="${g.done?'done':''}"><span class="box"></span><span>${g.l}</span><span class="p">${g.p}</span></li>`).join('')+S.wants.map(w=>{const W8=WANTS.find(x=>x[0]===w.id);return `<li class="${w.done?'done':''}"><span class="box"></span><span>Today: ${W8?W8[1]:w.id}</span><span class="p">+10</span></li>`}).join('');
-  $('log').innerHTML=S.log.slice(0,30).map(e=>`<li><time>d${e.d} ${hhmm(e.h)}</time><span class="${e.cls}">${e.t}</span></li>`).join('');
+  $('log').innerHTML=S.log.slice(0,30).map(e=>`<li><time>d${e.d} ${hhmm(e.h)}</time><span class="${esc2(e.cls)}">${esc2(e.t)}</span></li>`).join('');
   W&&W.refresh();renderNeeds();renderGuide();renderPlaces();renderSOS();if(TAB==='civic')renderCivic();
 }
 
@@ -2972,7 +2976,8 @@ function buildWorld(){
   const GS=D.gamlastan,SO=D.sodermalm,OS=D.ostermalm,KI=D.kista;
   function bColor(ti,ci,seedv,x,z,h){const T=CITY.b.types[ti],col=CITY.b.cols[ci];
     let wall=null,roof,glass=false;
-    if(col){const n=col.toLowerCase().trim();if(n in OSMCOL)wall=OSMCOL[n]===null?null:C(OSMCOL[n]);else{try{wall=C(n.startsWith('#')||/^[a-z]+$/.test(n)?n:'#'+n)}catch(e){wall=null}}
+    if(col){const n=col.toLowerCase().trim();if(n in OSMCOL)wall=OSMCOL[n]===null?null:C(OSMCOL[n]);else{// only a real colour: a tag like "4" would become "#4", or "mustard" is no CSS name, and THREE.Color warns about both (KNOWN_ISSUES L11)
+      const nm=n in THREE.Color.NAMES;if(nm||/^#?([0-9a-f]{3}|[0-9a-f]{6})$/.test(n)){try{wall=C(nm||n[0]==='#'?n:'#'+n)}catch(e){wall=null}}}
       // painted render, not neon: keep tagged colours within what Stockholm facades actually look like
       if(wall){const hsl={};wall.getHSL(hsl);wall.setHSL(hsl.h,Math.min(hsl.s,0.55),clamp(hsl.l,0.3,0.86))}}
     const pick=a=>a[seedv%a.length],r2=(seedv>>>8)%100;

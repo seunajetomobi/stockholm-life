@@ -1068,7 +1068,7 @@ const CAUSE_ISSUE={homeless:'housing'};
 const DEMO_SPOTS=[['Sergels torg',59.3326,18.0649,'tc'],['Mynttorget (outside the Riksdag)',59.3263,18.0713,'gamlastan'],['Medborgarplatsen',59.3144,18.0717,'sodermalm'],['Stadshuset',59.3275,18.0543,'kungsholmen'],['Kista torg',59.4030,17.9447,'kista']];
 const VALSTUGOR=[[59.3326,18.0649],[59.3144,18.0717],[59.3429,18.0495],[59.4030,17.9447],[59.3884,17.9284],[59.3608,17.9721]];
 function civInit(s){if(!s.civ)s.civ={camp:{},pv:0,member:null,candidate:false,elected:false,gov:['housing','jobs'],last:null,history:[],next:0,move:null,voted:0,news:[],jo:[],docs:[]};if(!s.civ.next)s.civ.next=nextElectionDay(s.day||1)}
-function nextElectionDay(from){let d=from+56;while(dateOf(d).getDay()!==0)d++;return d}
+function nextElectionDay(from){let d=from+56;while(lifeDate(d).getDay()!==0)d++;return d}
 const policy=k=>!!(S&&S.civ&&S.civ.gov.includes(k));
 const electionOpen=()=>S.day>=S.civ.next-18&&S.day<=S.civ.next;
 const isElectionDay=()=>S.day===S.civ.next;
@@ -1221,7 +1221,7 @@ function renderGuide(){const st=nextSteps();const n=$('next');
   $('suggest').innerHTML=st.slice(0,3).map((s,i)=>`<button class="sug" data-i="${i}"><b>${s.l}</b><small>${s.s}</small><i>${s.btn}</i></button>`).join('')||'<p class="note">Nothing urgent. Explore the city.</p>';
   $('suggest').querySelectorAll('.sug').forEach(b=>b.onclick=()=>st[+b.dataset.i].fn())}
 // ---------- society panel
-const fmtElection=()=>{const d=dateOf(S.civ.next);return `${WD[d.getDay()]} ${d.getDate()} ${MONTHS[d.getMonth()]}`};
+const fmtElection=()=>{const d=lifeDate(S.civ.next);return `${WD[d.getDay()]} ${d.getDate()} ${MONTHS[d.getMonth()]}`};
 function renderCivic(){if(!S||!S.civ)return;const c=S.civ,sh=pollShares(),v=canVote(),mv=c.move,days=c.next-S.day;const L=c.member?LISTS.find(l=>l.id===c.member):null;const at=!!S.loc;
   const b=(id,txt,dis,main)=>`<button class="tbtn${main?' main':''}" data-a="${id}" ${dis?'disabled':''}>${txt}</button>`;
   let h=`<div class="sec"><h3>Kommunval · Stockholm city council</h3><div class="cdown"><b class="num">${days}</b><span>day${days===1?'':'s'} to election day, ${fmtElection()}${electionOpen()?' · early voting open':''}</span></div>
@@ -1262,7 +1262,10 @@ const WORLD=useModule('world','data/world.js');// every country and its largest 
 const RTIME=useModule('realtime','rules/realtime.js');// the real-time switch and derived clock (src/rules/realtime.js)
 const REALTIME=RTIME.enabled(location.search,(()=>{try{return localStorage}catch(e){return null}})(),true);// real Stockholm time is the default (docs/REALTIME_SPEC.md); ?realtime=0 is the old game clock
 function syncClock(){if(!REALTIME||!S||!S.t0)return false;const c=RTIME.deriveClock(S.t0,STIME.nowMs()),ch=c.day!==S.day;S.day=c.day;S.hour=c.hour;return ch}
-const realDate=()=>{const p=STIME.partsAt(S.t0);return new Date(p.year,p.month-1,p.day+S.day-1)};
+const realDate=(d=S.day)=>{const p=STIME.partsAt(S.t0);return new Date(p.year,p.month-1,p.day+d-1)};
+const lifeDate=d=>REALTIME&&S&&S.t0?realDate(d):dateOf(d);// the calendar date of life day d (with real time on, the real one: stage R2)
+// R2 (with real time on, owner 2026-11-26): derive the clock before the first render and before the city is built, so the first sky, season and tiles are the real ones; the offline weather is rolled for the real month when a calendar day has passed since the save
+function rtWorldStart(){const d=S.day;syncClock();if(S.day!==d&&!liveFresh())rollWeather()}
 const NAMNSDAG=useModule('namnsdag','rules/namnsdag.js');// Swedish name days (src/rules/namnsdag.js), shown as the tooltip of the date
 const LIFESTART=useModule('life-start','rules/life-start.js');// real start of a life for the save (src/rules/life-start.js); not used by the game yet
 const HOLIDAYS=useModule('holidays','rules/holidays.js');// Swedish public holidays from the statute (src/rules/holidays.js); not used by the game yet
@@ -1319,7 +1322,7 @@ const LOOKS=[['Casual_Male','Casual (man)'],['Casual_Female','Casual (woman)'],[
 function newGame(name,bg,look,pref,asp,skin){
   const b=BG[bg];const a=D[b.start];
   S={v:6,t0:LIFESTART.lifeStartFor(1,STIME.nowMs()),name:name||'Alex',bg,day:1,hour:8,money:b.s.money,energy:90,mood:b.s.mood,social:b.s.social,svenska:b.s.svenska,skill:b.s.skill,
-     queue:b.s.queue,home:b.home,pos:{x:a.x+0.3,z:a.z+0.3},loc:b.start,job:null,jobDays:0,pay:0,slUntil:0,vitD:0,coat:false,sunToday:false,sick:0,applied:{},flags:{},docs:{...b.docs},log:[],won:false,look:look||'Casual_Male'};lifeInit(S);S.flags.started=1;S.pref=pref||'any';S.aspiration=asp||'stockholmer';if(skin!==undefined&&skin!=='')S.outfit.skin=+skin;if(bg==='over')S.remark=1;assignAddress();rollWants();
+     queue:b.s.queue,home:b.home,pos:{x:a.x+0.3,z:a.z+0.3},loc:b.start,job:null,jobDays:0,pay:0,slUntil:0,vitD:0,coat:false,sunToday:false,sick:0,applied:{},flags:{},docs:{...b.docs},log:[],won:false,look:look||'Casual_Male'};lifeInit(S);syncClock();S.flags.started=1;S.pref=pref||'any';S.aspiration=asp||'stockholmer';if(skin!==undefined&&skin!=='')S.outfit.skin=+skin;if(bg==='over')S.remark=1;assignAddress();rollWants();
   updateLoc();rollWeather();
   log(`Welcome, ${S.name}. Day one in Stockholm.`);
   if(S.docs.permit===0)log('First stop: Migrationsverket in Sundbyberg for your residence permit card. Then Skatteverket for a personnummer.');
@@ -5869,7 +5872,8 @@ const POSTERS_CITY=[['#f2b705','#1b1b1b','KANELBULLE','Färskt varje morgon','Ba
     if(rain.visible){const p=rainG.attributes.position,sl=rain.userData.slant||0;for(let i=0;i<rainN;i++){let y=p.getY(i*2)-dt*4,x=p.getX(i*2)+dt*4*sl;if(y<0)y+=4;if(x>4)x-=8;p.setXYZ(i*2,x,y,p.getZ(i*2));p.setXYZ(i*2+1,x+0.004+sl*0.08,y-0.08,p.getZ(i*2))}p.needsUpdate=true;rain.position.set(fx,0,fz)}
     // thunderstorms: lightning flashes
     if(S.wx&&liveFresh()&&S.wx.code>=95&&!IN.on&&Math.random()<dt*0.12)flashT=0.3;flashT=Math.max(0,flashT-dt);flash.intensity=flashT>0?(Math.random()<0.6?2.2:0.4)*flashT/0.3:0;
-    if(CS.mode)shownHour=csClk()/60;else if(walk)shownHour=walk.startHour+(walk.dist/walk.L)*Math.min(3,walk.L*50/80/60);else if(!rideState)shownHour+=(S.hour-shownHour)*Math.min(1,dt*1.5);
+    // R2 (owner 2026-11-26): with real time on the city sky shows the real hour (no easing that sweeps through the day at midnight, no walk running ahead); the station keeps its own clock until R6
+    if(CS.mode)shownHour=csClk()/60;else if(REALTIME)shownHour=S.hour;else if(walk)shownHour=walk.startHour+(walk.dist/walk.L)*Math.min(3,walk.L*50/80/60);else if(!rideState)shownHour+=(S.hour-shownHour)*Math.min(1,dt*1.5);
     const nightF=lightAt(shownHour);
     if(auroraT>0){auroraT-=dt*0.05;auroraMat.opacity=Math.max(0,Math.min(0.35,auroraT))*nightF;const pa=aurora.geometry.attributes.position;for(let i=0;i<pa.count;i++)pa.setY(i,(i<51?35:-35)+Math.sin(pa.getX(i)*0.02+T)*10);pa.needsUpdate=true}
     lineGroup.visible=camD>6;stationSprites.forEach(s=>{s.base=camD<60&&Math.hypot(s.x-fx,s.z-fz)<Math.max(14,camD*1.4);s.sp.visible=s.base&&!s.hide});
@@ -6311,7 +6315,7 @@ await Promise.race([TIMESYNC,new Promise(r=>setTimeout(r,3000))]);// a new life 
   slotsGuard();
   let fresh=false;const resume=placeValid(S)?S.place:null;// read now: saves made while the city loads record the street
   if(!S){fresh=true;const b=BG.newcomer,a=D[b.start];S={v:6,t0:LIFESTART.lifeStartFor(1,STIME.nowMs()),name:'Alex',bg:'newcomer',day:1,hour:8,money:b.s.money,energy:90,mood:b.s.mood,social:b.s.social,svenska:b.s.svenska,skill:b.s.skill,queue:0,home:b.home,pos:{x:a.x+0.3,z:a.z+0.3},loc:b.start,job:null,jobDays:0,pay:0,slUntil:0,vitD:0,coat:false,sunToday:false,sick:0,applied:{},flags:{},docs:{...b.docs},log:[],won:false,weather:'clear',temp:7};log('Welcome to Stockholm. Pick who you are to begin.')}
-  lifeInit(S);updateLoc();render();
+  lifeInit(S);if(REALTIME)rtWorldStart();updateLoc();render();
   if(!SV.on){SV.on=true;addEventListener('pagehide',()=>save());document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')save()})}
   try{CITY=await loadCity();matchServices()}catch(e){console.error(e);CITY=null;$('loading')&&$('loading').classList.add('err');$('loadtxt').textContent='Could not load the real city data, so you get a simplified Stockholm. ('+e.message+')'}
   try{W=buildWorld()}catch(e){console.error(e);W=null}
@@ -6321,7 +6325,7 @@ await Promise.race([TIMESYNC,new Promise(r=>setTimeout(r,3000))]);// a new life 
   if(!W){const n=document.createElement('div');n.className='nogl';n.style.cssText='inset:auto;top:160px;left:50%;transform:translateX(-50%);width:min(440px,calc(100% - 32px));background:var(--glass);border-radius:12px;z-index:5;line-height:1.45';n.textContent='Your browser could not start 3D graphics (WebGL), so the city cannot be drawn. The game still works from the panels. Fix: quit the browser completely and reopen it (after a graphics crash Chrome blocks 3D until restart), and check that "Use graphics acceleration" is on in its settings.';$('stage').appendChild(n)}
   else{W.placeAvatar(S.pos.x,S.pos.z,true);if(!S.addr&&S.home!=='none'){assignAddress();save()}W.setHome();W.syncCar();if(!S.wants.length)rollWants();if(S.flags&&S.flags.arlanda&&W.enterAirport)setTimeout(()=>W.enterAirport(),600);else if(resume&&W.restorePlace)setTimeout(()=>W.restorePlace(resume),600)}
   syncClock();render();if(TITLE_ON)showTitle(fresh);else if(fresh)intro(REALTIME);
-  fadeLoader();if(REALTIME)setInterval(()=>{if(!S)return;if(syncClock())render();else $('time').textContent=hhmm(S.hour)},1000);
+  fadeLoader();if(REALTIME)setInterval(()=>{if(!S)return;if(syncClock()){if(!liveFresh())rollWeather();render()}else $('time').textContent=hhmm(S.hour)},1000);// R2: a new Stockholm day rolls the offline weather
   if(SET.live){fetchLiveWeather().then(ok=>{if(ok)setTimeout(()=>wearTip(true),fresh?20000:2500)});setInterval(fetchLiveWeather,10*60e3);if(FLIGHT_RELAY){fetchFlights();setInterval(fetchFlights,10000)}}setInterval(()=>{if(Math.random()<0.35)incomingCall()},150000);
 }
 window.claude?.hot?.snapshot?.(()=>({S}));

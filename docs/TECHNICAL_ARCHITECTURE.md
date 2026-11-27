@@ -89,19 +89,18 @@ Principle: **evolve, don't rewrite.** Keep three.js and static hosting; move cod
 
 ```
 index.html            markup + <script type="module" src="src/main.js">
-styles/game.css
 src/
+  styles/             base, title, panels, phone, responsive (CSS, linked in the original cascade order)
   main.js             boot
   state/  state.js (S, mutation helpers, events), save.js (envelope, slots, migrations), clock.js
   rules/  needs, jobs, housing, bills, people, civic, crime, docs
   ui/     panels (render), modal, phone/*, intro, hud
   live/   weather, sl, flights, news, fx
-  world/  world.js (facade returning W), tiles, collision, routing, agents, transit, interiors/*, driving, air, camera, input
-  places/ central/*, arlanda/*
+  world/  world.js (facade returning W), tiles, collision, routing, agents, transit, driving, air, camera, input, places/ (interiors, arlanda/*, central/*)
   data/   JOBS, HOMES, BG, ACTS, ITEMS, COUNTRIES, ...
 ```
 
-Until the game script itself is a module, modules are classic scripts on one namespace (`window.StockholmLife`), loaded before it; the reasons, the rules, the start-up sequence, the module inventory and the order of the moves are in [MODULES.md](MODULES.md).
+Until the game script itself is a module, modules are classic scripts on one namespace (`window.StockholmLife`), loaded before it; the reasons, the rules, the start-up sequence, the module inventory and the order of the moves are in [MODULES.md](MODULES.md). The approved sequence, the target of about 80 files and the decisions of 2026-11-27 are in [COMPONENTS_PLAN.md](COMPONENTS_PLAN.md); it supersedes the sequence in MODULES.md §6.
 
 ### 3.2 State, time and saving (M1, M2)
 
@@ -145,3 +144,10 @@ State changes as recordable actions, seeded randomness and the explicit clock ma
 | 2026-11-04 | M1a save safety may go ahead before M0 closes, as a narrow exception; the save format stays as it is and the rest of M1 still waits for M0. Deportation takes effect when its screen appears and removes v4 and v3; a tab whose expected save has changed stops saving; restart takes effect at Go; a v4 save without `flags.started` is not a completed life |
 | 2026-11-14 | Owner: keep three.js as the 3D foundation and divide the game progressively into modules, starting now (first move: geography). Modules are classic scripts until the game script can become a native ES module ([MODULES.md](MODULES.md) §2.1, proposed) |
 | 2026-11-25 | Owner: run the CI browser suite in six parallel shards, split by file by CI time (`tests/shard.py`), with a last job named `tests-browser` that passes only when every shard passed, so the ruleset's required checks stay as they are; about 20 minutes per run instead of about 2 hours |
+| 2026-11-27 | Owner: componentisation follows option A of [COMPONENTS_PLAN.md](COMPONENTS_PLAN.md) (D1): move-only slices as classic scripts on `window.StockholmLife`, native ES modules in one late pull request, the static markup stays in `index.html`. Reason: small reviewable moves, and no big-bang change to the test hook or deployment |
+| 2026-11-27 | Owner (D2): no build step, including for the componentised game. Reason: a bundler would break the test hook, `live_check`'s blob-ID check and no-build serving. Revisit only if the first-load budget fails after the ES-module step |
+| 2026-11-27 | Owner (D3): the guard-rail checker uses acorn, acorn-walk and eslint-scope, vendored at pinned versions in `tools/vendor/` and not published. Reason: CI and every machine get the same parser without npm or apt |
+| 2026-11-27 | Owner (D4): the game script runs in strict mode. Reason: the script already parses as strict; the one remaining risk, newly swallowed errors, is measured before the change |
+| 2026-11-27 | Owner (D5): a minimal state owner (`src/state/state.js`) comes before the full M1 design. Reason: `S` has many readers and few writers, so the shared state can move first without changing the bodies |
+| 2026-11-27 | Owner (D8): CSS goes in `src/styles/`. Reason: the Deploy workflow and `live_check` already publish `src/`, so no change to publishing |
+| 2026-11-27 | Owner (D9): renames in world moves (for example `walk` to `ctx.walk`) are machine-checked by `tools/modcheck.js`. Reason: a reviewer cannot check them by eye in a large diff |

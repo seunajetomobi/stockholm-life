@@ -4,6 +4,8 @@ How Stockholm Life is divided into modules: what exists now, how a module is wri
 
 Written with the first move (`refactor/modules-first-extraction`, from `main` `3eb5711`), 2026-11-14.
 
+**Approved sequence:** [COMPONENTS_PLAN.md](COMPONENTS_PLAN.md) (approved by the owner on 2026-11-27) supersedes and extends the extraction sequence in §6. §6 stays below as history; where the two differ, follow COMPONENTS_PLAN.md.
+
 ## 1. What exists (observed)
 
 ```
@@ -149,7 +151,7 @@ The Deploy workflow (`.github/workflows/deploy.yml`, step "Collect the game file
 **Observed.**
 
 - `S` is the single authoritative life state. It is saved as JSON under `stockholm-life-v4`, at version 5. It is owned by the game script, and written directly from everywhere.
-- The world keeps its own runtime state: `IN` (interiors), `CS` (station), `JR` (train), `DR` (driving), `AP` (Arlanda). The world reports into `S` through `window.__slCommit` and `window.__slDrive` and the `W` API (51 entries). The place you are in is saved through `W.placeState()` and `W.restorePlace()`.
+- The world keeps its own runtime state: `IN` (interiors), `CS` (station), `JR` (train), `DR` (driving), `AP` (Arlanda). The world reports into `S` through `window.__slCommit` and `window.__slDrive` and the `W` API (61 entries). The place you are in is saved through `W.placeState()` and `W.restorePlace()`.
 
 **Target.**
 
@@ -162,7 +164,7 @@ The Deploy workflow (`.github/workflows/deploy.yml`, step "Collect the game file
 | Kind | Mechanism |
 | --- | --- |
 | Data and pure rules | Direct calls to a module's functions (as with `transitRoute`) |
-| World ⇄ rules | The existing `W` facade, which stays; parts of `buildWorld` move behind it while it keeps its 51 entries |
+| World ⇄ rules | The existing `W` facade, which stays; parts of `buildWorld` move behind it while it keeps its 61 entries |
 | State changes | One small event emitter in the state module (`on`, `off`, `emit`), with named events such as `day`, `money` and `place`. It replaces the five reassigned functions with explicit hooks (`onNewGame`, `onDayChange`, …). Added with M1, not before |
 | Live data | Each client (weather, SL, flights, news, exchange rates) behind a function returning a promise, which degrades to "unavailable" as it does today |
 

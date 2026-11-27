@@ -5,7 +5,7 @@ import game
 import pytest
 from test_title_page import _start
 
-READY = "() => { const t = document.getElementById('title'); return t && !t.hidden && /Start/.test(t.innerText) }"
+READY = "() => { const t = document.getElementById('title'); return t && !t.hidden && /Start/i.test(t.innerText) }"
 
 
 def _open(browser, **kw):

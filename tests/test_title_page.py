@@ -12,7 +12,7 @@ def test_title_intro_settings_flow(browser, server):
     page.set_default_timeout(90000)  # the software-GL browser is slow when the machine is busy
     try:
         game.boot(page)
-        assert game.wait_for(page, "() => { const t = document.getElementById('title'); return t && !t.hidden && /Start/.test(t.innerText) }", 60), 'no title page'
+        assert game.wait_for(page, "() => { const t = document.getElementById('title'); return t && !t.hidden && /Start/i.test(t.innerText) }", 60), 'no title page'
         text = page.evaluate(VISIBLE)
         for word in ('Stockholms', 'Start', 'Options', 'How to play'):
             assert word.lower() in text.lower(), (word, text)
@@ -28,7 +28,7 @@ def test_title_intro_settings_flow(browser, server):
         page.click('#sBack')
         assert 'Control hints' in page.evaluate(VISIBLE)           # Back from Settings returns to Options
         page.click('#oBack')
-        assert 'Start' in page.evaluate(VISIBLE)
+        assert 'start' in page.evaluate(VISIBLE).lower()   # the main menu's labels are shown in capitals (LIV look)
         # Start: the first time the introduction shows; Skip goes straight into the game
         page.click('#tPlay')
         page.click('#cNew')
@@ -43,9 +43,10 @@ def test_title_intro_settings_flow(browser, server):
         # the brand opens the title page again, now with Continue
         # (the arrival cutscene hides the control buttons for a while, so press it from the page)
         page.evaluate("() => window.__T.showTitle(false)")
-        assert game.wait_for(page, "() => { const t = document.getElementById('title'); return t && !t.hidden && /Start/.test(t.innerText) }", 10)
+        assert game.wait_for(page, "() => { const t = document.getElementById('title'); return t && !t.hidden && /Start/i.test(t.innerText) }", 10)
         page.click('#tPlay')
-        assert game.wait_for(page, "() => { const t = document.getElementById('title'); return t && !t.hidden && /Continue your life/.test(t.innerText) }", 10)
+        # Continue is always listed now (owner, 2026-11-25), so check it can be pressed and is the main action
+        assert game.wait_for(page, "() => { const t = document.getElementById('title'), c = document.getElementById('cCont'); return t && !t.hidden && c && !c.disabled && c.classList.contains('primary') }", 10)
         # in the game a Quit button asks whether to save, then returns to a fresh title page
         page.click('#cBack')
         assert page.locator('#tQuit').count() == 0, 'quit does not belong on the title page'
@@ -57,7 +58,7 @@ def test_title_intro_settings_flow(browser, server):
         page.click('#qSave')
         page.wait_for_load_state('load')
         game.boot(page)
-        assert game.wait_for(page, "() => { const t = document.getElementById('title'); return t && !t.hidden && /Start/.test(t.innerText) }", 60), 'no title page after quitting'
+        assert game.wait_for(page, "() => { const t = document.getElementById('title'); return t && !t.hidden && /Start/i.test(t.innerText) }", 60), 'no title page after quitting'
         assert page.evaluate("() => !!localStorage.getItem('stockholm-life-v4')"), 'life not saved on quit'
         assert err.uncaught == [], err.uncaught
     finally:
@@ -97,7 +98,7 @@ def test_title_is_one_row_on_a_phone(browser, server):
     page.set_default_timeout(90000)
     try:
         game.boot(page)
-        assert game.wait_for(page, "() => { const t = document.getElementById('title'); return t && !t.hidden && /Start/.test(t.innerText) }", 60)
+        assert game.wait_for(page, "() => { const t = document.getElementById('title'); return t && !t.hidden && /Start/i.test(t.innerText) }", 60)
         h = page.evaluate("() => { const e = document.querySelector('#title h1'); const r = e.getBoundingClientRect(); return {h: r.height, fs: parseFloat(getComputedStyle(e).fontSize), w: r.width, vw: innerWidth} }")
         assert h['h'] < h['fs'] * 1.4, h          # one line, not wrapped
         assert h['w'] <= h['vw'] - 16, h           # and it fits the screen
@@ -112,7 +113,7 @@ def test_top_widgets_language_and_options(browser, server):
     page.set_default_timeout(90000)
     try:
         game.boot(page)
-        assert game.wait_for(page, "() => { const t = document.getElementById('title'); return t && !t.hidden && /Start/.test(t.innerText) }", 60)
+        assert game.wait_for(page, "() => { const t = document.getElementById('title'); return t && !t.hidden && /Start/i.test(t.innerText) }", 60)
         now = page.evaluate(STOCKHOLM_NOW)
         # nothing top left any more: no date, clock or weather box
         assert page.evaluate("() => !document.getElementById('tWx')")
@@ -126,10 +127,13 @@ def test_top_widgets_language_and_options(browser, server):
         assert order == ['tPlay', 'tOpt', 'tHow'], order
         # language: Swedish changes the page and is remembered
         page.click('#tLang button[data-l="sv"]')
-        assert 'Starta' in page.evaluate("() => document.getElementById('titleCard').innerText")
+        # the main menu is in capitals through CSS, so innerText reads "STARTA": compare in lower case
+        sv = page.evaluate("() => document.getElementById('titleCard').innerText").lower()
+        assert 'starta' in sv and 'så spelar du' in sv, sv
         assert page.evaluate("() => localStorage.getItem('stockholmsliv-lang')") == 'sv'
         page.click('#tLang button[data-l="en"]')
-        assert 'Start' in page.evaluate("() => document.getElementById('titleCard').innerText")
+        en = page.evaluate("() => document.getElementById('titleCard').innerText").lower()
+        assert 'start' in en and 'how to play' in en and 'starta' not in en, en
         # options: switching the control hints off hides the hint line, and it is saved
         page.click('#tOpt')
         page.click('.tog[data-k="hints"]')
@@ -145,7 +149,7 @@ def test_title_name_uses_the_swedish_flag_colours(browser, server):
     page.set_default_timeout(90000)
     try:
         game.boot(page)
-        assert game.wait_for(page, "() => { const t = document.getElementById('title'); return t && !t.hidden && /Start/.test(t.innerText) }", 60)
+        assert game.wait_for(page, "() => { const t = document.getElementById('title'); return t && !t.hidden && /Start/i.test(t.innerText) }", 60)
         c = page.evaluate("() => { const h = document.querySelector('#title h1'), s = h.querySelector('span'), g = e => getComputedStyle(e); return {a: g(h).color, as: g(h).webkitTextStrokeColor, b: g(s).color, bs: g(s).webkitTextStrokeColor} }")
         assert c['a'] == 'rgb(254, 204, 2)' and c['as'] == 'rgb(0, 106, 167)', c   # STOCKHOLMS: flag yellow, flag-blue outline
         assert c['b'] == 'rgb(0, 106, 167)' and c['bs'] == 'rgb(254, 204, 2)', c   # LIV: flag blue, flag-yellow outline
@@ -160,7 +164,7 @@ def test_title_blocks_the_game_and_buttons_animate(browser, server):
     page.set_default_timeout(90000)
     try:
         game.boot(page)
-        assert game.wait_for(page, "() => { const t = document.getElementById('title'); return t && !t.hidden && /Start/.test(t.innerText) && window.__TS && window.__TS.S }", 60)
+        assert game.wait_for(page, "() => { const t = document.getElementById('title'); return t && !t.hidden && /Start/i.test(t.innerText) && window.__TS && window.__TS.S }", 60)
         before = page.evaluate("() => JSON.stringify(window.__TS.S.pos)")
         for k in ('w', 'a', 's', 'd', 'e', 'ArrowUp'):
             page.keyboard.down(k)
@@ -189,7 +193,7 @@ def test_time_is_stockholm_even_when_the_device_clock_is_wrong(browser, server):
     page.set_default_timeout(90000)
     try:
         game.boot(page)
-        assert game.wait_for(page, "() => { const t = document.getElementById('title'); return t && !t.hidden && /Start/.test(t.innerText) }", 60)
+        assert game.wait_for(page, "() => { const t = document.getElementById('title'); return t && !t.hidden && /Start/i.test(t.innerText) }", 60)
         got = page.evaluate("() => ({device: Date.now(), true_: window.StockholmLife['stockholm-time'].nowMs(), off: window.StockholmLife['stockholm-time'].getOffset()})")
         real = time.time() * 1000
         assert abs(got['device'] - real - 3 * 3600e3) < 5000, got        # the device really was three hours ahead
@@ -214,12 +218,53 @@ def test_no_ringing_on_the_title_page(browser, server):
         ctx.close()
 
 
+HOVER_YELLOW = 'rgb(255, 216, 58)'          # #ffd83a, the main-menu button under the mouse
+START_YELLOW = 'rgb(254, 204, 2)'           # --yellow, Start when no other button is under the mouse
+LIV_BLUE = 'rgb(0, 106, 167)'                  # --blue: the other buttons, like LIV in the title
+BG = "getComputedStyle(document.getElementById('{}')).backgroundColor"
+
+
+def test_only_the_main_menu_button_under_the_mouse_is_yellow(browser, server):
+    """Owner, 2026-11-25: Start, Options and How to play look like the title's LIV (blue, a yellow outline, capitals); the
+    one under the mouse turns yellow, not only Start; while the mouse is on Options or How to play, Start turns blue like
+    the others, so only one button is yellow; when the mouse leaves, Start is yellow again. The mouse is moved to each
+    button's centre (no wait for the animated button to be still)."""
+    ctx, page, err = game.new_page(browser, hook=True, realtime=True, title=True, width=1366, height=768)
+    page.set_default_timeout(90000)
+    try:
+        game.boot(page)
+        assert game.wait_for(page, "() => { const t = document.getElementById('title'); return t && !t.hidden && /Start/i.test(t.innerText) && document.getElementById('tHow') }", 60), 'no title page'
+        page.evaluate("() => document.activeElement && document.activeElement.blur()")  # keyboard focus also turns a button yellow
+        look = page.evaluate("() => ['tPlay', 'tOpt', 'tHow'].map(i => { const s = getComputedStyle(document.getElementById(i)); return [s.textTransform, s.borderTopColor, s.color] })")
+        assert look == [['uppercase', 'rgb(0, 106, 167)', 'rgb(20, 35, 58)']] + [['uppercase', 'rgb(254, 204, 2)', 'rgb(255, 255, 255)']] * 2, look
+
+        def colours_become(want):
+            js = '() => ' + ' && '.join(f"{BG.format(b)} === '{c}'" for b, c in want.items())
+            ok = game.wait_for(page, js, 60)
+            got = page.evaluate('() => ({' + ', '.join(f"{b}: {BG.format(b)}" for b in want) + '})')
+            return ok, got
+
+        for b in ('tPlay', 'tOpt', 'tHow'):
+            box = page.evaluate(f"() => {{ const r = document.getElementById('{b}').getBoundingClientRect(); return [r.x + r.width / 2, r.y + r.height / 2] }}")
+            page.mouse.move(*box)
+            want = {k: HOVER_YELLOW if k == b else LIV_BLUE for k in ('tPlay', 'tOpt', 'tHow')}
+            ok, got = colours_become(want)
+            assert ok, f'mouse on {b}: want {want}, got {got}'
+        page.mouse.move(5, 760)
+        want = {'tPlay': START_YELLOW, 'tOpt': LIV_BLUE, 'tHow': LIV_BLUE}
+        ok, got = colours_become(want)
+        assert ok, f'mouse away: want {want}, got {got}'
+        assert err.uncaught == [], err.uncaught
+    finally:
+        ctx.close()
+
+
 def test_title_buttons_are_a_narrow_column(browser, server):
     ctx, page, err = game.new_page(browser, hook=True, realtime=True, title=True, width=1366, height=768)
     page.set_default_timeout(90000)
     try:
         game.boot(page)
-        assert game.wait_for(page, "() => { const t = document.getElementById('title'); return t && !t.hidden && /Start/.test(t.innerText) }", 60)
+        assert game.wait_for(page, "() => { const t = document.getElementById('title'); return t && !t.hidden && /Start/i.test(t.innerText) }", 60)
         w = page.evaluate("() => [...document.querySelectorAll('#titleCard .btns button')].map(b => b.offsetWidth)")  # layout width: a focused button is drawn slightly larger
         assert len(w) == 3 and max(w) <= 262, w
         assert err.uncaught == [], err.uncaught
@@ -245,12 +290,22 @@ def test_start_choice_load_and_new_life_form(browser, server):
     page.set_default_timeout(90000)
     try:
         game.boot(page)
-        assert game.wait_for(page, "() => { const t = document.getElementById('title'); return t && !t.hidden && /Start/.test(t.innerText) }", 60)
+        assert game.wait_for(page, "() => { const t = document.getElementById('title'); return t && !t.hidden && /Start/i.test(t.innerText) }", 60)
         page.click('#tPlay')
         txt = page.evaluate("() => document.getElementById('titleCard').innerText")
-        assert 'Start a new life' in txt and 'Back' in txt, txt
-        assert 'Load saved game' not in txt and 'Continue your life' not in txt, txt   # nothing saved yet: no Continue
-        # Saved games live inside Options: nothing saved yet, Back returns to Options
+        # Owner, 2026-11-25: Start always offers Continue, Load and a new life (before, Continue only appeared once a life
+        # existed and Load only inside Options). Nothing saved yet: Continue is there, greyed, and says why.
+        for want in ('Continue your life', 'Load a saved game', 'Start a new life', 'Back'):
+            assert want in txt, (want, txt)
+        assert page.evaluate("() => document.getElementById('cCont').disabled") is True
+        assert 'No life yet' in page.evaluate("() => document.getElementById('cNote').innerText")
+        assert page.evaluate("() => document.getElementById('cNew').classList.contains('primary')"), 'with no life, a new life is the main action'
+        # Load opens the saved games (nothing saved yet); Back returns to Start
+        page.evaluate("() => document.getElementById('cLoad').click()")
+        assert game.wait_for(page, "() => /No saved lives yet/.test(document.getElementById('titleCard').innerText) && document.getElementById('lBack')", 30)
+        page.evaluate("() => document.getElementById('lBack').click()")
+        assert game.wait_for(page, "() => !!document.getElementById('cLoad')", 30), 'Back from Load did not return to Start'
+        # Saved games are also inside Options: nothing saved yet, Back returns to Options
         page.click('#cBack')
         page.click('#tOpt')
         page.click('#oSaves')
@@ -355,7 +410,7 @@ def test_form_choices_start_the_right_kind_of_life(browser, server, nat, status,
     page.set_default_timeout(90000)
     try:
         game.boot(page)
-        assert game.wait_for(page, "() => { const t = document.getElementById('title'); return t && !t.hidden && /Start/.test(t.innerText) }", 60)
+        assert game.wait_for(page, "() => { const t = document.getElementById('title'); return t && !t.hidden && /Start/i.test(t.innerText) }", 60)
         _start(page, nat, status)
         got = page.evaluate("() => ({bg: window.__TS.S.bg, permit: window.__TS.S.docs.permit, status: (window.__TS.S.origin || {}).status || '', age: window.__TS.S.me && window.__TS.S.me.age, gl: window.__TS.S.me && window.__TS.S.me.genderLabel, g: window.__TS.S.me && window.__TS.S.me.gender})")
         assert got['bg'] == bg and got['permit'] == permit, got
@@ -374,7 +429,7 @@ def test_background_details_reach_the_life(browser, server):
     page.set_default_timeout(90000)
     try:
         game.boot(page)
-        assert game.wait_for(page, "() => { const t = document.getElementById('title'); return t && !t.hidden && /Start/.test(t.innerText) }", 60)
+        assert game.wait_for(page, "() => { const t = document.getElementById('title'); return t && !t.hidden && /Start/i.test(t.innerText) }", 60)
 
         def extra(pg):
             pg.select_option('#nfEdu', 'uni')
@@ -409,7 +464,7 @@ def test_sign_in_and_create_account_screens(browser, server):
     page.set_default_timeout(90000)
     try:
         game.boot(page)
-        assert game.wait_for(page, "() => { const t = document.getElementById('title'); return t && !t.hidden && /Start/.test(t.innerText) }", 60)
+        assert game.wait_for(page, "() => { const t = document.getElementById('title'); return t && !t.hidden && /Start/i.test(t.innerText) }", 60)
         r = page.evaluate("() => { const b = document.getElementById('tAcctBtn').getBoundingClientRect(), l = document.getElementById('tLang').getBoundingClientRect(); return {right: innerWidth - b.right, t: b.top, txt: document.getElementById('tAcctBtn').innerText, gap: l.left - b.right, langRight: innerWidth - l.right} }")
         assert r['t'] < 60 and r['txt'] == 'Sign in', r
         assert r['langRight'] < 40 and 0 <= r['gap'] < 30, r                     # top right, next to the language switch
@@ -467,7 +522,7 @@ def test_sign_in_is_icon_only_on_a_phone(browser, server):
     page.set_default_timeout(90000)
     try:
         game.boot(page)
-        assert game.wait_for(page, "() => { const t = document.getElementById('title'); return t && !t.hidden && /Start/.test(t.innerText) }", 60)
+        assert game.wait_for(page, "() => { const t = document.getElementById('title'); return t && !t.hidden && /Start/i.test(t.innerText) }", 60)
         r = page.evaluate("() => { const b = document.getElementById('tAcctBtn'), l = document.getElementById('tLang'); return {txt: b.innerText.trim(), w: b.getBoundingClientRect().width, h: b.getBoundingClientRect().height, label: b.getAttribute('aria-label'), sw: document.documentElement.scrollWidth, vw: innerWidth, overlap: b.getBoundingClientRect().right > l.getBoundingClientRect().left} }")
         assert r['txt'] == '' and r['label'] == 'Sign in', r       # icon only, but still labelled for screen readers
         assert r['w'] >= 36 and r['h'] >= 36, r                     # a comfortable touch target
@@ -482,7 +537,7 @@ def test_options_sound_settings_reload_reset_and_saved_games(browser, server):
     page.set_default_timeout(90000)
     try:
         game.boot(page)
-        assert game.wait_for(page, "() => { const t = document.getElementById('title'); return t && !t.hidden && /Start/.test(t.innerText) }", 60)
+        assert game.wait_for(page, "() => { const t = document.getElementById('title'); return t && !t.hidden && /Start/i.test(t.innerText) }", 60)
         card = lambda: page.evaluate("() => document.getElementById('titleCard').innerText")
         on = lambda k: page.evaluate("(k) => document.querySelector(`.tog[data-k=\"${k}\"]`).getAttribute('aria-checked')", k)
         # Options: hints, weather tips and sound are switches, with their state exposed to screen readers
@@ -528,10 +583,10 @@ def test_saved_games_lists_only_real_lives(browser, server):
     page.set_default_timeout(90000)
     try:
         game.boot(page)
-        assert game.wait_for(page, "() => { const t = document.getElementById('title'); return t && !t.hidden && /Start/.test(t.innerText) }", 60)
+        assert game.wait_for(page, "() => { const t = document.getElementById('title'); return t && !t.hidden && /Start/i.test(t.innerText) }", 60)
         _start(page)
         page.evaluate("() => window.__T.showTitle(false)")
-        assert game.wait_for(page, "() => { const t = document.getElementById('title'); return t && !t.hidden && /Start/.test(t.innerText) }", 10)
+        assert game.wait_for(page, "() => { const t = document.getElementById('title'); return t && !t.hidden && /Start/i.test(t.innerText) }", 10)
         page.click('#tOpt')
         page.click('#oSaves')
         txt = page.evaluate("() => document.getElementById('titleCard').innerText")
@@ -547,7 +602,7 @@ def test_about_credits_done_and_resume_card(browser, server):
     page.set_default_timeout(90000)
     try:
         game.boot(page)
-        assert game.wait_for(page, "() => { const t = document.getElementById('title'); return t && !t.hidden && /Start/.test(t.innerText) }", 60)
+        assert game.wait_for(page, "() => { const t = document.getElementById('title'); return t && !t.hidden && /Start/i.test(t.innerText) }", 60)
         card = lambda: page.evaluate("() => document.getElementById('titleCard').innerText")
         # Settings ends with Done (changes save by themselves), Reset to defaults, and an Apply button only after a change
         page.click('#tOpt'); page.click('#oSet')
@@ -577,7 +632,7 @@ def test_about_credits_done_and_resume_card(browser, server):
         # Continue shows who you would continue as
         _start(page)
         page.evaluate("() => window.__T.showTitle(false)")
-        assert game.wait_for(page, "() => { const t = document.getElementById('title'); return t && !t.hidden && /Start/.test(t.innerText) }", 10)
+        assert game.wait_for(page, "() => { const t = document.getElementById('title'); return t && !t.hidden && /Start/i.test(t.innerText) }", 10)
         page.click('#tPlay')
         r = page.evaluate("() => { const e = document.querySelector('#titleCard .resume'); return e ? e.innerText : '' }")
         assert 'Tester' in r and 'Day 1' in r, r
@@ -619,7 +674,7 @@ def test_title_has_no_tagline_or_button_backgrounds_and_the_first_o_loads(browse
     page.set_default_timeout(90000)
     try:
         game.boot(page)
-        assert game.wait_for(page, "() => { const t = document.getElementById('title'); return t && !t.hidden && /Start/.test(t.innerText) }", 60)
+        assert game.wait_for(page, "() => { const t = document.getElementById('title'); return t && !t.hidden && /Start/i.test(t.innerText) }", 60)
         text = page.evaluate("() => document.getElementById('title').innerText")
         assert 'real map' not in text.lower() and 'live a life' not in text.lower(), text
         pr = page.evaluate("() => { const b = document.querySelector('#tLang button[aria-pressed=true]'); const c = getComputedStyle(b), a = getComputedStyle(b, '::before'); return [c.backgroundColor, a.height, a.backgroundColor] }")

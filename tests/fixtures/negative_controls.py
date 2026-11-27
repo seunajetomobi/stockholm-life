@@ -56,9 +56,10 @@ def main():
     ap.add_argument('--only', nargs='*')
     ap.add_argument('--all-selectors', action='store_true', help='run every test group even after a fault is detected')
     args = ap.parse_args()
-    port = int(os.environ.get('SL_PORT', '8124'))
-    if port == 8000:
-        sys.exit('refusing to use port 8000')
+    v = os.environ.get('SL_PORT', '')  # required, as for the tests (tests/game.py server_port; owner, 2026-11-26)
+    if not v.strip().isdigit() or int(v) == 8000:
+        sys.exit(f'set SL_PORT to a free port other than 8000, for example SL_PORT=8124 (got {v!r})')
+    port = int(v)
     source = (ROOT / 'index.html').read_text(encoding='utf-8')
     bad = False
     with tempfile.TemporaryDirectory() as d:

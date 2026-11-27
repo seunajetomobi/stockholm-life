@@ -4,7 +4,22 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / 'tests' / 'output'           # screenshots; ignored by git
-PORT = int(os.environ.get('SL_PORT', '8000'))  # the flights relay's CORS only allows port 8000
+
+
+def server_port(env=os.environ):
+    """The local test server's port. On a developer machine SL_PORT must be set, and not to 8000: that port is the owner's own
+    ./start.sh server, and a run that fell back to it once started a server there (owner, 2026-11-26: "make SL_PORT
+    required"). GitHub Actions runners are fresh, so there it stays 8000 by default (the flights relay's CORS allows 8000)."""
+    v, ci = env.get('SL_PORT'), env.get('GITHUB_ACTIONS') == 'true'
+    if v is None and ci:
+        return 8000
+    if v is None or not v.strip().isdigit() or (int(v) == 8000 and not ci):
+        raise SystemExit(f'tests: set SL_PORT to a free port other than 8000, for example SL_PORT=8126 python3 -m pytest tests '
+                         f'(got {v!r}; port 8000 is kept for ./start.sh; in GitHub Actions it defaults to 8000)')
+    return int(v)
+
+
+PORT = server_port()
 BASE = f'http://127.0.0.1:{PORT}'
 CHROME_ARGS = ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist']
 SAVE_KEY = 'stockholm-life-v4'

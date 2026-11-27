@@ -54,7 +54,7 @@ The tests use the browser in `CHROME` when it is set, otherwise the system Googl
 
 ```sh
 python3 -m playwright install chromium
-CHROME=$(python3 -c 'from playwright.sync_api import sync_playwright as s; p = s().start(); print(p.chromium.executable_path); p.stop()') python3 -m pytest tests
+CHROME=$(python3 -c 'from playwright.sync_api import sync_playwright as s; p = s().start(); print(p.chromium.executable_path); p.stop()') SL_PORT=8126 python3 -m pytest tests
 ```
 
 Rendering is software WebGL (SwiftShader), so no GPU is needed.
@@ -64,6 +64,7 @@ Rendering is software WebGL (SwiftShader), so no GPU is needed.
 From the repository root:
 
 ```sh
+export SL_PORT=8126                     # required: any free port except 8000
 python3 tests/test_syntax.py            # syntax only, about 1 s
 python3 -m pytest tests                 # everything
 python3 -m pytest tests -m "not hook"   # without the station/train tests
@@ -73,7 +74,7 @@ python3 -m pytest tests -s              # also print load times and recorded con
 python3 -m pytest $(python3 tests/shard.py 2 6)   # shard 2 of 6, as one CI job runs it
 ```
 
-**Local server.** The tests use a server already running on port 8000 (for example `./start.sh`) if it serves this repo's `index.html`, and otherwise start `python3 -m http.server 8000 --bind 127.0.0.1` themselves and stop it afterwards. If port 8000 serves a different `index.html` (another checkout, an edited copy), the run stops with a message rather than testing the wrong code. Another port can be set with `SL_PORT=8123`, but the flights relay only allows port 8000, so live flights will show CORS errors there (they do not fail the tests).
+**Local server.** Every run needs `SL_PORT`, a free port other than 8000: the tests refuse to start without it, or on 8000, which stays free for your own `./start.sh` (owner, 2026-11-26; `tests/game.py` `server_port`). GitHub Actions keeps 8000 as its default. The tests use a server already running on that port if it serves this repo's `index.html`, and otherwise start `python3 -m http.server $SL_PORT --bind 127.0.0.1` themselves and stop it afterwards. If the port serves a different `index.html` (another checkout, an edited copy), the run stops with a message rather than testing the wrong code. The flights relay only allows port 8000, so live flights show CORS errors on other ports (they do not fail the tests).
 
 **Output.** Screenshots go to `tests/output/` (ignored by git), named after the test and screen width, e.g. `layout-390.png`.
 

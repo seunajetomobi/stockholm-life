@@ -49,13 +49,16 @@ SAVE_HOOK = ("window.__TS={get S(){return S},get busy(){return busy},set busy(v)
                                                        'openSaveFile', 'openSlotBackups', 'slotInfo', 'slotBackups', 'slotSwitch', 'slotRename', 'slotDelete', 'slotRestart', 'slotRestore', 'exportSlot', 'sleep'))
              + "};")
 
+# Dialogs and the drawer, for tests/test_close_outside.py (missing names read as null, as in SAVE_HOOK)
+UI_HOOK = 'window.__TU={' + ','.join(f"{n}:typeof {n}==='undefined'?null:{n}" for n in ('modal', 'closeModal', 'setTab', 'openCalls', 'quitGame')) + '};'
+
 
 def hooked_html():
     # SL_INDEX_HTML=<file> runs the hooked tests on another version (e.g. `git show <rev>:index.html > old.html`)
     html = Path(os.environ.get('SL_INDEX_HTML') or ROOT / 'index.html').read_text(encoding='utf-8')
     n = html.count('return API;')
     assert n == 1, f'test hook: expected one "return API;" in index.html, found {n}'
-    hook = 'window.__T={' + ','.join(HOOK_NAMES + [f'get {k}(){{return {k}}}' for k in HOOK_LIVE]) + '};' + SAVE_HOOK + 'return API;'
+    hook = 'window.__T={' + ','.join(HOOK_NAMES + [f'get {k}(){{return {k}}}' for k in HOOK_LIVE]) + '};' + SAVE_HOOK + UI_HOOK + 'return API;'
     return html.replace('return API;', hook)
 
 

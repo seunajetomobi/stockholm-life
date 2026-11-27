@@ -1176,7 +1176,18 @@ let TAB=null;const TAB_TITLES={here:'Here',phone:'Phone',me:'Me',civic:'Society'
 const wideUI=()=>window.matchMedia&&window.matchMedia('(min-width: 900px)').matches;
 function setTab(t){if(t===TAB&&!wideUI())t=null;TAB=t;const dr=$('drawer');dr.hidden=!t;document.body.classList.toggle('drawer-open',!!t);document.querySelectorAll('#dock button').forEach(b=>b.classList.toggle('on',b.dataset.tab===t));
   document.querySelectorAll('.pane').forEach(p=>p.hidden=p.dataset.pane!==t);if(t)$('dtitle').textContent=TAB_TITLES[t];if(t==='civic')renderCivic();try{localStorage.setItem('sl-tab',t||'')}catch(e){}}
-function uiInit(){document.querySelectorAll('#dock button').forEach(b=>b.onclick=()=>setTab(b.dataset.tab));$('dclose').onclick=()=>setTab(null);
+// The drawer (phone, bag, civic...) closes on a tap on the map, like every menu (owner, 2026-11-25), and the tap still
+// walks there. A tap as the game's own map taps count one (at most 8 px and 450 ms from press to release), read from the
+// pointers because on a touch screen the map's camera control cancels the click; one finger only: a second finger (a
+// pinch) cancels it. Only the map counts: the joystick, the places bar, prompts and the other controls leave the drawer
+// alone (code review). On a wide screen the Here panel is docked beside the map and open by default, not a menu over it,
+// so it stays.
+function drawerOutside(){let p=null;const open=()=>TAB&&!(TAB==='here'&&wideUI());
+  const onMap=e=>e.target instanceof HTMLCanvasElement&&!e.target.closest('#drawer,#modalRoot,#title');
+  document.addEventListener('pointerdown',e=>{p=e.isPrimary&&open()&&onMap(e)?[e.clientX,e.clientY,performance.now(),e.pointerId]:null},true);
+  document.addEventListener('pointercancel',()=>{p=null},true);
+  document.addEventListener('pointerup',e=>{const q=p;p=null;if(q&&e.pointerId===q[3]&&open()&&onMap(e)&&Math.hypot(e.clientX-q[0],e.clientY-q[1])<=8&&performance.now()-q[2]<=450)setTab(null)},true)}
+function uiInit(){document.querySelectorAll('#dock button').forEach(b=>b.onclick=()=>setTab(b.dataset.tab));$('dclose').onclick=()=>setTab(null);drawerOutside();
   let t=null;try{t=localStorage.getItem('sl-tab')}catch(e){}setTab(t===null?(wideUI()?'here':null):(t||null));
   const fit=()=>{const b=$('board');if(b)document.documentElement.style.setProperty('--boardH',b.offsetHeight+'px')};fit();if(window.ResizeObserver)new ResizeObserver(fit).observe($('board'));
   $('apps').innerHTML=PHONE_APPS.map((a,i)=>`<button class="app" data-i="${i}" data-k="${a[4]||''}"><span class="ic" style="background:${a[2]}">${a[1].startsWith('txt:')?`<b class="ict${a[1].length>6?' sm':''}">${a[1].slice(4)}</b>`:glyphSVG(a[1])}</span><span>${a[0]}</span></button>`).join('');
@@ -2741,7 +2752,17 @@ function goals(){return [
 ]}
 function check(){if(!S.won&&goals().every(g=>g.done)){S.won=true;save();
   modal(`<h2>Du är stockholmare nu</h2><p>${S.name} made it in ${S.day} days: papers in order, an apartment of your own, a steady job, the language and people to call.</p><div class="row2"><button class="btn" id="mClose">Keep living</button></div>`,m=>m.querySelector('#mClose').onclick=closeModal)}}
-function modal(html,bind){const r=$('modalRoot');r.innerHTML=`<div class="scrim"><div class="modal" role="dialog" aria-modal="true">${html}</div></div>`;bind&&bind(r.querySelector('.modal'));const f=r.querySelector('button:not(:disabled),input');f&&f.focus()}
+function modal(html,bind){const r=$('modalRoot');r.innerHTML=`<div class="scrim"><div class="modal" role="dialog" aria-modal="true">${html}</div></div>`;scrimDismiss(r.querySelector('.scrim'));bind&&bind(r.querySelector('.modal'));const f=r.querySelector('button:not(:disabled),input');f&&f.focus()}
+// A click on the dimmed area round a dialog presses the dialog's own close button, like every menu (owner, 2026-11-25):
+// the first of these it has, so Arlanda security's Close wins over its Flights button and Quit's "Quit without saving" is
+// never pressed. A dialog without one (the player must answer it) stays open. The press has to start on the dim area too,
+// so the click that opened the dialog, a drag from a slider or a text selection that ends outside never closes it. Once
+// something has been typed or chosen in the dialog (the customs declaration, a Swish amount, a name), a stray click
+// outside no longer throws it away: its own buttons still close it (code review, 2026-11-25).
+const DISMISS=['#no','#mClose','#qCancel','#emCancel','#fclose','#back'];
+function scrimDismiss(s){let down=false,typed=false;s.addEventListener('input',()=>{typed=true});s.addEventListener('change',()=>{typed=true});
+  s.addEventListener('pointerdown',e=>{down=e.target===s});
+  s.addEventListener('click',e=>{const was=down;down=false;if(!was||e.target!==s||typed)return;const m=s.querySelector('.modal'),b=m&&DISMISS.map(q=>m.querySelector(q)).find(x=>x&&!x.disabled);b&&b.click()})}
 function closeModal(){$('modalRoot').innerHTML=''}
 
 /* =================== UI RENDER =================== */
@@ -5941,6 +5962,11 @@ const setSave=()=>{try{localStorage.setItem(SETKEY,JSON.stringify(SET))}catch(e)
 const applyHints=()=>document.body.classList.toggle('nohints',!SET.hints);applyHints();
 const titleOpen=()=>{const t=document.getElementById('title');return !!t&&!t.hidden};// while the title page is open nothing else in the game answers
 ['keydown','keyup','keypress'].forEach(ev=>window.addEventListener(ev,e=>{if(titleOpen()){if(ev==='keydown')titleKey(e);e.stopPropagation()}},true));
+// A click beside a title-page panel does what Escape does: the panel's Back (owner, 2026-11-25). The main menu has none.
+// Outside means not on the card, the sign-in and language corner, the map credit or the copyright line, and not on the
+// page's scroll bar; the press must start outside too, so a drag from a slider or a text selection does nothing.
+(()=>{const t=$('title');let down=false;const out=e=>e.target instanceof Element&&!e.target.closest('.card,.ttop,.tosm,.thel')&&e.clientX<t.clientWidth&&e.clientY<t.clientHeight;
+  t.addEventListener('pointerdown',e=>{down=out(e)});t.addEventListener('click',e=>{const was=down;down=false;if(was&&out(e)&&titleOpen()&&!t.classList.contains('out'))titleBack()})})();
 const TITLE_ON=(()=>{try{return localStorage.getItem('stockholmsliv-title')!=='0'}catch(e){return true}})();
 let LANG=(()=>{try{const v=localStorage.getItem(LANGKEY);if(v==='sv'||v==='en')return v}catch(e){}return /^sv/i.test(navigator.language||'')?'sv':'en'})();
 const TXT={
@@ -6242,8 +6268,11 @@ const CHANGELOG=[{d:'2026-11-23',
   en:['A new title page, introduction and menus, in Swedish and English.','Start a new life: every country, a home town, education, languages and about you.','Stockholm time whatever your device clock says.','Options: accessibility, privacy and your data, help, and this list.'],
   sv:['En ny startsida, introduktion och nya menyer, på svenska och engelska.','Starta ett nytt liv: alla länder, en hemort, utbildning, språk och om dig.','Stockholmstid oavsett vad enhetens klocka visar.','Alternativ: tillgänglighet, integritet och dina data, hjälp och den här listan.']}];
 function installTry(note){if(INSTALL){const p=INSTALL;INSTALL=null;p.prompt();return}note.textContent=tt('instHow')}
+// Each title-page panel's way back, for Escape and for a click beside the panel ([data-back]: How to play's Back)
+const TITLE_BACK='#cBack,#oBack,#sBack,#lBack,#abBack,#acGuest,#nfBack,#axBack,#pvBack,#pvCancel,#hlBack,#nwBack,[data-back]';
+function titleBack(){const b=$('titleCard').querySelector(TITLE_BACK);if(b)b.click();return !!b}
 function titleKey(e){
-  if(e.key==='Escape'){const b=document.querySelector('#titleCard #cBack,#titleCard #oBack,#titleCard #sBack,#titleCard #lBack,#titleCard #abBack,#titleCard #acGuest,#titleCard #nfBack,#titleCard #axBack,#titleCard #pvBack,#titleCard #pvCancel,#titleCard #hlBack,#titleCard #nwBack');if(b){e.preventDefault();b.click()}return}
+  if(e.key==='Escape'){if(titleBack())e.preventDefault();return}
   if(e.key==='Tab'){const root=$('title'),f=[...root.querySelectorAll('button,input,select,textarea,a[href],summary')].filter(x=>!x.disabled&&!x.hidden&&x.offsetParent!==null);if(!f.length)return;
     const first=f[0],last=f[f.length-1],a=document.activeElement;if(!root.contains(a)){e.preventDefault();first.focus();return}
     if(e.shiftKey&&a===first){e.preventDefault();last.focus()}else if(!e.shiftKey&&a===last){e.preventDefault();first.focus()}}}
@@ -6266,7 +6295,7 @@ function titleNewLife(yes,no){titleShow(`<h2>${tt('newTitle')}</h2><p class="tag
 function introSlides(done,fromTitle){
   let i=0;const draw=()=>{const L=tt('slides'),last=i===L.length-1,[h,b]=L[i];
     titleShow(`<div class="slides"><h3>${h}</h3><p>${b}</p></div><div class="dots">${L.map((_,k)=>`<i class="${k===i?'on':''}"></i>`).join('')}</div>
-      <button class="primary" id="iNext">${last?(fromTitle?tt('back'):tt('start')):tt('next')}</button><button id="iSkip">${fromTitle?tt('back'):tt('skip')}</button>`,t=>{
+      <button class="primary" id="iNext">${last?(fromTitle?tt('back'):tt('start')):tt('next')}</button><button id="iSkip"${fromTitle?' data-back':''}>${fromTitle?tt('back'):tt('skip')}</button>`,t=>{
       t.querySelector('#iNext').onclick=()=>{if(last){markIntro();done()}else{i++;TITLE.cur=draw;draw()}};
       t.querySelector('#iSkip').onclick=()=>{markIntro();done()}})};TITLE.cur=draw;draw()}
 const segHtml=(key,opts)=>`<div class="seg" data-k="${key}" role="group">${opts.map(([v,l])=>`<button type="button" data-v="${v}" class="${String(SET[key])===String(v)?'on':''}" aria-pressed="${String(SET[key])===String(v)}">${l}</button>`).join('')}</div>`;

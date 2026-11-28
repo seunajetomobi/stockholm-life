@@ -110,7 +110,7 @@ class Site:
                 if path in site.files:
                     body = site.files[path]
                     body = body(self) if callable(body) else body
-                    ct = 'text/html; charset=utf-8' if path.endswith('.html') else 'application/json' if path.endswith('.json') \
+                    ct = 'text/html; charset=utf-8' if path.endswith('.html') or path == '' else 'application/json' if path.endswith('.json') \
                         else 'text/plain; charset=utf-8'
                     send(self, 200, body, {'Content-Type': ct, 'Cache-Control': 'max-age=600'}, site.gz)
                 else:
@@ -299,6 +299,132 @@ def test_short_span_warns(tmp_path, site_for):
     code, rep, out = run_tool(tmp_path, '--expect', sha, '--url', site.url, '--repo', str(repo), '--rounds', '2',
                               '--interval', '0', '--no-browser')                                # W4
     assert code == 0 and any('cannot confirm a mismatch' in w for w in rep['warnings']), out
+
+
+# ---------------------------------------------------------------- hosts without version.txt (Cloudflare, --no-version-file)
+
+IGNORE = b'# not published\n.git\n.github\n.assetsignore\ndocs\ntests\ntools\nREADME.md\n'
+CF_EXTRA = {'src/geography.js': b'// module', 'assets/icon.svg': b'<svg/>', 'manifest.webmanifest': b'{}',
+            '.assetsignore': IGNORE, 'docs/x.md': b'x', 'tests/t.py': b't', 'tools/live_check.py': b'#', 'README.md': b'r'}
+CF_SERVED = ['index.html', 'data/b.json', 'data/r.json', 'data/m.json', 'src/geography.js', 'assets/icon.svg', 'manifest.webmanifest']
+
+
+@pytest.fixture
+def cf_site(tmp_path):
+    """cf_site() -> (repo, sha, Site): a repository with .assetsignore, served the way Cloudflare does (no version.txt)."""
+    made = []
+
+    def make():
+        files = {**game_files(), **CF_EXTRA}
+        repo = tmp_path / 'cfrepo'
+        sha = commit(repo, files)
+        s = Site({p: files[p] for p in CF_SERVED})
+        s.files[''] = files['index.html']                      # like Cloudflare: the page is at /
+        s.hooks['index.html'] = lambda h: send(h, 307, b'', {'Location': '/'}) or True
+        made.append(s)
+        return repo, sha, s
+    yield make
+    for s in made:
+        s.close()
+
+
+def test_no_version_targets_are_what_assetsignore_leaves(tmp_path, cf_site):
+    repo, sha, site = cf_site()
+    exp = lc.expected_from_git(repo, sha, version_file=False)
+    assert sorted(exp['targets']) == sorted(CF_SERVED) and exp['identified_by'] == 'file contents'
+    assert 'version.txt' in lc.expected_from_git(repo, sha)['targets']        # the default is unchanged
+
+
+def test_no_version_all_match_passes(tmp_path, cf_site):
+    repo, sha, site = cf_site()
+    code, rep, out = check(tmp_path, repo, sha, site, '--no-version-file', '--rounds', '2')
+    assert code == 0 and rep['result'] == 'PASS', out
+    assert f'Targets: {len(CF_SERVED)} files' in out and 'not by a version file' in out
+    assert not site.hits('version.txt')
+
+
+def test_no_version_index_is_read_at_the_root(tmp_path, cf_site):
+    """Cloudflare answers /index.html with a redirect to /; the page itself is read at /."""
+    repo, sha, site = cf_site()
+    code, rep, out = check(tmp_path, repo, sha, site, '--no-version-file')
+    assert code == 0, out
+    site.files[''] = b'<html>an older build</html>'
+    code, rep, out = check(tmp_path, repo, sha, site, '--no-version-file')
+    assert code == 1 and rep['content']['targets']['index.html']['state'] == 'mismatch', out
+
+
+def test_no_version_one_file_differs_fails(tmp_path, cf_site):
+    repo, sha, site = cf_site()
+    site.files['src/geography.js'] = b'// an older build'
+    code, rep, out = check(tmp_path, repo, sha, site, '--no-version-file')
+    assert code == 1 and rep['categories'] == ['content-mismatch'], out
+    assert rep['content']['targets']['src/geography.js']['state'] == 'mismatch'
+    code, rep, out = run_tool(tmp_path, '--expect', sha, '--url', site.url, '--repo', str(repo), '--interval', '0',
+                              '--no-browser', '--no-version-file')
+    assert code == 2 and 'unconfirmed mismatch' in out                       # default window, as for version hosts
+
+
+def test_no_version_missing_file_fails(tmp_path, cf_site):
+    repo, sha, site = cf_site()
+    del site.files['assets/icon.svg']
+    code, rep, out = check(tmp_path, repo, sha, site, '--no-version-file')
+    assert code == 1 and rep['content']['targets']['assets/icon.svg']['state'] == 'mismatch', out
+    assert [o['value'] for o in rep['rounds'][0]['observations'] if o['target'] == 'assets/icon.svg'] == ['MISSING']
+
+
+def test_no_version_needs_assetsignore_and_git_source(tmp_path, site_for):
+    repo, sha, site = site_for(game_files())
+    code, rep, out = check(tmp_path, repo, sha, site, '--no-version-file')
+    assert code == 3 and '.assetsignore' in out
+    code, rep, out = check(tmp_path, repo, sha, site, '--no-version-file', '--source', 'github')
+    assert code == 3 and '--source git' in out
+
+
+def test_assetsignore_rules():
+    pats = lc.parse_assetsignore('# c\n\n.git\ndocs\n/top.txt\n*.md\nsrc/skip/\n')
+    ign = lambda p: lc.assets_ignored(p, pats)
+    assert all(map(ign, ['.git/config', 'docs/a/b.md', 'top.txt', 'x/y.md', 'src/skip/a.js']))
+    assert not any(map(ign, ['index.html', 'src/a.js', 'data/b.json', 'sub/top.txt', 'src/skipper/a.js']))
+    with pytest.raises(lc.UsageError):
+        lc.parse_assetsignore('!keep')
+
+
+@pytest.mark.parametrize('pattern, hidden, shown', [
+    ('**/README.md', ['README.md', 'a/README.md', 'a/b/README.md'], ['README.mdx', 'a/XREADME.md']),   # root included
+    ('docs/**', ['docs/a.md', 'docs/x/y.md'], ['docs', 'other/docs/a.md', 'docsx/a.md']),
+    ('a/**/b', ['a/b', 'a/x/b', 'a/x/y/b'], ['b', 'x/a/b', 'a/bx']),
+    ('/top.txt', ['top.txt'], ['sub/top.txt']),
+    ('sub/file.js', ['sub/file.js'], ['x/sub/file.js', 'file.js']),                  # an inner / anchors to the root
+    ('file.js', ['file.js', 'sub/file.js', 'a/b/file.js'], ['file.json']),            # no / matches at any depth
+    ('out/', ['out/a.js', 'x/out/a.js'], ['out', 'outer/a.js']),                      # a trailing / means folders only
+    ('*.log', ['a.log', 'x/y.log'], ['a.logx', 'a/logs']),   # * stops at /
+    ('a?c', ['abc'], ['a/c', 'abbc']),
+    ('\\#hash', ['#hash'], ['hash']),                                                  # an escaped # is a name
+])
+def test_assetsignore_gitignore_semantics(pattern, hidden, shown):
+    pats = lc.parse_assetsignore(pattern)
+    assert len(pats) == 1
+    for p in hidden:
+        assert lc.assets_ignored(p, pats), (pattern, p)
+    for p in shown:
+        assert not lc.assets_ignored(p, pats), (pattern, p)
+
+
+def test_assetsignore_comments_and_blanks():
+    assert lc.parse_assetsignore('# c\n\n   \n#x\n\\#y\n') == ['\\#y']
+
+
+@pytest.mark.browser
+def test_no_version_browser_check_passes_with_index_redirect(tmp_path, cf_site):
+    """The default browser check on a Cloudflare-like host: /index.html redirects (307) to /, which serves the page."""
+    pytest.importorskip('playwright')
+    repo, sha, site = cf_site()
+    code, rep, out = bcheck(tmp_path, repo, sha, site, '--no-version-file')
+    assert code == 0 and rep['browser']['verdict'] == 'PASS', out
+    b = rep['browser']
+    assert {o['target'] for o in b['observations']} == {'index.html', *GOOD}
+    assert not b['other_same_origin'] and not b['interception_failures']
+    assert site.hits('index.html') == [], 'the page must be opened at /, never at /index.html'
 
 
 # ---------------------------------------------------------------- expected sources and targets (T1, T2, G1-G7, S6)

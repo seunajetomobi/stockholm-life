@@ -8,6 +8,13 @@ commit by Git blob ID, repeats the comparison in rounds so that CDN caching cann
 checks the data files with the same rules as the Deploy workflow, and starts the game in headless Chromium with
 every same-origin request intercepted and hashed. How to use it and what it cannot see: tests/README.md.
 
+Hosts without a version.txt (Cloudflare, https://stockholmsliv.app/, where nothing generates one): add
+--no-version-file (implied for stockholmsliv.app) and use --source git. The targets are then every file of the commit
+that .assetsignore does not exclude (index.html, data/**, src/**, assets/** and the rest); PASS needs all of them to
+match by blob ID, in the same rounds and confirmation window. The commit is identified by those file contents, not by
+a version file, and the report says so. Example for the live branch:
+    python3 tools/live_check.py --expect $(git rev-parse origin/live) --url https://stockholmsliv.app/ --no-version-file
+
 Exit codes: 0 PASS, 1 FAIL, 2 INCONCLUSIVE (could not check; nothing proven wrong), 3 usage or local error.
 
 The tool only reads. It never deploys, pushes, fetches or changes Git refs, never writes into the repository unless
@@ -18,6 +25,7 @@ address, host names are resolved once and pinned, redirects are checked hop by h
 import argparse
 import calendar
 import email.utils
+import functools
 import gzip
 import hashlib
 import html.parser
@@ -52,6 +60,7 @@ DEFAULT_WINDOW = 600          # s; GitHub Pages sends Cache-Control: max-age=600
 MAX_WINDOW = 3600
 MAX_SPAN = 4 * 3600
 SHA_RE = re.compile(r'^[0-9a-f]{40}$')
+NO_VERSION_HOSTS = ('stockholmsliv.app',)   # Cloudflare hosts: no version.txt, so --no-version-file is implied
 SLUG_RE = re.compile(r'^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$')
 
 # The game-file rules of .github/workflows/deploy.yml ("Check the game files"). tests/test_live_check.py runs both
@@ -340,27 +349,92 @@ def check_entry(path, mode, typ):
         raise UsageError(f'{path}: unsupported entry (mode {mode}, type {typ})')
 
 
-def finish_expected(sha, files, source, detail):
-    """files: {path: (blob, size)} for index.html and data/**. Adds the generated version.txt (deploy.yml)."""
+@functools.lru_cache(maxsize=None)
+def ignore_regex(pat):
+    """One .assetsignore line (gitignore syntax, no negation) as (regex, dirs_only). A leading or inner '/' anchors the
+    pattern to the root; otherwise it matches at any depth. '**/' at the start matches any depth (the root included),
+    '/**' at the end everything inside, '/**/' in the middle zero or more folders; '*' and '?' never cross a '/'."""
+    dirs_only = pat.endswith('/')
+    pat = pat.rstrip('/')
+    anchored = '/' in pat
+    pat = pat.lstrip('/')
+    out, i = [], 0
+    while i < len(pat):
+        c = pat[i]
+        if pat.startswith('**/', i) and (i == 0 or pat[i - 1] == '/'):
+            out.append('(?:.*/)?'); i += 3
+        elif pat.startswith('/**', i) and i + 3 == len(pat):
+            out.append('/.+'); i += 3
+        elif c == '*':
+            j = i
+            while j < len(pat) and pat[j] == '*':
+                j += 1
+            out.append('[^/]*'); i = j
+        elif c == '?':
+            out.append('[^/]'); i += 1
+        elif c == '\\' and i + 1 < len(pat):
+            out.append(re.escape(pat[i + 1])); i += 2
+        else:
+            out.append(re.escape(c)); i += 1
+    return re.compile(('' if anchored else '(?:.*/)?') + ''.join(out) + r'\Z'), dirs_only
+
+
+def assets_ignored(path, patterns):
+    """True if .assetsignore leaves this file out of what Cloudflare serves. A pattern that matches a folder hides
+    everything inside it; a pattern with a trailing '/' matches folders only."""
+    parts = path.split('/')
+    for pat in patterns:
+        rx, dirs_only = ignore_regex(pat) if isinstance(pat, str) else pat
+        for n in range(1, len(parts) + 1):
+            if rx.match('/'.join(parts[:n])) and (not dirs_only or n < len(parts)):
+                return True
+    return False
+
+
+def parse_assetsignore(text):
+    pats = []
+    for line in text.splitlines():
+        line = line.strip()
+        if not line or line.startswith('#'):
+            continue
+        if line.startswith('!'):
+            raise UsageError(f'.assetsignore line {line!r}: negations are not supported by this tool')
+        pats.append(line)
+    return pats
+
+
+def finish_expected(sha, files, source, detail, version_file=True):
+    """files: {path: (blob, size)}: index.html, data/** and src/**, or with version_file=False every file the host
+    really serves. Adds the generated version.txt (deploy.yml) unless the host does not publish one."""
     if 'index.html' not in files:
         raise UsageError(f'{sha} has no index.html: not a game commit')
     if not any(p.startswith('data/') for p in files):
         raise UsageError(f'{sha} has no files under data/: not a game commit')
-    version = f'{sha}\n'.encode()
-    targets = {'version.txt': {'blob': blob_id(version), 'size': len(version), 'generated': True}}
+    targets = {}
+    if version_file:
+        version = f'{sha}\n'.encode()
+        targets['version.txt'] = {'blob': blob_id(version), 'size': len(version), 'generated': True}
     for p in sorted(files):
         targets[p] = {'blob': files[p][0], 'size': files[p][1], 'generated': False}
-    return {'sha': sha, 'source': source, 'detail': detail, 'targets': targets}
+    return {'sha': sha, 'source': source, 'detail': detail, 'targets': targets,
+            'identified_by': 'version file' if version_file else 'file contents'}
 
 
-def expected_from_git(repo, sha):
+def expected_from_git(repo, sha, version_file=True):
     r = git_ro(repo, 'rev-parse', '--git-dir')
     if r.returncode:
         raise UsageError(f'{repo} is not a Git repository')
     if git_ro(repo, 'cat-file', '-e', f'{sha}^{{commit}}').returncode:
         raise UsageError(f'commit {sha} is not in {repo}. Run `git fetch origin` there yourself (this tool never fetches), '
                          'or use --source github')
-    r = git_ro(repo, 'ls-tree', '-r', '-l', '-z', sha, '--', 'index.html', 'data', 'src')
+    paths = ['--', 'index.html', 'data', 'src'] if version_file else []
+    r = git_ro(repo, 'ls-tree', '-r', '-l', '-z', sha, *paths)
+    ignore = None
+    if not version_file:                      # Cloudflare serves everything .assetsignore does not exclude
+        ri = git_ro(repo, 'cat-file', 'blob', f'{sha}:.assetsignore')
+        if ri.returncode:
+            raise UsageError(f'{sha} has no .assetsignore: cannot tell which files the host publishes')
+        ignore = parse_assetsignore(ri.stdout.decode())
     if r.returncode:
         raise UsageError(f'git ls-tree failed: {r.stderr.decode(errors="replace").strip()}')
     files = {}
@@ -369,13 +443,13 @@ def expected_from_git(repo, sha):
             continue
         meta, path = rec.decode().split('\t', 1)
         mode, typ, obj, size = meta.split()
-        if not published(path):
+        if not (published(path) if version_file else not assets_ignored(path, ignore)):
             continue
         check_entry(path, mode, typ)
         files[path] = (obj, int(size))
     on_main = git_ro(repo, 'merge-base', '--is-ancestor', sha, 'refs/remotes/origin/main').returncode
     detail = {'repo': str(Path(repo).resolve()), 'on_local_origin_main': {0: 'yes', 1: 'no'}.get(on_main, 'unknown')}
-    return finish_expected(sha, files, 'local-git', detail)
+    return finish_expected(sha, files, 'local-git', detail, version_file)
 
 
 def api_json(policy, url):
@@ -550,8 +624,9 @@ def classify(o, expected, status, body):
     return o
 
 
-def observe_file(policy, expected, path, round_no, t0, nonce):
-    url = urllib.parse.urljoin(policy.base, path) + (f'?lc={nonce}' if path == 'version.txt' else '')
+def observe_file(policy, expected, path, round_no, t0, nonce, root_index=False):
+    # Cloudflare redirects /index.html to /, so on such hosts index.html is read where it is really served
+    url = urllib.parse.urljoin(policy.base, '' if root_index and path == 'index.html' else path) + (f'?lc={nonce}' if path == 'version.txt' else '')
     o = make_obs(path, f'round {round_no}', url, time.monotonic() - t0)
     try:
         r = http_get(policy, url, 'site', follow=False)
@@ -686,6 +761,8 @@ def browser_check(policy, expected, base, index_bytes, opts, t0):
 
     def same_origin(route, req):
         url, path = req.url, rel(req.url)
+        if opts.get('root_index') and path == '':
+            path = 'index.html'                    # Cloudflare serves the page at /, not at /index.html
         tgt = targets.get(path)
         o = make_obs(path, 'browser', url, time.monotonic() - t0, resource_type=req.resource_type)
         fetched = None
@@ -806,7 +883,7 @@ def browser_check(policy, expected, base, index_bytes, opts, t0):
                         if not r.url.startswith(base) and not policy.loopback else None)
                 page.on('response', lambda r: res['external'].append({'url': r.url, 'result': f'HTTP {r.status}', 'required': r.url in required})
                         if r.status >= 400 and not r.url.startswith(base) and not policy.loopback else None)
-                nav = base + f'index.html?lc={opts["nonce"]}'
+                nav = base + ('' if opts.get('root_index') else 'index.html') + f'?lc={opts["nonce"]}'
                 try:
                     page.goto(nav, wait_until='load', timeout=max(1000, (deadline - time.monotonic()) * 1000))
                     early = None
@@ -1003,6 +1080,9 @@ def parse_args(argv):
     a.add_argument('--confirm-window', type=int, default=None,
                    help=f'seconds a mismatch must persist to count as confirmed (default and minimum on real sites: '
                         f'{DEFAULT_WINDOW} or the CDN max-age, whichever is larger)')
+    a.add_argument('--no-version-file', action='store_true',
+                   help='for a host that publishes no version.txt (Cloudflare, stockholmsliv.app: implied): the commit is '
+                        'identified by the blob IDs of every file the host serves (all files .assetsignore does not exclude)')
     a.add_argument('--no-browser', action='store_true', help='skip the browser startup check')
     a.add_argument('--browser-anyway', action='store_true', help='run the browser check even if the files did not match')
     a.add_argument('--browser-timeout', type=int, default=180, help='seconds for the game to start (default 180)')
@@ -1097,6 +1177,9 @@ def effective_window(args, loopback, observations):
 
 def run(args):
     loopback, api = check_args(args)
+    no_version = args.no_version_file or urllib.parse.urlsplit(args.url).hostname in NO_VERSION_HOSTS
+    if no_version and args.source == 'github':
+        raise UsageError('--no-version-file needs --source git (the file list comes from .assetsignore in the commit)')
     repo = Path(args.repo)
     outputs = {k: safe_output(getattr(args, k), {ROOT, repo}, args.allow_repo_output) for k in ('json', 'screenshot') if getattr(args, k)}
     resolver, names = test_resolver() if loopback else (None, ())
@@ -1107,12 +1190,14 @@ def run(args):
     t0 = time.monotonic()
     report['started'] = time.strftime('%Y-%m-%d %H:%M:%S Z', time.gmtime())
     if args.source == 'git':
-        exp = expected_from_git(repo, args.expect)
+        exp = expected_from_git(repo, args.expect, not no_version)
     else:
         if loopback and not simulated:
             raise UsageError('--source github with an http:// site needs SL_LIVE_GITHUB_API (no internet in loopback mode)')
         exp = expected_from_github(policy, api, args.github_repo, args.expect, simulated)
     report['expected'] = exp
+    if no_version:
+        report['notes'].append('no version.txt on this host: the commit is identified by the blob IDs of all published files')
     targets = exp['targets']
     plan_span = (args.rounds - 1) * args.interval
     planned_w = args.confirm_window if (loopback and args.confirm_window is not None) else max(args.confirm_window or 0, DEFAULT_WINDOW)
@@ -1129,7 +1214,7 @@ def run(args):
         nonce = f'{int(time.time())}-{k}'
         rows = []
         for path in targets:
-            o, body = observe_file(policy, targets[path], path, k, t0, nonce)
+            o, body = observe_file(policy, targets[path], path, k, t0, nonce, no_version)
             series[path].append(o)
             rows.append(o)
             if o['value'] == MATCH:
@@ -1165,7 +1250,7 @@ def run(args):
                 raise UsageError('SL_LIVE_TEST_SINK must map to a loopback address')
             sink = (host, dest)
         opts = {'timeout': args.browser_timeout, 'nonce': f'{int(time.time())}-b', 'stubs': stubs, 'sink': sink,
-                'fault': os.environ.get('SL_LIVE_FAULT'), 'screenshot': bool(outputs.get('screenshot')),
+                'fault': os.environ.get('SL_LIVE_FAULT'), 'root_index': no_version, 'screenshot': bool(outputs.get('screenshot')),
                 'chrome_args': (os.environ.get('SL_LIVE_TEST_CHROME_ARGS') or '').split()}
         b = browser_check(policy, exp, policy.base, matched.get('index.html'), opts, t0)
         png = b.pop('screenshot_png', None)
@@ -1182,6 +1267,8 @@ def run(args):
     # identity
     if loopback and not simulated:
         report['identity'] = {'verdict': SKIP, 'reason': 'disabled in loopback mode'}
+    elif no_version:
+        report['identity'] = {'verdict': SKIP, 'reason': 'not a GitHub Pages host: there is no github-pages deployment record to compare'}
     else:
         report['identity'] = identity_check(policy, api, args.github_repo, series.get('index.html', []))
     report['network'] = {'pins': policy.pins, 'resolver_calls': policy.resolver_calls, 'connections': policy.connections}
@@ -1222,7 +1309,13 @@ def print_report(r, quiet, verbose):
                    + (' (TEST ONLY)' if e['source'] == 'simulated-github' else '') + f' - commit {e["sha"]}, tree {dt["tree"]}')
         out.append(f'Expected source: {src}')
         n = len(e['targets'])
-        out.append(f'Targets: {n} (index.html, {n - 2} data files, version.txt); confirmation window {r["confirm_window"]} s')
+        if e.get('identified_by') == 'file contents':
+            out.append(f'Targets: {n} files served by the host (all files .assetsignore does not exclude); confirmation window '
+                       f'{r["confirm_window"]} s')
+            out.append('Identification: this host publishes no version.txt, so the commit is identified by the contents of its '
+                       'files (Git blob IDs), not by a version file')
+        else:
+            out.append(f'Targets: {n} (index.html, {n - 2} data files, version.txt); confirmation window {r["confirm_window"]} s')
         for w in r['warnings'] + r['notes']:
             out.append(f'  note: {w}')
         for rd in r['rounds']:
